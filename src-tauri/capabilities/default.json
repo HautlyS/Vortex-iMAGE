@@ -1,0 +1,22 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "GitHub Photos capabilities",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "opener:default",
+    "http:default",
+    "dialog:allow-open",
+    "store:default",
+    "shell:allow-open",
+    {
+      "identifier": "fs:allow-read-file",
+      "allow": [
+        { "path": "$HOME/**" },
+        { "path": "$PICTURE/**" },
+        { "path": "$DOWNLOAD/**" }
+      ]
+    }
+  ]
+}
