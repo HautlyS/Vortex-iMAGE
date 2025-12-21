@@ -7,192 +7,194 @@
   <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
-    :root { --bg: #0c0c0e; --surface: rgba(255,255,255,0.03); --border: rgba(255,255,255,0.06); --text: #fafafa; --muted: rgba(255,255,255,0.5); --accent: #8b5cf6; }
+    :root { --bg: #0a0a0c; --surface: rgba(255,255,255,0.025); --border: rgba(255,255,255,0.05); --text: #f5f5f7; --muted: rgba(255,255,255,0.45); --accent: #8b5cf6; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { height: 100vh; overflow: hidden; background: var(--bg); font-family: 'Inter', -apple-system, sans-serif; color: var(--text); }
+    html, body { height: 100vh; overflow: hidden; background: var(--bg); font-family: 'Inter', system-ui, sans-serif; color: var(--text); -webkit-font-smoothing: antialiased; }
 
-    .glow { position: fixed; width: 500px; height: 500px; border-radius: 50%; filter: blur(120px); pointer-events: none; }
-    .glow-1 { top: -15%; left: 20%; background: rgba(139,92,246,0.1); }
-    .glow-2 { bottom: -20%; right: 10%; background: rgba(99,102,241,0.08); }
+    .glow { position: fixed; border-radius: 50%; filter: blur(100px); will-change: transform; pointer-events: none; }
+    .glow-1 { width: 450px; height: 450px; top: -10%; left: 15%; background: rgba(139,92,246,0.12); }
+    .glow-2 { width: 350px; height: 350px; bottom: -15%; right: 10%; background: rgba(79,70,229,0.1); }
 
-    /* macOS Menu Bar */
-    .menubar { position: fixed; top: 0; left: 0; right: 0; height: 28px; background: rgba(30,30,32,0.85); backdrop-filter: blur(20px); display: flex; align-items: center; padding: 0 12px; font-size: 13px; font-weight: 500; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.05); opacity: 0; }
-    .menubar-left, .menubar-right { display: flex; align-items: center; gap: 18px; }
-    .menubar-left { flex: 1; }
-    .menubar-right { color: var(--muted); font-size: 12px; font-weight: 400; }
-    .menu-item { color: var(--text); cursor: default; padding: 2px 8px; border-radius: 4px; transition: background 0.15s; }
-    .menu-item:hover { background: rgba(255,255,255,0.1); }
-    .menu-apple { font-size: 15px; }
+    /* Menu Bar */
+    .menubar { position: fixed; top: 0; left: 0; right: 0; height: 28px; background: rgba(20,20,22,0.8); backdrop-filter: blur(20px); display: flex; align-items: center; padding: 0 14px; font-size: 13px; font-weight: 500; z-index: 100; border-bottom: 1px solid var(--border); }
+    .menubar-left { display: flex; align-items: center; gap: 20px; flex: 1; }
+    .menubar-right { display: flex; align-items: center; gap: 16px; font-size: 12px; font-weight: 400; color: var(--muted); }
+    .menu-item { padding: 3px 10px; border-radius: 4px; cursor: default; }
+    .menu-item:hover { background: rgba(255,255,255,0.08); }
+    .menu-apple { font-size: 14px; }
 
-    /* macOS Window */
-    .window { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 900px; height: 580px; background: rgba(22,22,24,0.95); border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 25px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03) inset; overflow: hidden; opacity: 0; backdrop-filter: blur(30px); }
-    .window-bar { height: 52px; background: rgba(40,40,44,0.6); border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; padding: 0 16px; gap: 8px; }
-    .window-btn { width: 12px; height: 12px; border-radius: 50%; }
-    .btn-close { background: #ff5f57; }
-    .btn-min { background: #ffbd2e; }
-    .btn-max { background: #28c840; }
-    .window-title { flex: 1; text-align: center; font-size: 13px; font-weight: 500; color: var(--muted); margin-right: 56px; }
+    /* Window */
+    .window { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 880px; height: 560px; background: rgba(18,18,20,0.92); border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 30px 90px rgba(0,0,0,0.5); overflow: hidden; will-change: transform, opacity; }
+    .titlebar { height: 50px; background: rgba(28,28,32,0.6); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 16px; }
+    .traffic { display: flex; gap: 8px; }
+    .traffic span { width: 12px; height: 12px; border-radius: 50%; }
+    .t-close { background: #ff5f57; }
+    .t-min { background: #febc2e; }
+    .t-max { background: #28c840; }
+    .titlebar-text { flex: 1; text-align: center; font-size: 13px; color: var(--muted); margin-right: 52px; }
 
-    .window-content { display: flex; height: calc(100% - 52px); }
+    .main { display: flex; height: calc(100% - 50px); }
 
     /* Sidebar */
-    .sidebar { width: 200px; background: rgba(30,30,32,0.5); border-right: 1px solid rgba(255,255,255,0.05); padding: 12px 8px; }
-    .sidebar-section { margin-bottom: 20px; }
-    .sidebar-title { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 0 12px; margin-bottom: 8px; }
-    .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: rgba(255,255,255,0.8); cursor: default; transition: background 0.15s; }
-    .sidebar-item:hover { background: rgba(255,255,255,0.05); }
-    .sidebar-item.active { background: rgba(139,92,246,0.2); color: #fff; }
-    .sidebar-icon { font-size: 16px; width: 20px; text-align: center; }
+    .sidebar { width: 190px; background: rgba(22,22,26,0.5); border-right: 1px solid var(--border); padding: 14px 10px; overflow: hidden; }
+    .nav-group { margin-bottom: 22px; }
+    .nav-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; padding: 0 10px; margin-bottom: 8px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 6px; font-size: 13px; color: rgba(255,255,255,0.75); cursor: default; will-change: transform, opacity; }
+    .nav-item:hover { background: rgba(255,255,255,0.04); }
+    .nav-item.active { background: rgba(139,92,246,0.18); color: #fff; }
+    .nav-icon { width: 18px; text-align: center; font-size: 14px; }
 
     /* Gallery */
-    .gallery { flex: 1; padding: 16px; overflow: hidden; }
-    .gallery-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .gallery-title { font-size: 22px; font-weight: 600; }
-    .gallery-count { font-size: 13px; color: var(--muted); }
-    .gallery-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-    .gallery-item { aspect-ratio: 1; background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(99,102,241,0.1)); border-radius: 8px; opacity: 0; position: relative; overflow: hidden; }
-    .gallery-item::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.4)); }
-    .gallery-item:nth-child(2) { background: linear-gradient(135deg, rgba(236,72,153,0.2), rgba(139,92,246,0.1)); }
-    .gallery-item:nth-child(3) { background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(99,102,241,0.1)); }
-    .gallery-item:nth-child(5) { background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(59,130,246,0.1)); }
-    .gallery-item:nth-child(7) { background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(236,72,153,0.1)); }
+    .gallery { flex: 1; padding: 18px; display: flex; flex-direction: column; }
+    .gallery-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .gallery-title { font-size: 20px; font-weight: 600; }
+    .gallery-meta { font-size: 12px; color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; flex: 1; }
+    .cell { border-radius: 8px; will-change: transform, opacity; position: relative; overflow: hidden; }
+    .cell::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, var(--c1, rgba(139,92,246,0.25)), var(--c2, rgba(79,70,229,0.1))); }
+    .cell:nth-child(2) { --c1: rgba(236,72,153,0.25); --c2: rgba(139,92,246,0.1); }
+    .cell:nth-child(3) { --c1: rgba(59,130,246,0.25); --c2: rgba(99,102,241,0.1); }
+    .cell:nth-child(4) { --c1: rgba(16,185,129,0.2); --c2: rgba(59,130,246,0.1); }
+    .cell:nth-child(5) { --c1: rgba(245,158,11,0.25); --c2: rgba(236,72,153,0.1); }
+    .cell:nth-child(6) { --c1: rgba(99,102,241,0.25); --c2: rgba(139,92,246,0.1); }
+    .cell:nth-child(7) { --c1: rgba(168,85,247,0.25); --c2: rgba(79,70,229,0.1); }
+    .cell:nth-child(8) { --c1: rgba(34,197,94,0.2); --c2: rgba(16,185,129,0.1); }
 
     /* Dock */
-    .dock { position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%); display: flex; align-items: flex-end; gap: 4px; padding: 4px 8px; background: rgba(40,40,44,0.7); border-radius: 18px; border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(20px); opacity: 0; }
-    .dock-item { width: 48px; height: 48px; background: linear-gradient(135deg, rgba(60,60,65,0.8), rgba(40,40,44,0.9)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: default; transition: transform 0.2s ease, margin 0.2s ease; }
-    .dock-item:hover { transform: translateY(-8px) scale(1.15); margin: 0 8px; }
-    .dock-item.active::after { content: ''; position: absolute; bottom: -6px; width: 4px; height: 4px; background: var(--muted); border-radius: 50%; }
-    .dock-separator { width: 1px; height: 40px; background: rgba(255,255,255,0.1); margin: 0 4px; }
-    .dock-app-image { background: linear-gradient(135deg, var(--accent), #6366f1); }
+    .dock { position: fixed; bottom: 6px; left: 50%; transform: translateX(-50%); display: flex; align-items: flex-end; gap: 3px; padding: 4px 6px; background: rgba(30,30,34,0.75); border-radius: 16px; border: 1px solid var(--border); backdrop-filter: blur(20px); }
+    .dock-icon { width: 44px; height: 44px; background: rgba(50,50,55,0.8); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: default; will-change: transform; transition: transform 0.15s cubic-bezier(0.34,1.56,0.64,1), margin 0.15s ease; }
+    .dock-icon:hover { transform: translateY(-10px) scale(1.2); margin: 0 6px; }
+    .dock-icon.app { background: linear-gradient(135deg, var(--accent), #6366f1); position: relative; }
+    .dock-icon.app::after { content: ''; position: absolute; bottom: -4px; width: 4px; height: 4px; background: rgba(255,255,255,0.6); border-radius: 50%; }
+    .dock-sep { width: 1px; height: 36px; background: rgba(255,255,255,0.08); margin: 0 3px; }
 
-    /* Info Panel */
-    .info { position: fixed; top: 50%; right: 40px; transform: translateY(-50%); width: 260px; opacity: 0; }
-    .info-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; backdrop-filter: blur(20px); margin-bottom: 12px; }
-    .info-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
-    .info-text { font-size: 12px; color: var(--muted); line-height: 1.6; }
-    .info-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(139,92,246,0.15); border-radius: 100px; font-size: 11px; color: var(--accent); margin-top: 12px; }
+    /* Panel */
+    .panel { position: fixed; top: 50%; right: 30px; transform: translateY(-50%); width: 240px; display: flex; flex-direction: column; gap: 10px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; backdrop-filter: blur(16px); will-change: transform, opacity; }
+    .card-title { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .card-text { font-size: 11px; color: var(--muted); line-height: 1.55; }
+    .tag { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; padding: 5px 10px; background: rgba(139,92,246,0.12); border-radius: 50px; font-size: 10px; color: var(--accent); }
 
-    .cta-float { position: fixed; bottom: 80px; right: 40px; padding: 12px 24px; background: var(--text); border-radius: 10px; color: var(--bg); font-size: 13px; font-weight: 500; text-decoration: none; opacity: 0; transition: transform 0.2s, box-shadow 0.2s; }
-    .cta-float:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(255,255,255,0.15); }
+    .btn-dl { position: fixed; bottom: 70px; right: 30px; padding: 11px 22px; background: #fff; border-radius: 10px; color: var(--bg); font-size: 12px; font-weight: 600; text-decoration: none; will-change: transform; transition: transform 0.2s, box-shadow 0.2s; }
+    .btn-dl:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(255,255,255,0.12); }
 
-    @media (max-width: 1200px) { .info { display: none; } .window { width: 85vw; } }
-    @media (max-width: 768px) { .window { width: 95vw; height: 70vh; } .sidebar { display: none; } .gallery-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 1100px) { .panel, .btn-dl { display: none; } }
+    @media (max-width: 900px) { .window { width: 92vw; } .sidebar { width: 160px; } }
+    @media (max-width: 700px) { .sidebar { display: none; } .grid { grid-template-columns: repeat(3, 1fr); } }
   </style>
 </head>
 <body>
   <div class="glow glow-1"></div>
   <div class="glow glow-2"></div>
 
-  <!-- macOS Menu Bar -->
-  <div class="menubar">
-    <div class="menubar-left">
+  <header class="menubar">
+    <nav class="menubar-left">
       <span class="menu-item menu-apple"></span>
-      <span class="menu-item">iMAGE</span>
+      <span class="menu-item"><strong>iMAGE</strong></span>
       <span class="menu-item">File</span>
       <span class="menu-item">Edit</span>
       <span class="menu-item">View</span>
-      <span class="menu-item">Window</span>
       <span class="menu-item">Help</span>
-    </div>
+    </nav>
     <div class="menubar-right">
-      <span>☁️ Synced</span>
-      <span>100%</span>
-      <span id="time"></span>
+      <span>☁ Synced</span>
+      <span id="clock"></span>
     </div>
-  </div>
+  </header>
 
-  <!-- App Window -->
-  <div class="window">
-    <div class="window-bar">
-      <div class="window-btn btn-close"></div>
-      <div class="window-btn btn-min"></div>
-      <div class="window-btn btn-max"></div>
-      <div class="window-title">iMAGE — Photos</div>
+  <section class="window">
+    <div class="titlebar">
+      <div class="traffic"><span class="t-close"></span><span class="t-min"></span><span class="t-max"></span></div>
+      <span class="titlebar-text">iMAGE — All Photos</span>
     </div>
-    <div class="window-content">
-      <div class="sidebar">
-        <div class="sidebar-section">
-          <div class="sidebar-title">Library</div>
-          <div class="sidebar-item active"><span class="sidebar-icon">🖼</span>All Photos</div>
-          <div class="sidebar-item"><span class="sidebar-icon">⭐</span>Favorites</div>
-          <div class="sidebar-item"><span class="sidebar-icon">🗑</span>Recently Deleted</div>
+    <div class="main">
+      <aside class="sidebar">
+        <div class="nav-group">
+          <div class="nav-label">Library</div>
+          <div class="nav-item active"><span class="nav-icon">🖼</span>All Photos</div>
+          <div class="nav-item"><span class="nav-icon">⭐</span>Favorites</div>
+          <div class="nav-item"><span class="nav-icon">🕐</span>Recents</div>
         </div>
-        <div class="sidebar-section">
-          <div class="sidebar-title">Albums</div>
-          <div class="sidebar-item"><span class="sidebar-icon">📁</span>Screenshots</div>
-          <div class="sidebar-item"><span class="sidebar-icon">📁</span>Wallpapers</div>
-          <div class="sidebar-item"><span class="sidebar-icon">📁</span>Projects</div>
+        <div class="nav-group">
+          <div class="nav-label">Albums</div>
+          <div class="nav-item"><span class="nav-icon">📁</span>Screenshots</div>
+          <div class="nav-item"><span class="nav-icon">📁</span>Wallpapers</div>
         </div>
-        <div class="sidebar-section">
-          <div class="sidebar-title">GitHub</div>
-          <div class="sidebar-item"><span class="sidebar-icon">📦</span>my-photos</div>
+        <div class="nav-group">
+          <div class="nav-label">Repos</div>
+          <div class="nav-item"><span class="nav-icon">📦</span>my-photos</div>
         </div>
-      </div>
+      </aside>
       <div class="gallery">
-        <div class="gallery-header">
+        <div class="gallery-head">
           <span class="gallery-title">All Photos</span>
-          <span class="gallery-count">128 items</span>
+          <span class="gallery-meta">128 items</span>
         </div>
-        <div class="gallery-grid">
-          <div class="gallery-item"></div>
-          <div class="gallery-item"></div>
-          <div class="gallery-item"></div>
-          <div class="gallery-item"></div>
-          <div class="gallery-item"></div>
-          <div class="gallery-item"></div>
-          <div class="gallery-item"></div>
-          <div class="gallery-item"></div>
+        <div class="grid">
+          <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+          <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
         </div>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- Info Panel -->
-  <div class="info">
-    <div class="info-card">
-      <div class="info-title">GitHub-Backed Storage</div>
-      <div class="info-text">Your photos are stored in your own GitHub repository. Full version control, complete ownership.</div>
-      <div class="info-badge">🔐 Private & Secure</div>
+  <aside class="panel">
+    <div class="card">
+      <div class="card-title">GitHub Storage</div>
+      <div class="card-text">Photos stored in your own repos. Version controlled, fully owned.</div>
+      <div class="tag">🔐 Private</div>
     </div>
-    <div class="info-card">
-      <div class="info-title">Git LFS Support</div>
-      <div class="info-text">Large files handled automatically. No size limits holding you back.</div>
+    <div class="card">
+      <div class="card-title">Git LFS</div>
+      <div class="card-text">Large files handled seamlessly. No limits.</div>
     </div>
-  </div>
+  </aside>
 
-  <a href="https://github.com/HautlyS/Vortex-iMAGE/releases" class="cta-float">Download for macOS</a>
+  <a href="https://github.com/HautlyS/Vortex-iMAGE/releases" class="btn-dl">Download</a>
 
-  <!-- macOS Dock -->
-  <div class="dock">
-    <div class="dock-item">📁</div>
-    <div class="dock-item">🌐</div>
-    <div class="dock-item">💬</div>
-    <div class="dock-item dock-app-image active">🖼</div>
-    <div class="dock-item">⚙️</div>
-    <div class="dock-separator"></div>
-    <div class="dock-item">📥</div>
-  </div>
+  <nav class="dock">
+    <div class="dock-icon">📁</div>
+    <div class="dock-icon">🌐</div>
+    <div class="dock-icon">💬</div>
+    <div class="dock-icon app">🖼</div>
+    <div class="dock-icon">⚙️</div>
+    <div class="dock-sep"></div>
+    <div class="dock-icon">📥</div>
+  </nav>
 
   <script>
     // Clock
-    const updateTime = () => document.getElementById('time').textContent = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    updateTime(); setInterval(updateTime, 1000);
+    const clock = document.getElementById('clock');
+    const tick = () => clock.textContent = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    tick(); setInterval(tick, 60000);
 
-    // Animations
-    const tl = anime.timeline({ easing: 'easeOutCubic' });
+    // Timeline
+    anime.timeline({ easing: 'easeOutExpo' })
+      .add({ targets: '.glow', opacity: [0, 1], scale: [0.85, 1], duration: 1400 }, 0)
+      .add({ targets: '.menubar', opacity: [0, 1], translateY: [-8, 0], duration: 500 }, 100)
+      .add({ targets: '.window', opacity: [0, 1], scale: [0.92, 1], duration: 700 }, 200)
+      .add({ targets: '.nav-item', opacity: [0, 1], translateX: [-12, 0], duration: 400, delay: anime.stagger(40) }, 500)
+      .add({ targets: '.cell', opacity: [0, 1], scale: [0.85, 1], duration: 450, delay: anime.stagger(50, { grid: [4, 2], from: 'center' }) }, 600)
+      .add({ targets: '.dock', opacity: [0, 1], translateY: [20, 0], duration: 500 }, 800)
+      .add({ targets: '.dock-icon', scale: [0.6, 1], opacity: [0, 1], duration: 350, delay: anime.stagger(40) }, 900)
+      .add({ targets: '.panel .card', opacity: [0, 1], translateX: [15, 0], duration: 450, delay: anime.stagger(80) }, 1000)
+      .add({ targets: '.btn-dl', opacity: [0, 1], translateY: [8, 0], duration: 400 }, 1150);
 
-    tl.add({ targets: '.menubar', opacity: [0, 1], translateY: [-10, 0], duration: 600 }, 0)
-      .add({ targets: '.window', opacity: [0, 1], scale: [0.95, 1], duration: 800, easing: 'easeOutExpo' }, 200)
-      .add({ targets: '.sidebar-item', opacity: [0, 1], translateX: [-15, 0], duration: 500, delay: anime.stagger(50) }, 600)
-      .add({ targets: '.gallery-item', opacity: [0, 1], scale: [0.9, 1], duration: 500, delay: anime.stagger(60, { grid: [4, 2], from: 'first' }) }, 700)
-      .add({ targets: '.dock', opacity: [0, 1], translateY: [30, 0], duration: 600 }, 900)
-      .add({ targets: '.dock-item', scale: [0.5, 1], duration: 400, delay: anime.stagger(50) }, 1000)
-      .add({ targets: '.info', opacity: [0, 1], translateX: [20, 0], duration: 600 }, 1100)
-      .add({ targets: '.cta-float', opacity: [0, 1], translateY: [10, 0], duration: 500 }, 1300);
+    // Ambient glow float
+    anime({ targets: '.glow-1', translateX: [-25, 25], translateY: [-15, 15], duration: 9000, direction: 'alternate', easing: 'easeInOutSine', loop: true });
+    anime({ targets: '.glow-2', translateX: [18, -18], translateY: [12, -12], duration: 11000, direction: 'alternate', easing: 'easeInOutSine', loop: true });
 
-    // Floating glows
-    anime({ targets: '.glow-1', translateX: [-20, 20], translateY: [-15, 15], duration: 10000, direction: 'alternate', easing: 'easeInOutSine', loop: true });
-    anime({ targets: '.glow-2', translateX: [15, -15], translateY: [10, -10], duration: 12000, direction: 'alternate', easing: 'easeInOutSine', loop: true });
+    // Gallery cell hover
+    document.querySelectorAll('.cell').forEach(c => {
+      c.addEventListener('mouseenter', () => anime({ targets: c, scale: 1.04, duration: 200, easing: 'easeOutCubic' }));
+      c.addEventListener('mouseleave', () => anime({ targets: c, scale: 1, duration: 200, easing: 'easeOutCubic' }));
+    });
+
+    // Card hover
+    document.querySelectorAll('.card').forEach(c => {
+      c.addEventListener('mouseenter', () => anime({ targets: c, translateY: -3, duration: 200, easing: 'easeOutCubic' }));
+      c.addEventListener('mouseleave', () => anime({ targets: c, translateY: 0, duration: 200, easing: 'easeOutCubic' }));
+    });
   </script>
 </body>
 </html>
