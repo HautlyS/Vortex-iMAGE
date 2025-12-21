@@ -28,22 +28,28 @@ check_gum() {
 
 show_banner() {
     clear
-    gum style \
-        --foreground 212 --border-foreground 99 --border double \
-        --align center --width 60 --margin "1 2" --padding "1 4" \
-        '╔═══════════════════════════════════════╗' \
-        '║  ██╗   ██╗ ██████╗ ██████╗████████╗  ║' \
-        '║  ██║   ██║██╔═══██╗██╔══██╚══██╔══╝  ║' \
-        '║  ██║   ██║██║   ██║██████╔╝  ██║     ║' \
-        '║  ╚██╗ ██╔╝██║   ██║██╔══██╗  ██║     ║' \
-        '║   ╚████╔╝ ╚██████╔╝██║  ██║  ██║     ║' \
-        '║    ╚═══╝   ╚═════╝ ╚═╝  ╚═╝  ╚═╝     ║' \
-        '╠═══════════════════════════════════════╣' \
-        '║     「 B U I L D   S Y S T E M 」     ║' \
-        '╚═══════════════════════════════════════╝'
+    local cols=$(tput cols 2>/dev/null || echo 80)
+    local width=$((cols > 64 ? 60 : cols - 4))
+    
+    if [ "$cols" -lt 50 ]; then
+        # Minimal banner for small terminals
+        gum style --foreground 212 --bold --align center "VORTEX BUILD SYSTEM"
+    else
+        gum style \
+            --foreground 212 --border-foreground 99 --border double \
+            --align center --width "$width" --margin "1 1" --padding "0 2" \
+            '  ██╗   ██╗ ██████╗ ██████╗████████╗' \
+            '  ██║   ██║██╔═══██╗██╔══██╚══██╔══╝' \
+            '  ██║   ██║██║   ██║██████╔╝  ██║   ' \
+            '  ╚██╗ ██╔╝██║   ██║██╔══██╗  ██║   ' \
+            '   ╚████╔╝ ╚██████╔╝██║  ██║  ██║   ' \
+            '    ╚═══╝   ╚═════╝ ╚═╝  ╚═╝  ╚═╝   ' \
+            '' \
+            '「 B U I L D   S Y S T E M 」'
+    fi
     
     echo ""
-    gum style --foreground 141 --italic "  ⟨ $(date '+%Y.%m.%d') ⟩ System Online ⟨ $(uname -s) ⟩"
+    gum style --foreground 141 --italic "$(date '+%Y.%m.%d') | $(uname -s)"
     echo ""
 }
 
@@ -112,6 +118,11 @@ setup_android() {
 build_targets() {
     local targets=("$@")
     
+    # Build frontend first
+    echo ""
+    gum style --foreground 99 --bold "► Building frontend..."
+    gum spin --spinner dot --title "Running vite build..." --show-output -- $PKG_MGR run build
+    
     for target in "${targets[@]}"; do
         echo ""
         gum style --foreground 99 --bold "► Building: $target"
@@ -166,13 +177,14 @@ main() {
             ;;
     esac
     
-    gum style --foreground 141 "  ┌─────────────────────────────────────┐"
-    gum style --foreground 141 "  │  Select build targets (space/enter) │"
-    gum style --foreground 141 "  └─────────────────────────────────────┘"
+    gum style --foreground 141 "Select build targets (space to toggle, enter to confirm)"
     echo ""
     
-    selected=$(gum choose --no-limit --cursor.foreground 212 --selected.foreground 82 \
-        --cursor "▸ " --header "  ⟨ Available Targets ⟩" "${targets[@]}")
+    local height=$(($(tput lines 2>/dev/null || echo 20) - 10))
+    [ "$height" -lt 5 ] && height=5
+    
+    selected=$(gum choose --no-limit --height "$height" --cursor.foreground 212 --selected.foreground 82 \
+        --cursor "▸ " --header "Available Targets:" "${targets[@]}")
     
     if [ -z "$selected" ]; then
         gum style --foreground 214 "No targets selected. Exiting."

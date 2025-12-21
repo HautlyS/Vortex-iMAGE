@@ -7,7 +7,7 @@ use tauri::{AppHandle, Emitter, State};
 use thiserror::Error;
 use tokio::fs;
 
-const CLIENT_ID: &str = "YOUR_GITHUB_CLIENT_ID";
+const CLIENT_ID: &str = "Ov23lijNSMM1i93CQdfQ";
 
 #[derive(Error, Debug)]
 pub enum AppError {

@@ -1,4 +1,4 @@
-# iMAGE
+# Vortex - iMAGE
 
 Photo storage app using GitHub as backend. Part of Vortex Interface.
 
