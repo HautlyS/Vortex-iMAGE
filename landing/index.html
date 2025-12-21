@@ -6,106 +6,193 @@
   <title>iMAGE - Vortex Interface</title>
   <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&display=swap');
-    :root { --bg: #0c0c0e; --surface: rgba(255,255,255,0.02); --border: rgba(255,255,255,0.04); --text: #fafafa; --text-muted: rgba(255,255,255,0.4); --accent: #8b5cf6; --accent-2: #6366f1; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+    :root { --bg: #0c0c0e; --surface: rgba(255,255,255,0.03); --border: rgba(255,255,255,0.06); --text: #fafafa; --muted: rgba(255,255,255,0.5); --accent: #8b5cf6; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { height: 100vh; overflow: hidden; background: var(--bg); font-family: 'Geist', 'Inter', -apple-system, sans-serif; color: var(--text); -webkit-font-smoothing: antialiased; }
+    html, body { height: 100vh; overflow: hidden; background: var(--bg); font-family: 'Inter', -apple-system, sans-serif; color: var(--text); }
 
-    .noise { position: fixed; inset: 0; opacity: 0.015; pointer-events: none; background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+    .glow { position: fixed; width: 500px; height: 500px; border-radius: 50%; filter: blur(120px); pointer-events: none; }
+    .glow-1 { top: -15%; left: 20%; background: rgba(139,92,246,0.1); }
+    .glow-2 { bottom: -20%; right: 10%; background: rgba(99,102,241,0.08); }
 
-    .glow { position: fixed; width: 600px; height: 600px; border-radius: 50%; filter: blur(120px); opacity: 0; pointer-events: none; }
-    .glow-1 { top: -20%; left: -10%; background: rgba(139,92,246,0.12); }
-    .glow-2 { bottom: -30%; right: -10%; background: rgba(99,102,241,0.08); }
+    /* macOS Menu Bar */
+    .menubar { position: fixed; top: 0; left: 0; right: 0; height: 28px; background: rgba(30,30,32,0.85); backdrop-filter: blur(20px); display: flex; align-items: center; padding: 0 12px; font-size: 13px; font-weight: 500; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.05); opacity: 0; }
+    .menubar-left, .menubar-right { display: flex; align-items: center; gap: 18px; }
+    .menubar-left { flex: 1; }
+    .menubar-right { color: var(--muted); font-size: 12px; font-weight: 400; }
+    .menu-item { color: var(--text); cursor: default; padding: 2px 8px; border-radius: 4px; transition: background 0.15s; }
+    .menu-item:hover { background: rgba(255,255,255,0.1); }
+    .menu-apple { font-size: 15px; }
 
-    .lines { position: fixed; inset: 0; overflow: hidden; opacity: 0; }
-    .line { position: absolute; width: 1px; height: 100vh; background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.03), transparent); }
+    /* macOS Window */
+    .window { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 900px; height: 580px; background: rgba(22,22,24,0.95); border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 25px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03) inset; overflow: hidden; opacity: 0; backdrop-filter: blur(30px); }
+    .window-bar { height: 52px; background: rgba(40,40,44,0.6); border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; padding: 0 16px; gap: 8px; }
+    .window-btn { width: 12px; height: 12px; border-radius: 50%; }
+    .btn-close { background: #ff5f57; }
+    .btn-min { background: #ffbd2e; }
+    .btn-max { background: #28c840; }
+    .window-title { flex: 1; text-align: center; font-size: 13px; font-weight: 500; color: var(--muted); margin-right: 56px; }
 
-    .content { position: relative; z-index: 10; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; }
+    .window-content { display: flex; height: calc(100% - 52px); }
 
-    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 100px; font-size: 0.7rem; font-weight: 400; color: var(--text-muted); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 2rem; opacity: 0; backdrop-filter: blur(10px); }
-    .chip-dot { width: 5px; height: 5px; background: var(--accent); border-radius: 50%; animation: pulse-dot 2s ease-in-out infinite; }
-    @keyframes pulse-dot { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+    /* Sidebar */
+    .sidebar { width: 200px; background: rgba(30,30,32,0.5); border-right: 1px solid rgba(255,255,255,0.05); padding: 12px 8px; }
+    .sidebar-section { margin-bottom: 20px; }
+    .sidebar-title { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 0 12px; margin-bottom: 8px; }
+    .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: rgba(255,255,255,0.8); cursor: default; transition: background 0.15s; }
+    .sidebar-item:hover { background: rgba(255,255,255,0.05); }
+    .sidebar-item.active { background: rgba(139,92,246,0.2); color: #fff; }
+    .sidebar-icon { font-size: 16px; width: 20px; text-align: center; }
 
-    .title { font-size: clamp(4rem, 18vw, 12rem); font-weight: 600; letter-spacing: -0.04em; line-height: 0.9; margin-bottom: 1.5rem; opacity: 0; }
+    /* Gallery */
+    .gallery { flex: 1; padding: 16px; overflow: hidden; }
+    .gallery-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .gallery-title { font-size: 22px; font-weight: 600; }
+    .gallery-count { font-size: 13px; color: var(--muted); }
+    .gallery-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .gallery-item { aspect-ratio: 1; background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(99,102,241,0.1)); border-radius: 8px; opacity: 0; position: relative; overflow: hidden; }
+    .gallery-item::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.4)); }
+    .gallery-item:nth-child(2) { background: linear-gradient(135deg, rgba(236,72,153,0.2), rgba(139,92,246,0.1)); }
+    .gallery-item:nth-child(3) { background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(99,102,241,0.1)); }
+    .gallery-item:nth-child(5) { background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(59,130,246,0.1)); }
+    .gallery-item:nth-child(7) { background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(236,72,153,0.1)); }
 
-    .desc { max-width: 400px; font-size: 1rem; font-weight: 300; line-height: 1.6; color: var(--text-muted); text-align: center; margin-bottom: 3rem; opacity: 0; }
+    /* Dock */
+    .dock { position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%); display: flex; align-items: flex-end; gap: 4px; padding: 4px 8px; background: rgba(40,40,44,0.7); border-radius: 18px; border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(20px); opacity: 0; }
+    .dock-item { width: 48px; height: 48px; background: linear-gradient(135deg, rgba(60,60,65,0.8), rgba(40,40,44,0.9)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: default; transition: transform 0.2s ease, margin 0.2s ease; }
+    .dock-item:hover { transform: translateY(-8px) scale(1.15); margin: 0 8px; }
+    .dock-item.active::after { content: ''; position: absolute; bottom: -6px; width: 4px; height: 4px; background: var(--muted); border-radius: 50%; }
+    .dock-separator { width: 1px; height: 40px; background: rgba(255,255,255,0.1); margin: 0 4px; }
+    .dock-app-image { background: linear-gradient(135deg, var(--accent), #6366f1); }
 
-    .cards { display: flex; gap: 12px; margin-bottom: 2.5rem; }
-    .card { padding: 16px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; backdrop-filter: blur(20px); display: flex; align-items: center; gap: 12px; opacity: 0; transition: all 0.25s ease; cursor: default; }
-    .card:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); transform: translateY(-1px); }
-    .card-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent-2), var(--accent)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-    .card-label { font-size: 0.8rem; font-weight: 400; color: rgba(255,255,255,0.7); }
+    /* Info Panel */
+    .info { position: fixed; top: 50%; right: 40px; transform: translateY(-50%); width: 260px; opacity: 0; }
+    .info-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; backdrop-filter: blur(20px); margin-bottom: 12px; }
+    .info-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    .info-text { font-size: 12px; color: var(--muted); line-height: 1.6; }
+    .info-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(139,92,246,0.15); border-radius: 100px; font-size: 11px; color: var(--accent); margin-top: 12px; }
 
-    .btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 28px; background: var(--text); border: none; border-radius: 12px; color: var(--bg); text-decoration: none; font-size: 0.9rem; font-weight: 500; opacity: 0; transition: all 0.2s ease; }
-    .btn:hover { transform: scale(1.03); box-shadow: 0 0 40px rgba(255,255,255,0.15); }
-    .btn svg { width: 16px; height: 16px; transition: transform 0.2s; }
-    .btn:hover svg { transform: translateX(3px); }
+    .cta-float { position: fixed; bottom: 80px; right: 40px; padding: 12px 24px; background: var(--text); border-radius: 10px; color: var(--bg); font-size: 13px; font-weight: 500; text-decoration: none; opacity: 0; transition: transform 0.2s, box-shadow 0.2s; }
+    .cta-float:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(255,255,255,0.15); }
 
-    .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; color: var(--text-muted); opacity: 0; }
-    .footer a { color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
-    .footer a:hover { color: var(--text); }
-
-    @media (max-width: 640px) {
-      .cards { flex-direction: column; width: 100%; max-width: 260px; }
-      .card { justify-content: center; }
-    }
+    @media (max-width: 1200px) { .info { display: none; } .window { width: 85vw; } }
+    @media (max-width: 768px) { .window { width: 95vw; height: 70vh; } .sidebar { display: none; } .gallery-grid { grid-template-columns: repeat(3, 1fr); } }
   </style>
 </head>
 <body>
-  <div class="noise"></div>
   <div class="glow glow-1"></div>
   <div class="glow glow-2"></div>
-  <div class="lines"></div>
 
-  <div class="content">
-    <div class="chip"><span class="chip-dot"></span>Vortex Interface</div>
-    <h1 class="title">iMAGE</h1>
-    <p class="desc">Store and organize your photos using GitHub repositories. Secure, versioned, yours.</p>
-    <div class="cards">
-      <div class="card"><div class="card-icon">☁</div><span class="card-label">Cloud Sync</span></div>
-      <div class="card"><div class="card-icon">⚡</div><span class="card-label">Git LFS</span></div>
-      <div class="card"><div class="card-icon">🔐</div><span class="card-label">Private Repos</span></div>
+  <!-- macOS Menu Bar -->
+  <div class="menubar">
+    <div class="menubar-left">
+      <span class="menu-item menu-apple"></span>
+      <span class="menu-item">iMAGE</span>
+      <span class="menu-item">File</span>
+      <span class="menu-item">Edit</span>
+      <span class="menu-item">View</span>
+      <span class="menu-item">Window</span>
+      <span class="menu-item">Help</span>
     </div>
-    <a href="https://github.com/Hauteclere/Vortex-iMAGE/releases" class="btn">
-      Download
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    </a>
+    <div class="menubar-right">
+      <span>☁️ Synced</span>
+      <span>100%</span>
+      <span id="time"></span>
+    </div>
   </div>
 
-  <div class="footer">
-    <span>© 2024 Vortex</span>
-    <a href="https://github.com/Hauteclere/Vortex-iMAGE">GitHub</a>
+  <!-- App Window -->
+  <div class="window">
+    <div class="window-bar">
+      <div class="window-btn btn-close"></div>
+      <div class="window-btn btn-min"></div>
+      <div class="window-btn btn-max"></div>
+      <div class="window-title">iMAGE — Photos</div>
+    </div>
+    <div class="window-content">
+      <div class="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-title">Library</div>
+          <div class="sidebar-item active"><span class="sidebar-icon">🖼</span>All Photos</div>
+          <div class="sidebar-item"><span class="sidebar-icon">⭐</span>Favorites</div>
+          <div class="sidebar-item"><span class="sidebar-icon">🗑</span>Recently Deleted</div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-title">Albums</div>
+          <div class="sidebar-item"><span class="sidebar-icon">📁</span>Screenshots</div>
+          <div class="sidebar-item"><span class="sidebar-icon">📁</span>Wallpapers</div>
+          <div class="sidebar-item"><span class="sidebar-icon">📁</span>Projects</div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-title">GitHub</div>
+          <div class="sidebar-item"><span class="sidebar-icon">📦</span>my-photos</div>
+        </div>
+      </div>
+      <div class="gallery">
+        <div class="gallery-header">
+          <span class="gallery-title">All Photos</span>
+          <span class="gallery-count">128 items</span>
+        </div>
+        <div class="gallery-grid">
+          <div class="gallery-item"></div>
+          <div class="gallery-item"></div>
+          <div class="gallery-item"></div>
+          <div class="gallery-item"></div>
+          <div class="gallery-item"></div>
+          <div class="gallery-item"></div>
+          <div class="gallery-item"></div>
+          <div class="gallery-item"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info Panel -->
+  <div class="info">
+    <div class="info-card">
+      <div class="info-title">GitHub-Backed Storage</div>
+      <div class="info-text">Your photos are stored in your own GitHub repository. Full version control, complete ownership.</div>
+      <div class="info-badge">🔐 Private & Secure</div>
+    </div>
+    <div class="info-card">
+      <div class="info-title">Git LFS Support</div>
+      <div class="info-text">Large files handled automatically. No size limits holding you back.</div>
+    </div>
+  </div>
+
+  <a href="https://github.com/HautlyS/Vortex-iMAGE/releases" class="cta-float">Download for macOS</a>
+
+  <!-- macOS Dock -->
+  <div class="dock">
+    <div class="dock-item">📁</div>
+    <div class="dock-item">🌐</div>
+    <div class="dock-item">💬</div>
+    <div class="dock-item dock-app-image active">🖼</div>
+    <div class="dock-item">⚙️</div>
+    <div class="dock-separator"></div>
+    <div class="dock-item">📥</div>
   </div>
 
   <script>
-    // Generate vertical lines
-    const linesEl = document.querySelector('.lines');
-    for (let i = 0; i < 8; i++) {
-      const line = document.createElement('div');
-      line.className = 'line';
-      line.style.left = `${12.5 * (i + 1)}%`;
-      linesEl.appendChild(line);
-    }
+    // Clock
+    const updateTime = () => document.getElementById('time').textContent = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    updateTime(); setInterval(updateTime, 1000);
 
+    // Animations
     const tl = anime.timeline({ easing: 'easeOutCubic' });
 
-    tl.add({ targets: '.glow', opacity: [0, 1], scale: [0.9, 1], duration: 1800 }, 0)
-      .add({ targets: '.lines', opacity: [0, 1], duration: 1500 }, 200)
-      .add({ targets: '.chip', opacity: [0, 1], translateY: [15, 0], duration: 800 }, 400)
-      .add({ targets: '.title', opacity: [0, 1], translateY: [50, 0], duration: 1000, easing: 'easeOutExpo' }, 500)
-      .add({ targets: '.desc', opacity: [0, 1], translateY: [20, 0], duration: 800 }, 800)
-      .add({ targets: '.card', opacity: [0, 1], translateY: [25, 0], scale: [0.96, 1], duration: 700, delay: anime.stagger(80) }, 1000)
-      .add({ targets: '.btn', opacity: [0, 1], translateY: [15, 0], duration: 700 }, 1300)
-      .add({ targets: '.footer', opacity: [0, 1], duration: 800 }, 1500);
+    tl.add({ targets: '.menubar', opacity: [0, 1], translateY: [-10, 0], duration: 600 }, 0)
+      .add({ targets: '.window', opacity: [0, 1], scale: [0.95, 1], duration: 800, easing: 'easeOutExpo' }, 200)
+      .add({ targets: '.sidebar-item', opacity: [0, 1], translateX: [-15, 0], duration: 500, delay: anime.stagger(50) }, 600)
+      .add({ targets: '.gallery-item', opacity: [0, 1], scale: [0.9, 1], duration: 500, delay: anime.stagger(60, { grid: [4, 2], from: 'first' }) }, 700)
+      .add({ targets: '.dock', opacity: [0, 1], translateY: [30, 0], duration: 600 }, 900)
+      .add({ targets: '.dock-item', scale: [0.5, 1], duration: 400, delay: anime.stagger(50) }, 1000)
+      .add({ targets: '.info', opacity: [0, 1], translateX: [20, 0], duration: 600 }, 1100)
+      .add({ targets: '.cta-float', opacity: [0, 1], translateY: [10, 0], duration: 500 }, 1300);
 
-    // Subtle glow movement
-    anime({ targets: '.glow-1', translateX: [-30, 30], translateY: [-20, 20], duration: 12000, direction: 'alternate', easing: 'easeInOutSine', loop: true });
-    anime({ targets: '.glow-2', translateX: [20, -20], translateY: [15, -15], duration: 15000, direction: 'alternate', easing: 'easeInOutSine', loop: true });
-
-    // Card hover
-    document.querySelectorAll('.card').forEach(c => {
-      c.addEventListener('mouseenter', () => anime({ targets: c.querySelector('.card-icon'), scale: [1, 1.08, 1], duration: 350, easing: 'easeOutElastic(1, .6)' }));
-    });
+    // Floating glows
+    anime({ targets: '.glow-1', translateX: [-20, 20], translateY: [-15, 15], duration: 10000, direction: 'alternate', easing: 'easeInOutSine', loop: true });
+    anime({ targets: '.glow-2', translateX: [15, -15], translateY: [10, -10], duration: 12000, direction: 'alternate', easing: 'easeInOutSine', loop: true });
   </script>
 </body>
 </html>

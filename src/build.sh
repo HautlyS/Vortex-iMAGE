@@ -177,14 +177,10 @@ main() {
             ;;
     esac
     
-    gum style --foreground 141 "Select build targets (space to toggle, enter to confirm)"
+    echo "Select build targets:"
     echo ""
     
-    local height=$(($(tput lines 2>/dev/null || echo 20) - 10))
-    [ "$height" -lt 5 ] && height=5
-    
-    selected=$(gum choose --no-limit --height "$height" --cursor.foreground 212 --selected.foreground 82 \
-        --cursor "▸ " --header "Available Targets:" "${targets[@]}")
+    selected=$(gum choose --no-limit --height 8 "${targets[@]}")
     
     if [ -z "$selected" ]; then
         gum style --foreground 214 "No targets selected. Exiting."
