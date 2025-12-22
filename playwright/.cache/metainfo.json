@@ -1,0 +1,77 @@
+{
+  "version": "1.57.0",
+  "viteVersion": "6.4.1",
+  "registerSourceHash": "ff8a0896b5953eb8fa0e32aaebffdab7efa3bc27",
+  "components": [
+    {
+      "id": "_home_hautly_iMAGE_tests___components_AuthButton_vue",
+      "filename": "/home/hautly/iMAGE/tests/AuthButton.spec.ts",
+      "importSource": "@/components/AuthButton.vue"
+    },
+    {
+      "id": "_home_hautly_iMAGE_tests___components_PhotoGallery_vue",
+      "filename": "/home/hautly/iMAGE/tests/PhotoGallery.spec.ts",
+      "importSource": "@/components/PhotoGallery.vue"
+    }
+  ],
+  "sources": {
+    "/home/hautly/iMAGE/playwright/index.html": {
+      "timestamp": 1766338074027.9255
+    },
+    "/home/hautly/iMAGE/playwright/index.ts": {
+      "timestamp": 1766337959031.3838
+    },
+    "/home/hautly/iMAGE/node_modules/.pnpm/vue@3.5.26_typescript@5.6.3/node_modules/vue/dist/vue.runtime.esm-bundler.js": {
+      "timestamp": 1766328325364.8838
+    },
+    "/home/hautly/iMAGE/node_modules/.pnpm/@vue+compiler-dom@3.5.26/node_modules/@vue/compiler-dom/dist/compiler-dom.esm-bundler.js": {
+      "timestamp": 1766328326885.8564
+    },
+    "/home/hautly/iMAGE/node_modules/.pnpm/@vue+runtime-dom@3.5.26/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-bundler.js": {
+      "timestamp": 1766328327499.8455
+    },
+    "/home/hautly/iMAGE/node_modules/.pnpm/@vue+shared@3.5.26/node_modules/@vue/shared/dist/shared.esm-bundler.js": {
+      "timestamp": 1766328326818.8577
+    },
+    "/home/hautly/iMAGE/node_modules/.pnpm/@vue+compiler-core@3.5.26/node_modules/@vue/compiler-core/dist/compiler-core.esm-bundler.js": {
+      "timestamp": 1766328328218.8325
+    },
+    "/home/hautly/iMAGE/src/style.css": {
+      "timestamp": 1766337715839.6135
+    },
+    "/home/hautly/iMAGE/src/components/PhotoGallery.vue": {
+      "timestamp": 1766337647317.5579
+    },
+    "/home/hautly/iMAGE/src/components/AuthButton.vue": {
+      "timestamp": 1766337628181.4556
+    },
+    "/home/hautly/iMAGE/node_modules/.pnpm/@vue+runtime-core@3.5.26/node_modules/@vue/runtime-core/dist/runtime-core.esm-bundler.js": {
+      "timestamp": 1766328328463.8281
+    },
+    "/home/hautly/iMAGE/src/composables/useGitHubAuth.ts": {
+      "timestamp": 1766329211341.0923
+    },
+    "/home/hautly/iMAGE/src/composables/useAccentColor.ts": {
+      "timestamp": 1766330252864.4614
+    },
+    "/home/hautly/iMAGE/node_modules/.pnpm/@tauri-apps+api@2.9.1/node_modules/@tauri-apps/api/core.js": {
+      "timestamp": 1766328326298.867
+    },
+    "/home/hautly/iMAGE/node_modules/.pnpm/@tauri-apps+plugin-shell@2.3.3/node_modules/@tauri-apps/plugin-shell/dist-js/index.js": {
+      "timestamp": 1766328375327.9863
+    },
+    "/home/hautly/iMAGE/node_modules/.pnpm/@tauri-apps+plugin-store@2.4.1/node_modules/@tauri-apps/plugin-store/dist-js/index.js": {
+      "timestamp": 1766328369590.0894
+    },
+    "/home/hautly/iMAGE/node_modules/.pnpm/@tauri-apps+api@2.9.1/node_modules/@tauri-apps/api/external/tslib/tslib.es6.js": {
+      "timestamp": 1766328326302.867
+    },
+    "/home/hautly/iMAGE/node_modules/.pnpm/@tauri-apps+api@2.9.1/node_modules/@tauri-apps/api/event.js": {
+      "timestamp": 1766328326299.867
+    },
+    "/home/hautly/iMAGE/node_modules/.pnpm/@vue+reactivity@3.5.26/node_modules/@vue/reactivity/dist/reactivity.esm-bundler.js": {
+      "timestamp": 1766328328831.8215
+    }
+  },
+  "deps": {}
+}

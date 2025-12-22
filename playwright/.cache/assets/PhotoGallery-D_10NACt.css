@@ -1,0 +1,13 @@
+
+.lightbox-enter-active[data-v-51718b6f], .lightbox-leave-active[data-v-51718b6f] { transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lightbox-enter-from[data-v-51718b6f], .lightbox-leave-to[data-v-51718b6f] { opacity: 0;
+}
+@keyframes scaleUp-51718b6f {
+from { transform: scale(0.95); opacity: 0;
+}
+to { transform: scale(1); opacity: 1;
+}
+}
+.animate-scale-up[data-v-51718b6f] { animation: scaleUp-51718b6f 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}

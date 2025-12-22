@@ -1,0 +1,31 @@
+{
+  "$schema": "../gen/schemas/mobile-schema.json",
+  "identifier": "mobile",
+  "description": "iMAGE mobile capabilities for Android/iOS",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "opener:default",
+    "http:default",
+    "dialog:allow-open",
+    "store:default",
+    "shell:allow-open",
+    {
+      "identifier": "fs:allow-read-file",
+      "allow": [
+        { "path": "$PICTURE/**" },
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$DOCUMENT/**" },
+        { "path": "$DATA/**" },
+        { "path": "$CACHE/**" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-write-file",
+      "allow": [
+        { "path": "$DATA/**" },
+        { "path": "$CACHE/**" }
+      ]
+    }
+  ]
+}

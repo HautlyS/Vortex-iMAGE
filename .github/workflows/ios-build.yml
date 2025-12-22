@@ -1,0 +1,395 @@
+name: iOS Build
+
+on:
+  push:
+    branches: [main, release]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release
+      export_method:
+        description: 'Export method (release only)'
+        required: false
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - ad-hoc
+          - app-store
+      upload_to_testflight:
+        description: 'Upload to TestFlight'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  APP_NAME: iMAGE
+  BUNDLE_ID: com.vortex.image
+
+jobs:
+  build-ios:
+    runs-on: macos-14
+    timeout-minutes: 60
+    outputs:
+      artifact_name: ${{ steps.set-outputs.outputs.artifact_name }}
+      has_ipa: ${{ steps.find-artifacts.outputs.has_ipa }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup build environment
+        id: setup
+        run: |
+          # Determine build configuration
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
+            echo "build_type=release" >> $GITHUB_OUTPUT
+            echo "export_method=app-store" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event.inputs.build_type }}" == "release" ]]; then
+            echo "build_type=release" >> $GITHUB_OUTPUT
+            echo "export_method=${{ github.event.inputs.export_method || 'development' }}" >> $GITHUB_OUTPUT
+          else
+            echo "build_type=debug" >> $GITHUB_OUTPUT
+            echo "export_method=development" >> $GITHUB_OUTPUT
+          fi
+          
+          # Check if signing is available
+          if [[ -n "${{ secrets.BUILD_CERTIFICATE_BASE64 }}" ]]; then
+            echo "has_signing=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_signing=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Select Xcode version
+        run: |
+          # Use latest stable Xcode available on runner
+          XCODE_PATH=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+          if [[ -n "$XCODE_PATH" ]]; then
+            sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+          fi
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-path || true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios,x86_64-apple-ios,aarch64-apple-ios-sim
+
+      - name: Cache Rust
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+          cache-on-failure: true
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm run build
+
+      - name: Initialize iOS project
+        run: |
+          pnpm tauri ios init || true
+          
+          # Verify iOS project was created
+          if [[ ! -d "src-tauri/gen/apple" ]]; then
+            echo "::error::Failed to initialize iOS project"
+            exit 1
+          fi
+
+      - name: Find Xcode project info
+        id: xcode-info
+        run: |
+          XCODEPROJ=$(find src-tauri/gen/apple -name "*.xcodeproj" -type d | head -1)
+          
+          if [[ -z "$XCODEPROJ" ]]; then
+            echo "::error::No Xcode project found"
+            exit 1
+          fi
+          
+          echo "xcodeproj=$XCODEPROJ" >> $GITHUB_OUTPUT
+          
+          # Get scheme name
+          SCHEME=$(xcodebuild -project "$XCODEPROJ" -list 2>/dev/null | \
+            awk '/Schemes:/{found=1; next} found && /^[[:space:]]+[^[:space:]]/{print $1; exit}')
+          
+          if [[ -z "$SCHEME" ]]; then
+            # Fallback: derive from project name
+            SCHEME=$(basename "$XCODEPROJ" .xcodeproj)_iOS
+          fi
+          
+          echo "scheme=$SCHEME" >> $GITHUB_OUTPUT
+          echo "Found project: $XCODEPROJ"
+          echo "Found scheme: $SCHEME"
+
+      # Certificate setup for signed builds
+      - name: Install Apple certificate and provisioning profile
+        if: steps.setup.outputs.has_signing == 'true'
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD || 'temporary-keychain-password' }}
+        run: |
+          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          # Decode certificate and profile
+          echo "$BUILD_CERTIFICATE_BASE64" | base64 --decode > $CERTIFICATE_PATH
+          
+          if [[ -n "$BUILD_PROVISION_PROFILE_BASE64" ]]; then
+            echo "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode > $PP_PATH
+          fi
+
+          # Create and configure keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          # Import certificate
+          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+
+          # Install provisioning profile
+          if [[ -f "$PP_PATH" ]]; then
+            mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+            # Get profile UUID and rename
+            PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print UUID" /dev/stdin <<< $(security cms -D -i "$PP_PATH"))
+            cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/${PROFILE_UUID}.mobileprovision
+          fi
+
+      # Build iOS app
+      - name: Build iOS (Debug - Simulator)
+        if: steps.setup.outputs.build_type == 'debug'
+        run: |
+          pnpm tauri ios build --debug -- \
+            -destination "generic/platform=iOS Simulator" \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Build iOS (Release)
+        if: steps.setup.outputs.build_type == 'release'
+        env:
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          BUILD_ARGS=""
+          
+          if [[ "${{ steps.setup.outputs.has_signing }}" == "true" && -n "$TEAM_ID" ]]; then
+            BUILD_ARGS="-- DEVELOPMENT_TEAM=$TEAM_ID"
+          else
+            BUILD_ARGS="-- CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO"
+          fi
+          
+          pnpm tauri ios build $BUILD_ARGS
+
+      # Export IPA for signed release builds
+      - name: Export IPA
+        if: steps.setup.outputs.build_type == 'release' && steps.setup.outputs.has_signing == 'true'
+        env:
+          EXPORT_METHOD: ${{ steps.setup.outputs.export_method }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          XCODEPROJ: ${{ steps.xcode-info.outputs.xcodeproj }}
+          SCHEME: ${{ steps.xcode-info.outputs.scheme }}
+        run: |
+          ARCHIVE_PATH="$RUNNER_TEMP/app.xcarchive"
+          IPA_PATH="$RUNNER_TEMP/ipa"
+          
+          # Create export options plist
+          cat > ExportOptions.plist << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>${EXPORT_METHOD}</string>
+              <key>teamID</key>
+              <string>${TEAM_ID}</string>
+              <key>signingStyle</key>
+              <string>automatic</string>
+              <key>stripSwiftSymbols</key>
+              <true/>
+              <key>uploadSymbols</key>
+              <true/>
+          </dict>
+          </plist>
+          EOF
+          
+          # Archive
+          xcodebuild archive \
+            -project "$XCODEPROJ" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -archivePath "$ARCHIVE_PATH" \
+            -destination "generic/platform=iOS" \
+            DEVELOPMENT_TEAM="$TEAM_ID"
+          
+          # Export IPA
+          xcodebuild -exportArchive \
+            -archivePath "$ARCHIVE_PATH" \
+            -exportPath "$IPA_PATH" \
+            -exportOptionsPlist ExportOptions.plist
+          
+          # Move IPA to workspace
+          mkdir -p ./build-output
+          mv "$IPA_PATH"/*.ipa ./build-output/ 2>/dev/null || true
+
+      - name: Find build artifacts
+        id: find-artifacts
+        run: |
+          mkdir -p ./build-output
+          
+          # Find IPA files
+          find . -name "*.ipa" -type f -exec cp {} ./build-output/ \; 2>/dev/null || true
+          
+          # Find app bundles from Tauri build
+          APP_PATH=$(find src-tauri/gen/apple -name "*.app" -type d 2>/dev/null | head -1)
+          if [[ -n "$APP_PATH" ]]; then
+            # Zip the .app for upload
+            cd "$(dirname "$APP_PATH")"
+            zip -r "$GITHUB_WORKSPACE/build-output/$(basename "$APP_PATH" .app).app.zip" "$(basename "$APP_PATH")"
+            cd "$GITHUB_WORKSPACE"
+          fi
+          
+          # Check what we have
+          echo "Build output contents:"
+          ls -la ./build-output/ || echo "No build output"
+          
+          if ls ./build-output/*.ipa 1>/dev/null 2>&1; then
+            echo "has_ipa=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_ipa=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set outputs
+        id: set-outputs
+        run: |
+          echo "artifact_name=ios-${{ steps.setup.outputs.build_type }}-${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.set-outputs.outputs.artifact_name }}
+          path: ./build-output/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-logs-${{ github.sha }}
+          path: |
+            src-tauri/gen/apple/build/**/*.log
+            ~/Library/Logs/DiagnosticReports/*.crash
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Cleanup keychain
+        if: always()
+        run: |
+          security delete-keychain $RUNNER_TEMP/app-signing.keychain-db 2>/dev/null || true
+
+  # Upload to TestFlight
+  upload-testflight:
+    needs: build-ios
+    runs-on: macos-14
+    if: |
+      needs.build-ios.outputs.has_ipa == 'true' && 
+      (github.event.inputs.upload_to_testflight == 'true' || 
+       (github.ref_type == 'tag' && startsWith(github.ref_name, 'v')))
+    
+    steps:
+      - name: Download IPA artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build-ios.outputs.artifact_name }}
+          path: ./artifacts
+
+      - name: Validate App Store Connect credentials
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
+        run: |
+          if [[ -z "$APPLE_API_KEY_ID" || -z "$APPLE_API_ISSUER_ID" || -z "$APPLE_API_KEY_CONTENT" ]]; then
+            echo "::error::Missing App Store Connect API credentials"
+            echo "Required secrets: APPLE_API_KEY_ID, APPLE_API_ISSUER_ID, APPLE_API_KEY_CONTENT"
+            exit 1
+          fi
+
+      - name: Upload to TestFlight
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
+        run: |
+          # Create API key file
+          mkdir -p ~/.private_keys
+          echo "$APPLE_API_KEY_CONTENT" > ~/.private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
+          chmod 600 ~/.private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
+          
+          # Find IPA
+          IPA_FILE=$(find ./artifacts -name "*.ipa" -type f | head -1)
+          
+          if [[ -z "$IPA_FILE" ]]; then
+            echo "::error::No IPA file found"
+            exit 1
+          fi
+          
+          echo "Uploading: $IPA_FILE"
+          
+          # Use xcrun notarytool for validation, then altool for upload
+          # Note: For App Store uploads, use Transporter or fastlane deliver
+          xcrun altool --upload-app \
+            --type ios \
+            --file "$IPA_FILE" \
+            --apiKey "$APPLE_API_KEY_ID" \
+            --apiIssuer "$APPLE_API_ISSUER_ID" \
+            --verbose
+
+      - name: Upload success notification
+        if: success()
+        run: |
+          echo "::notice::Successfully uploaded to TestFlight!"
+          echo "The build will be available for testing after Apple processes it (usually 10-30 minutes)"

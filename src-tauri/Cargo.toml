@@ -26,8 +26,39 @@ tauri-plugin-store = "2"
 tauri-plugin-shell = "2"
 base64 = "0.21"
 sha2 = "0.10"
-reqwest = { version = "0.12", features = ["json", "stream"] }
-tokio = { version = "1", features = ["fs"] }
 thiserror = "1"
 futures = "0.3"
+dirs = "5"
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
+
+# Compression algorithms
+zstd = "0.13"
+lz4_flex = "0.11"
+snap = "1"
+brotli = "7"
+flate2 = "1"
+
+# Post-quantum cryptography
+pqcrypto-mlkem = "0.1"
+pqcrypto-dilithium = "0.5"
+pqcrypto-traits = "0.3"
+
+# Classical cryptography
+chacha20poly1305 = "0.10"
+x25519-dalek = { version = "2", features = ["static_secrets"] }
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+blake3 = "1"
+argon2 = "0.5"
+hkdf = "0.12"
+hmac = "0.12"
+rand = "0.8"
+hex = "0.4"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+reqwest = { version = "0.12", features = ["json", "stream"] }
+tokio = { version = "1", features = ["fs", "rt-multi-thread"] }
+
+[target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
+reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls"] }
+tokio = { version = "1", features = ["fs", "rt-multi-thread"] }
 

@@ -1,0 +1,429 @@
+# Implementation Plan: Photo Manager Enhancement
+
+## Overview
+
+This implementation plan transforms the iMAGE app into a production-ready photo management system. Tasks are organized to build incrementally, with core infrastructure first, then features that depend on it. Property-based tests validate correctness properties from the design document.
+
+## Tasks
+
+- [x] 1. Set up testing infrastructure and core utilities
+  - [x] 1.1 Install fast-check for property-based testing in frontend
+    - Add fast-check to devDependencies
+    - Configure vitest or playwright for property tests
+    - _Requirements: Testing Strategy_
+  - [x] 1.2 Write property test for preview size bounds (Property 7)
+    - **Property 7: Preview Size Bounds Enforcement**
+    - Test that any input size is clamped to [80, 400]
+    - **Validates: Requirements 4.4**
+  - [x] 1.3 Create usePhotoPreviewSize composable
+    - Implement size state with MIN_SIZE=80, MAX_SIZE=400
+    - Implement clampSize function
+    - Implement persistence with Tauri store
+    - _Requirements: 4.3, 4.4_
+  - [x] 1.4 Write property test for preview size persistence (Property 8)
+    - **Property 8: Preview Size Persistence Round-Trip**
+    - Test save then load returns same value
+    - **Validates: Requirements 4.3**
+
+- [x] 2. Implement selection system
+  - [x] 2.1 Create useSelection composable
+    - Implement selected Set state
+    - Implement select() with additive (Ctrl) and range (Shift) modes
+    - Implement clearSelection() and isSelected()
+    - _Requirements: 7.1, 7.2_
+  - [x] 2.2 Write property test for additive selection (Property 19)
+    - **Property 19: Additive Selection Accumulation**
+    - Test Ctrl+click adds to existing selection
+    - **Validates: Requirements 7.1**
+  - [x] 2.3 Write property test for range selection (Property 20)
+    - **Property 20: Range Selection Completeness**
+    - Test Shift+click selects all items in range
+    - **Validates: Requirements 7.2**
+
+- [x] 3. Implement favorites system
+  - [x] 3.1 Create useFavorites composable
+    - Implement favorites array state
+    - Implement toggleFavorite() with idempotent behavior
+    - Implement isFavorite() lookup
+    - Implement persistence with Tauri store
+    - _Requirements: 5.2, 5.3, 5.4, 5.5, 5.6_
+  - [x] 3.2 Write property test for favorite toggle (Property 10)
+    - **Property 10: Favorite Toggle Idempotence**
+    - Test double toggle returns to original state
+    - **Validates: Requirements 5.2**
+  - [x] 3.3 Write property test for favorites persistence (Property 11)
+    - **Property 11: Favorites Persistence Round-Trip**
+    - Test save then load returns same favorites
+    - **Validates: Requirements 5.3**
+  - [x] 3.4 Write property test for favorites grouping (Property 14)
+    - **Property 14: Favorites Grouping Correctness**
+    - Test photos and albums are correctly partitioned
+    - **Validates: Requirements 5.6**
+
+- [x] 4. Checkpoint - Core composables complete
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 5. Implement color tagging system
+  - [x] 5.1 Create useColorTags composable
+    - Implement tags and taggedItems state
+    - Implement tagItems() for batch tagging
+    - Implement getItemsByTag() for filtering
+    - Implement renameTag() for customization
+    - Implement persistence with Tauri store
+    - _Requirements: 6.3, 6.4, 6.6, 6.7_
+  - [x] 5.2 Write property test for batch tag application (Property 15)
+    - **Property 15: Color Tag Batch Application**
+    - Test all selected items receive the tag
+    - **Validates: Requirements 6.3**
+  - [x] 5.3 Write property test for tag auto-registration (Property 16)
+    - **Property 16: Color Tag Auto-Registration**
+    - Test used tags appear in sidebar with correct count
+    - **Validates: Requirements 6.4**
+  - [x] 5.4 Write property test for tag persistence (Property 17)
+    - **Property 17: Color Tag Persistence Round-Trip**
+    - Test save then load returns same tags and associations
+    - **Validates: Requirements 6.6**
+  - [x] 5.5 Write property test for tag filtering (Property 18)
+    - **Property 18: Color Tag Filter Correctness**
+    - Test filtering shows exactly tagged items
+    - **Validates: Requirements 6.7**
+
+- [-] 6. Implement Rust backend for repository management
+  - [x] 6.1 Add create_repo command to github.rs
+    - Implement GitHub API call to create repository
+    - Support name, description, private parameters
+    - Return RepoInfo struct
+    - _Requirements: 2.2, 2.3_
+  - [x] 6.2 Add get_repo_info command
+    - Fetch repository details including visibility
+    - Return RepoInfo with private field
+    - _Requirements: 3.2_
+  - [x] 6.3 Add update_repo_visibility command
+    - Implement PATCH to update repository visibility
+    - Handle rate limiting and errors
+    - _Requirements: 3.1_
+  - [x] 6.4 Add validate_repo_name function
+    - Implement regex validation for repo names
+    - Return Result with validation error details
+    - _Requirements: 2.6_
+  - [x] 6.5 Write property test for repo name validation (Property 4)
+    - **Property 4: Repository Name Validation**
+    - Test valid names accepted, invalid rejected
+    - **Validates: Requirements 2.6**
+
+- [x] 7. Implement useRepoManager composable
+  - [x] 7.1 Create useRepoManager composable
+    - Implement createRepo() calling Rust command
+    - Implement getRepoInfo() for fetching current state
+    - Implement updateVisibility() with confirmation for public
+    - _Requirements: 2.1, 2.4, 2.5, 3.1, 3.2, 3.3_
+  - [x] 7.2 Write property test for repo creation state update (Property 5)
+    - **Property 5: Repository Creation State Update**
+    - Test app repo setting matches new repo after creation
+    - **Validates: Requirements 2.4**
+  - [x] 7.3 Write property test for privacy sync (Property 6)
+    - **Property 6: Privacy Sync Bidirectional Consistency**
+    - Test local and remote privacy match after sync
+    - **Validates: Requirements 3.1, 3.2**
+
+- [x] 8. Checkpoint - Backend and composables complete
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 9. Implement folder scanning and album upload in Rust
+  - [x] 9.1 Add scan_folder command
+    - Recursively scan folder for images
+    - Return FolderScanResult with counts and structure
+    - _Requirements: 1.1_
+  - [x] 9.2 Add upload_folder_as_album command
+    - Create folder structure in GitHub repo
+    - Upload images maintaining structure
+    - Emit progress events
+    - _Requirements: 1.2, 1.4_
+  - [x] 9.3 Add upload_folder_recursive command
+    - Extract all images from nested folders
+    - Upload to root photos folder
+    - _Requirements: 1.3_
+  - [x] 9.4 Write property test for album structure preservation (Property 1)
+    - **Property 1: Album Structure Preservation**
+    - Test folder structure is preserved in repo
+    - **Validates: Requirements 1.2, 1.4**
+  - [x] 9.5 Write property test for recursive extraction (Property 2)
+    - **Property 2: Recursive Image Extraction Completeness**
+    - Test all images extracted to root
+    - **Validates: Requirements 1.3**
+  - [x] 9.6 Write property test for partial upload results (Property 3)
+    - **Property 3: Partial Upload Result Partitioning**
+    - Test success/failure sets are disjoint and complete
+    - **Validates: Requirements 1.5**
+
+- [x] 10. Add list_albums command
+  - [x] 10.1 Implement list_albums in github.rs
+    - Recursively fetch folder structure from repo
+    - Count photos in each album
+    - Return Album tree structure
+    - _Requirements: 8.1, 8.4_
+  - [x] 10.2 Write property test for album photo count (Property 23)
+    - **Property 23: Album Photo Count Accuracy**
+    - Test displayed count matches actual photos
+    - **Validates: Requirements 8.4**
+
+- [x] 11. Checkpoint - All Rust backend complete
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 12. Implement UI components - PhotoPreview
+  - [x] 12.1 Create PhotoPreview.vue component
+    - Display photo thumbnail with resize handle
+    - Display heart icon for favorites
+    - Display color tag indicator
+    - Handle selection state styling
+    - _Requirements: 4.1, 4.2, 5.1_
+  - [x] 12.2 Write property test for batch resize (Property 9)
+    - **Property 9: Batch Resize Uniformity**
+    - Test all selected photos have same size after resize
+    - **Validates: Requirements 4.5**
+
+- [x] 13. Implement UI components - Context Menu
+  - [x] 13.1 Create ContextMenu.vue component
+    - Position at mouse coordinates
+    - Support nested submenus for colors
+    - Handle click outside to close
+    - _Requirements: 6.1, 7.4, 7.5_
+  - [x] 13.2 Integrate context menu with PhotoGallery
+    - Show on right-click of selected items
+    - Include color tag, favorite, delete, move options
+    - _Requirements: 6.1, 7.4, 7.5_
+
+- [x] 14. Implement UI components - Folder Upload Dialog
+  - [x] 14.1 Create FolderUploadDialog.vue component
+    - Display folder info (name, image count, subfolder count)
+    - Provide "Create Album" and "Import Recursively" options
+    - _Requirements: 1.1_
+  - [x] 14.2 Integrate dialog with folder upload flow
+    - Show dialog when folder is dropped or selected
+    - Call appropriate upload command based on selection
+    - _Requirements: 1.1, 1.2, 1.3_
+
+- [x] 15. Implement UI components - Repository Creator
+  - [x] 15.1 Create RepoCreator.vue component
+    - Form with name, description, visibility fields
+    - Validation feedback for repo name
+    - Loading state during creation
+    - _Requirements: 2.1, 2.2, 2.6_
+  - [x] 15.2 Integrate with App.vue
+    - Show when user has no repo configured
+    - Auto-configure app after successful creation
+    - _Requirements: 2.3, 2.4, 2.5_
+
+- [x] 16. Checkpoint - Core UI components complete
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 17. Implement sidebar enhancements
+  - [x] 17.1 Create AlbumTree.vue component
+    - Display albums as expandable tree
+    - Show photo count next to each album
+    - Handle click to filter photos
+    - _Requirements: 8.1, 8.2, 8.3, 8.4_
+  - [x] 17.2 Write property test for album expand controls (Property 21)
+    - **Property 21: Album Tree Expand Control Presence**
+    - Test albums with children have expand controls
+    - **Validates: Requirements 8.2**
+  - [x] 17.3 Write property test for album filtering (Property 22)
+    - **Property 22: Album Filter Correctness**
+    - Test clicking album shows only its photos
+    - **Validates: Requirements 8.3**
+  - [x] 17.4 Create ColorTagPanel.vue component
+    - Display used color tags with counts
+    - Support double-click to rename
+    - Handle click to filter by tag
+    - _Requirements: 6.4, 6.5, 6.7_
+  - [x] 17.5 Update Sidebar in App.vue
+    - Add AlbumTree section
+    - Add ColorTagPanel section
+    - Add Favorites navigation item
+    - _Requirements: 5.4, 6.4, 8.1_
+
+- [x] 18. Implement theme system
+  - [x] 18.1 Create useTheme composable
+    - Implement theme state with accent color
+    - Implement Matrix effects toggle (scanlines, glow)
+    - Implement persistence
+    - _Requirements: 9.1, 9.2, 9.3, 9.5_
+  - [x] 18.2 Write property test for theme persistence (Property 24)
+    - **Property 24: Theme Persistence Round-Trip**
+    - Test save then load returns same theme config
+    - **Validates: Requirements 9.5**
+  - [x] 18.3 Update global styles with Matrix/Apple aesthetic
+    - Dark black-gray base palette
+    - Subtle glow effects on interactive elements
+    - Optional scanline overlay
+    - Smooth transitions throughout
+    - _Requirements: 9.1, 9.3, 9.4_
+  - [x] 18.4 Write property test for accessibility contrast (Property 25)
+    - **Property 25: Theme Accessibility Contrast**
+    - Test all color pairs meet WCAG AA
+    - **Validates: Requirements 9.6**
+
+- [x] 19. Implement view mode and responsive layout
+  - [x] 19.1 Update PhotoGallery for responsive grid
+    - Use CSS Grid with auto-fill
+    - Support user-defined preview size
+    - _Requirements: 10.1, 10.2_
+  - [x] 19.2 Add list view mode
+    - Show photo metadata (name, size, date)
+    - Toggle between grid and list
+    - _Requirements: 10.3, 10.5_
+  - [x] 19.3 Write property test for view mode persistence (Property 26)
+    - **Property 26: View Mode Persistence Round-Trip**
+    - Test save then load returns same view mode
+    - **Validates: Requirements 10.4**
+
+- [x] 20. Checkpoint - UI complete
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 21. Enhance upload progress system
+  - [x] 21.1 Update usePhotoUpload for detailed progress
+    - Track individual file progress
+    - Calculate overall batch percentage
+    - Calculate upload speed and ETA
+    - _Requirements: 11.1, 11.2, 11.3_
+  - [x] 21.2 Write property test for individual progress tracking (Property 27)
+    - **Property 27: Upload Progress Individual Tracking**
+    - Test each file has unique progress entry
+    - **Validates: Requirements 11.1**
+  - [x] 21.3 Write property test for progress calculation (Property 28)
+    - **Property 28: Upload Progress Calculation Correctness**
+    - Test overall percentage and speed are correct
+    - **Validates: Requirements 11.2, 11.3**
+  - [x] 21.4 Add cancel and retry functionality
+    - Support canceling in-progress uploads
+    - Support retrying individual failed files
+    - _Requirements: 11.4, 11.5_
+
+- [x] 22. Update Privacy Settings with sync
+  - [x] 22.1 Update PrivacySettings.vue
+    - Fetch current repo visibility on open
+    - Show loading state during sync
+    - Add confirmation dialog for private→public
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+
+- [x] 23. Enhance lightbox with metadata
+  - [x] 23.1 Update PhotoGallery lightbox
+    - Display file name, size, dimensions
+    - Display upload date and color tags
+    - Add copy URL button
+    - Add favorite toggle
+    - _Requirements: 12.1, 12.2, 12.3, 12.4_
+
+- [x] 24. Final integration and polish
+  - [x] 24.1 Wire all components together in App.vue
+    - Connect sidebar navigation to views
+    - Connect context menu to batch operations
+    - Connect drag-drop to folder upload dialog
+    - _Requirements: All_
+  - [x] 24.2 Add keyboard shortcuts
+    - Ctrl+A for select all
+    - Delete for remove selected
+    - F for toggle favorite
+    - _Requirements: 7.1, 5.2_
+
+- [x] 25. Final checkpoint - All features complete
+  - Ensure all tests pass, ask the user if questions arise.
+  - Run full test suite including all property tests
+  - Verify all requirements are implemented
+
+- [ ] 26. Implement Upload Toast System
+  - [x] 26.1 Create useUploadToast composable
+    - Implement transfers array state
+    - Implement addTransfer(), updateProgress(), setStatus() functions
+    - Implement clearCompleted() and getActiveCount()
+    - Implement getSummaryText() for "(N) files being uploaded/downloaded"
+    - _Requirements: 13.1, 13.2, 13.3_
+  - [ ]* 26.2 Write property test for toast visibility (Property 29)
+    - **Property 29: Toast Visibility During Active Transfers**
+    - Test toast visible when transfers active
+    - **Validates: Requirements 13.1, 13.2**
+  - [ ]* 26.3 Write property test for summary count (Property 30)
+    - **Property 30: Toast Summary Count Accuracy**
+    - Test summary shows correct active transfer count
+    - **Validates: Requirements 13.3**
+  - [x] 26.4 Create UploadToast.vue component
+    - Position fixed bottom-right corner
+    - Display summary with file count
+    - Expandable dropdown with individual file progress
+    - Show file name and percentage for each transfer
+    - _Requirements: 13.3, 13.4, 13.5_
+  - [x] 26.5 Implement auto-dismiss and failure handling
+    - Auto-dismiss after 3 seconds when all complete
+    - Keep visible if any transfer failed
+    - Highlight failed files in dropdown
+    - _Requirements: 13.6, 13.7_
+  - [ ]* 26.6 Write property test for auto-dismiss (Property 31)
+    - **Property 31: Toast Auto-Dismiss on Completion**
+    - Test toast dismisses after all transfers complete
+    - **Validates: Requirements 13.6**
+  - [ ]* 26.7 Write property test for failure persistence (Property 32)
+    - **Property 32: Toast Persistence on Failure**
+    - Test toast stays visible when transfers fail
+    - **Validates: Requirements 13.7**
+  - [x] 26.8 Integrate UploadToast with App.vue
+    - Connect to usePhotoUpload for upload progress
+    - Support minimize/expand toggle
+    - _Requirements: 13.8_
+
+- [ ] 27. Implement Photo Sync Status System
+  - [x] 27.1 Create useSyncStatus composable
+    - Implement syncStates Map for tracking photo states
+    - Implement getStatus() and setStatus() functions
+    - Implement getStatusTooltip() for hover descriptions
+    - Implement getAvailableActions() for context-aware menu
+    - _Requirements: 14.2, 14.3, 14.6_
+  - [ ]* 27.2 Write property test for status completeness (Property 33)
+    - **Property 33: Sync Status State Completeness**
+    - Test every photo has exactly one valid status
+    - **Validates: Requirements 14.2**
+  - [ ]* 27.3 Write property test for tooltip accuracy (Property 34)
+    - **Property 34: Sync Status Tooltip Accuracy**
+    - Test tooltip matches status state
+    - **Validates: Requirements 14.3**
+  - [ ]* 27.4 Write property test for action relevance (Property 35)
+    - **Property 35: Sync Action Menu Relevance**
+    - Test only valid actions shown for each state
+    - **Validates: Requirements 14.6**
+  - [x] 27.5 Create SyncStatusIndicator.vue component
+    - Display distinct icon for each sync state
+    - Use different colors: local-only (yellow), remote-only (blue), synced (green)
+    - Show tooltip on hover with status explanation
+    - _Requirements: 14.1, 14.2, 14.3, 14.8_
+  - [x] 27.6 Implement sync action menu
+    - Show menu on indicator click
+    - Include Upload, Download, Remove local, Delete remote options
+    - Filter options based on current sync state
+    - _Requirements: 14.4, 14.5, 14.6_
+  - [x] 27.7 Implement sync actions
+    - uploadPhoto() - upload local file to GitHub
+    - downloadPhoto() - download remote file to local
+    - removeLocalCopy() - delete local file, keep remote
+    - deleteFromRemote() - delete from GitHub, keep local
+    - _Requirements: 14.7_
+  - [ ]* 27.8 Write property test for state transitions (Property 36)
+    - **Property 36: Sync Action State Transition**
+    - Test actions result in correct state changes
+    - **Validates: Requirements 14.7**
+  - [x] 27.9 Integrate SyncStatusIndicator with PhotoPreview
+    - Add indicator to PhotoPreview.vue
+    - Connect to useSyncStatus composable
+    - Update indicator when sync actions complete
+    - _Requirements: 14.1, 14.7_
+
+- [ ] 28. Final checkpoint - New features complete
+  - Ensure all tests pass, ask the user if questions arise.
+  - Run full test suite including new property tests
+  - Verify Requirements 13 and 14 are fully implemented
+
+## Notes
+
+- All property-based tests are required for comprehensive coverage
+- Each property test references its design document property number
+- Checkpoints ensure incremental validation before proceeding
+- Rust backend tasks should be completed before dependent frontend tasks
+- Property tests use fast-check (frontend) and proptest (Rust) with 100 iterations minimum
