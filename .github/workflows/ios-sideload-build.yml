@@ -88,22 +88,86 @@ jobs:
           rm -rf src-tauri/gen/apple
           pnpm tauri ios init
 
+      - name: Disable code signing in Xcode project
+        run: |
+          XCODEPROJ=$(find src-tauri/gen/apple -name "*.xcodeproj" -type d | head -1)
+          
+          if [[ -z "$XCODEPROJ" ]]; then
+            echo "::error::No Xcode project found"
+            exit 1
+          fi
+          
+          PBXPROJ="$XCODEPROJ/project.pbxproj"
+          
+          echo "Modifying: $PBXPROJ"
+          
+          # Disable code signing completely
+          sed -i '' 's/CODE_SIGN_IDENTITY = "[^"]*"/CODE_SIGN_IDENTITY = ""/g' "$PBXPROJ"
+          sed -i '' 's/CODE_SIGN_IDENTITY = -/CODE_SIGN_IDENTITY = ""/g' "$PBXPROJ"
+          sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=iphoneos\*\]" = "[^"]*"/"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = ""/g' "$PBXPROJ"
+          
+          # Set signing to manual and disable
+          sed -i '' 's/CODE_SIGNING_REQUIRED = YES/CODE_SIGNING_REQUIRED = NO/g' "$PBXPROJ"
+          sed -i '' 's/CODE_SIGNING_ALLOWED = YES/CODE_SIGNING_ALLOWED = NO/g' "$PBXPROJ"
+          
+          # Remove development team requirement
+          sed -i '' 's/DEVELOPMENT_TEAM = "[^"]*"/DEVELOPMENT_TEAM = ""/g' "$PBXPROJ"
+          
+          # Add missing settings if not present
+          if ! grep -q "CODE_SIGNING_REQUIRED = NO" "$PBXPROJ"; then
+            sed -i '' 's/buildSettings = {/buildSettings = {\n\t\t\t\tCODE_SIGNING_REQUIRED = NO;/g' "$PBXPROJ"
+          fi
+          
+          if ! grep -q "CODE_SIGNING_ALLOWED = NO" "$PBXPROJ"; then
+            sed -i '' 's/buildSettings = {/buildSettings = {\n\t\t\t\tCODE_SIGNING_ALLOWED = NO;/g' "$PBXPROJ"
+          fi
+          
+          echo "Code signing disabled in project"
+
       - name: Build iOS (unsigned)
         run: |
-          pnpm tauri ios build -- \
+          # Build using xcodebuild directly with all signing disabled
+          XCODEPROJ=$(find src-tauri/gen/apple -name "*.xcodeproj" -type d | head -1)
+          SCHEME=$(xcodebuild -project "$XCODEPROJ" -list 2>/dev/null | awk '/Schemes:/{found=1; next} found && /^[[:space:]]+[^[:space:]]/{print $1; exit}')
+          
+          echo "Building project: $XCODEPROJ"
+          echo "Scheme: $SCHEME"
+          
+          # First build the Rust library
+          cd src-tauri
+          cargo build --release --target aarch64-apple-ios
+          cd ..
+          
+          # Then build with xcodebuild
+          xcodebuild build \
+            -project "$XCODEPROJ" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath ./build \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            -destination "generic/platform=iOS"
+            DEVELOPMENT_TEAM="" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            -allowProvisioningUpdates=NO \
+            ONLY_ACTIVE_ARCH=NO
 
       - name: Find and package app
         id: package
         run: |
-          # Find the .app bundle
-          APP_PATH=$(find src-tauri/gen/apple -name "*.app" -type d | head -1)
+          # Find the .app bundle in build output
+          APP_PATH=$(find ./build -name "*.app" -type d 2>/dev/null | head -1)
+          
+          # Fallback to gen/apple if not in build dir
+          if [[ -z "$APP_PATH" ]]; then
+            APP_PATH=$(find src-tauri/gen/apple -name "*.app" -type d 2>/dev/null | head -1)
+          fi
           
           if [[ -z "$APP_PATH" ]]; then
             echo "::error::No .app bundle found"
+            echo "Searching in all locations..."
+            find . -name "*.app" -type d 2>/dev/null || true
             exit 1
           fi
           
