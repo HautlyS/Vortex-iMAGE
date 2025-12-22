@@ -147,6 +147,7 @@ onUnmounted(() => {
   z-index: 2;
 }
 
+.decay-card:hover .indicator-btn,
 .photo-preview:hover .indicator-btn {
   opacity: 1;
 }

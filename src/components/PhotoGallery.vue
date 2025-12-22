@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import PhotoPreview from './PhotoPreview.vue'
+import PixelCard from '../component/PixelCard/PixelCard.vue'
 import { useSelection } from '../composables/useSelection'
 import { useFavorites } from '../composables/useFavorites'
 import { useColorTags } from '../composables/useColorTags'
+import { useSyncStatus } from '../composables/useSyncStatus'
 import { GALLERY, SHORTCUTS } from '../config'
 
 interface Photo {
@@ -30,10 +32,12 @@ const emit = defineEmits<{
 const { select, isSelected } = useSelection()
 const { isFavorite, toggleFavorite } = useFavorites()
 const { getItemTags } = useColorTags()
+const { getStatus, uploadPhoto, downloadPhoto, removeLocalCopy, deleteFromRemote } = useSyncStatus()
 
 const selectedPhoto = ref<Photo | null>(null)
 const selectedIndex = computed(() => props.photos.findIndex(p => p.sha === selectedPhoto.value?.sha))
 const galleryRef = ref<HTMLElement | null>(null)
+const imageLoading = ref(false)
 
 // Use config for grid sizing
 const gridStyle = computed(() => ({
@@ -64,16 +68,43 @@ function handlePhotoContextMenu(e: MouseEvent, photo: Photo) {
   emit('contextmenu', e)
 }
 
+function handlePhotoSyncAction(action: string, photoId: string) {
+  switch (action) {
+    case 'upload':
+      uploadPhoto(photoId)
+      break
+    case 'download':
+      downloadPhoto(photoId)
+      break
+    case 'remove-local':
+      removeLocalCopy(photoId)
+      break
+    case 'delete-remote':
+      deleteFromRemote(photoId)
+      break
+  }
+}
+
 function handleResize(newSize: number) {
   emit('resize', newSize)
 }
 
 function openLightbox(photo: Photo) {
   selectedPhoto.value = photo
+  imageLoading.value = true
 }
 
 function closeLightbox() {
   selectedPhoto.value = null
+  imageLoading.value = false
+}
+
+function onImageLoad() {
+  // Add a small delay to let the transition finish smoothly if needed, 
+  // or just hide immediately. Using slight delay for effect.
+  setTimeout(() => {
+    imageLoading.value = false
+  }, 500)
 }
 
 function nextPhoto() {
@@ -168,10 +199,12 @@ function copyUrl(url: string) {
         :selected="isSelected(photo.sha)"
         :favorited="isFavorite(photo.sha)"
         :color-tag="getPhotoColorTag(photo)"
+        :sync-status="getStatus(photo.sha)"
         :tabindex="index === 0 ? 0 : -1"
         role="listitem"
         @select="handlePhotoSelect"
         @favorite="handlePhotoFavorite"
+        @sync-action="handlePhotoSyncAction"
         @contextmenu="handlePhotoContextMenu"
         @resize="handleResize"
         @dblclick="openLightbox(photo)"
@@ -235,7 +268,19 @@ function copyUrl(url: string) {
           </button>
 
           <div class="lb-content">
-            <img :src="selectedPhoto.url" :alt="selectedPhoto.name" />
+            <PixelCard 
+              v-if="imageLoading" 
+              variant="pink" 
+              :speed="80"
+              class-name="fixed !w-full !h-full !inset-0 z-20 pointer-events-none"
+              :no-focus="true"
+            />
+            <img 
+              v-show="!imageLoading" 
+              :src="selectedPhoto.url" 
+              :alt="selectedPhoto.name" 
+              @load="onImageLoad"
+            />
           </div>
 
           <button v-if="selectedIndex < photos.length - 1" class="lb-nav lb-next" @click="nextPhoto">

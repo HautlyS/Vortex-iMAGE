@@ -147,12 +147,17 @@ function applyTheme(config: ThemeConfig) {
     style.setProperty('--accent-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`)
     style.setProperty('--accent-glow', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${config.glowIntensity / 100})`)
     style.setProperty('--accent-light', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.1)`)
-    style.setProperty('--accent-medium', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)`)
-    style.setProperty('--accent-strong', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.4)`)
+    style.setProperty('--accent-medium', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.2)`)
+    style.setProperty('--accent-strong', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)`)
   }
   if (rgb2) {
     style.setProperty('--accent-secondary-rgb', `${rgb2.r}, ${rgb2.g}, ${rgb2.b}`)
   }
+
+  // Glass opacity (0.4 to 0.95 range)
+  const glassOpacity = config.glassOpacity / 100
+  style.setProperty('--glass-opacity', String(glassOpacity))
+  style.setProperty('--glass-bg', `rgba(14, 14, 20, ${glassOpacity})`)
 
   // Border radius
   const radius = BORDER_RADIUS[config.borderRadius]
@@ -168,13 +173,6 @@ function applyTheme(config: ThemeConfig) {
   style.setProperty('--duration-normal', speeds.normal)
   style.setProperty('--duration-slow', speeds.slow)
 
-  // Glass morphism
-  style.setProperty('--glass-opacity', `${config.glassOpacity / 100}`)
-  style.setProperty('--glass-blur', config.glassMorphism ? '16px' : '0px')
-  style.setProperty('--glass-bg', config.glassMorphism 
-    ? `rgba(17, 17, 19, ${config.glassOpacity / 100})` 
-    : 'rgba(17, 17, 19, 0.98)')
-
   // Typography
   style.setProperty('--font-family', FONT_FAMILIES[config.fontFamily])
   const sizes = FONT_SIZES[config.fontSize]
@@ -185,7 +183,6 @@ function applyTheme(config: ThemeConfig) {
 
   // Glow intensity
   style.setProperty('--glow-intensity', `${config.glowIntensity}%`)
-  style.setProperty('--glow-spread', `${config.glowIntensity / 2}px`)
 
   // Anarchy mode
   if (config.anarchyMode) {
