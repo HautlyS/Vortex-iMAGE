@@ -48,15 +48,8 @@ const { photos, loadingPhotos, loadPhotos, addToQueue, queue } = usePhotoUpload(
 const { addTransfer, updateProgress, setStatus: setTransferStatus } = useUploadToast()
 const { init: initAccent } = useAccentColor()
 const { loadTheme } = useTheme()
-const { selected, clearSelection, selectAll, getSelected } = useSelection()
-const { loadFavorites, isFavorite, toggleFavorite } = useFavorites()
-const { loadTags, tagItems, getItemsByTag } = useColorTags()
-const { size: previewSize, setSize: setPreviewSize, loadSize: loadPreviewSize } = usePhotoPreviewSize()
-const { activeDriver, loadDrivers, setActiveDriver: _setActiveDriver } = useDataDriver()
-const { loadConfig: loadBackupConfig } = useBackupSettings()
-const { errors, hasError, clearErrors } = useErrorBoundary()
-const { createTimeout } = useTimeout()
-void _setActiveDriver // suppress unused warning
+const { selected } = useSelection()
+const { errors } = useErrorBoundary()
 
 // App state
 const loading = ref(true)
