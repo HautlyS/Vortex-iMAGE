@@ -1,7 +1,7 @@
 import { ref, onUnmounted } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
-import { open } from '@tauri-apps/plugin-shell'
-import { load } from '@tauri-apps/plugin-store'
+
+// Check if running in dev mock mode
+export const isDevMode = import.meta.env.DEV && import.meta.env.VITE_MOCK_AUTH === 'true'
 
 interface DeviceCodeResponse {
   device_code: string
@@ -16,16 +16,15 @@ interface GitHubUser {
   avatar_url: string
 }
 
-const token = ref<string | null>(null)
-const user = ref<GitHubUser | null>(null)
-const repo = ref<string>('')
+const token = ref<string | null>(isDevMode ? 'mock-token-dev' : null)
+const user = ref<GitHubUser | null>(isDevMode ? { login: 'dev-user', avatar_url: 'https://avatars.githubusercontent.com/u/0?v=4' } : null)
+const repo = ref<string>(isDevMode ? 'dev-user/photos' : '')
 
 export function useGitHubAuth() {
   const loading = ref(false)
   const userCode = ref('')
   const error = ref<string | null>(null)
   
-  // Instance-specific polling variables to prevent conflicts
   let pollInterval: ReturnType<typeof setInterval> | null = null
   let pollTimeout: ReturnType<typeof setTimeout> | null = null
 
@@ -43,7 +42,12 @@ export function useGitHubAuth() {
   onUnmounted(clearPolling)
 
   async function init() {
+    // In dev mode, already initialized with mock data
+    if (isDevMode) return
+
     try {
+      const { invoke } = await import('@tauri-apps/api/core')
+      const { load } = await import('@tauri-apps/plugin-store')
       const store = await load('settings.json')
       token.value = await store.get<string>('token') || null
       repo.value = await store.get<string>('repo') || ''
@@ -54,27 +58,40 @@ export function useGitHubAuth() {
       token.value = null
       user.value = null
       try {
+        const { load } = await import('@tauri-apps/plugin-store')
         const store = await load('settings.json')
         await store.delete('token')
         await store.save()
-      } catch {
-        // Silent fail on cleanup
-      }
+      } catch {}
     }
   }
 
   async function startLogin() {
-    if (loading.value) return // Prevent multiple calls
+    if (isDevMode) {
+      // Mock instant login
+      loading.value = true
+      await new Promise(r => setTimeout(r, 500))
+      token.value = 'mock-token-dev'
+      user.value = { login: 'dev-user', avatar_url: 'https://avatars.githubusercontent.com/u/0?v=4' }
+      repo.value = 'dev-user/photos'
+      loading.value = false
+      return
+    }
+
+    if (loading.value) return
     clearPolling()
     loading.value = true
     error.value = null
     
     try {
+      const { invoke } = await import('@tauri-apps/api/core')
+      const { open } = await import('@tauri-apps/plugin-shell')
+      const { load } = await import('@tauri-apps/plugin-store')
+      
       const res = await invoke<DeviceCodeResponse>('start_oauth')
       userCode.value = res.user_code
       await open(res.verification_uri)
       
-      // Set timeout for expiration
       pollTimeout = setTimeout(() => {
         clearPolling()
         loading.value = false
@@ -94,9 +111,7 @@ export function useGitHubAuth() {
               const store = await load('settings.json')
               await store.set('token', t)
               await store.save()
-            } catch {
-              // Continue even if save fails
-            }
+            } catch {}
             
             loading.value = false
             userCode.value = ''
@@ -119,24 +134,27 @@ export function useGitHubAuth() {
     token.value = null
     user.value = null
     
+    if (isDevMode) return
+
     try {
+      const { load } = await import('@tauri-apps/plugin-store')
       const store = await load('settings.json')
       await store.delete('token')
       await store.save()
-    } catch {
-      // Silent fail
-    }
+    } catch {}
   }
 
   async function setRepo(r: string) {
     repo.value = r
+    
+    if (isDevMode) return
+
     try {
+      const { load } = await import('@tauri-apps/plugin-store')
       const store = await load('settings.json')
       await store.set('repo', r)
       await store.save()
-    } catch {
-      // Silent fail
-    }
+    } catch {}
   }
 
   return {

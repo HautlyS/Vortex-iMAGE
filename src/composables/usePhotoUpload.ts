@@ -1,8 +1,5 @@
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
-import { listen, type UnlistenFn } from '@tauri-apps/api/event'
-import { open } from '@tauri-apps/plugin-dialog'
-import { useGitHubAuth } from './useGitHubAuth'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useGitHubAuth, isDevMode } from './useGitHubAuth'
 
 interface UploadResult {
   url: string
@@ -36,33 +33,61 @@ export interface Photo {
   size?: number
 }
 
+// Mock photos for dev mode
+const MOCK_PHOTOS: Photo[] = [
+  { name: 'sunset-beach.jpg', url: 'https://picsum.photos/seed/1/800/600', sha: 'mock-sha-1', size: 245000 },
+  { name: 'mountain-view.jpg', url: 'https://picsum.photos/seed/2/800/600', sha: 'mock-sha-2', size: 312000 },
+  { name: 'city-lights.jpg', url: 'https://picsum.photos/seed/3/800/600', sha: 'mock-sha-3', size: 198000 },
+  { name: 'forest-path.jpg', url: 'https://picsum.photos/seed/4/800/600', sha: 'mock-sha-4', size: 276000 },
+  { name: 'ocean-waves.jpg', url: 'https://picsum.photos/seed/5/800/600', sha: 'mock-sha-5', size: 289000 },
+  { name: 'desert-dunes.jpg', url: 'https://picsum.photos/seed/6/800/600', sha: 'mock-sha-6', size: 234000 },
+  { name: 'autumn-leaves.jpg', url: 'https://picsum.photos/seed/7/800/600', sha: 'mock-sha-7', size: 267000 },
+  { name: 'snowy-peaks.jpg', url: 'https://picsum.photos/seed/8/800/600', sha: 'mock-sha-8', size: 301000 },
+  { name: 'tropical-beach.jpg', url: 'https://picsum.photos/seed/9/800/600', sha: 'mock-sha-9', size: 256000 },
+  { name: 'night-sky.jpg', url: 'https://picsum.photos/seed/10/800/600', sha: 'mock-sha-10', size: 223000 },
+  { name: 'waterfall.jpg', url: 'https://picsum.photos/seed/11/800/600', sha: 'mock-sha-11', size: 278000 },
+  { name: 'flower-garden.jpg', url: 'https://picsum.photos/seed/12/800/600', sha: 'mock-sha-12', size: 245000 },
+]
+
+// Global shared state
 const queue = ref<UploadItem[]>([])
-const photos = ref<Photo[]>([])
+const photos = ref<Photo[]>(isDevMode ? [...MOCK_PHOTOS] : [])
 const isUploading = ref(false)
 const loadingPhotos = ref(false)
+let initialized = false
 
 export function usePhotoUpload() {
   const { token, repo } = useGitHubAuth()
   
-  // Instance-specific event listener to prevent conflicts
-  let unlisten: UnlistenFn | null = null
-  let isProcessing = false // Prevent race conditions
+  let unlisten: (() => void) | null = null
+  let isProcessing = false
 
   const pendingCount = computed(() => queue.value.filter(i => i.status === 'pending').length)
   const failedCount = computed(() => queue.value.filter(i => i.status === 'failed').length)
   const successCount = computed(() => queue.value.filter(i => i.status === 'success').length)
   const currentUpload = computed(() => queue.value.find(i => i.status === 'uploading'))
 
+  watch([token, repo], ([t, r]) => {
+    if (t && r && !isDevMode) loadPhotos()
+  }, { immediate: true })
+
   onMounted(async () => {
+    if (isDevMode) {
+      // Already have mock photos
+      return
+    }
+
     try {
+      const { listen } = await import('@tauri-apps/api/event')
       unlisten = await listen<UploadProgress>('upload-progress', (event) => {
         const item = queue.value.find(i => i.id === event.payload.id)
-        if (item) {
-          item.progress = event.payload.percent
-        }
+        if (item) item.progress = event.payload.percent
       })
-    } catch (error) {
-      console.warn('Failed to setup upload progress listener:', error)
+    } catch {}
+    
+    if (!initialized && token.value && repo.value) {
+      initialized = true
+      loadPhotos()
     }
   })
 
@@ -74,15 +99,24 @@ export function usePhotoUpload() {
   })
 
   async function selectFiles() {
+    if (isDevMode) {
+      // Mock file selection - add random photos
+      const mockFiles = [
+        `photo-${Date.now()}-1.jpg`,
+        `photo-${Date.now()}-2.jpg`,
+      ]
+      addToQueue(mockFiles)
+      return
+    }
+
     try {
+      const { open } = await import('@tauri-apps/plugin-dialog')
       const files = await open({
         multiple: true,
         filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }]
       })
       if (files) addToQueue(files as string[])
-    } catch (error) {
-      console.error('File selection failed:', error)
-    }
+    } catch {}
   }
 
   function addToQueue(paths: string[]) {
@@ -113,7 +147,28 @@ export function usePhotoUpload() {
         next.status = 'uploading'
         next.progress = 0
 
+        if (isDevMode) {
+          // Mock upload with progress
+          for (let p = 0; p <= 100; p += 20) {
+            next.progress = p
+            await new Promise(r => setTimeout(r, 200))
+          }
+          next.status = 'success'
+          next.progress = 100
+          
+          // Add mock photo
+          const seed = Math.floor(Math.random() * 1000)
+          photos.value.unshift({
+            name: next.name,
+            url: `https://picsum.photos/seed/${seed}/800/600`,
+            sha: `mock-sha-${seed}`,
+            size: Math.floor(Math.random() * 200000) + 150000
+          })
+          continue
+        }
+
         try {
+          const { invoke } = await import('@tauri-apps/api/core')
           const filename = `${Date.now()}-${next.name}`
           const result = await invoke<UploadResult>('upload_photo', {
             path: next.path,
@@ -126,6 +181,13 @@ export function usePhotoUpload() {
           next.status = 'success'
           next.progress = 100
           next.url = result.url
+          
+          photos.value.unshift({
+            name: filename,
+            url: `https://raw.githubusercontent.com/${repo.value}/main/photos/${filename}`,
+            sha: result.sha,
+            path: `photos/${filename}`
+          })
         } catch (e) {
           next.status = 'failed'
           next.progress = 0
@@ -137,7 +199,7 @@ export function usePhotoUpload() {
       isProcessing = false
     }
     
-    await loadPhotos()
+    if (!isDevMode) await loadPhotos()
   }
 
   function retryFailed() {
@@ -169,26 +231,34 @@ export function usePhotoUpload() {
   }
 
   async function loadPhotos() {
-    if (!token.value || !repo.value) return
+    if (isDevMode) {
+      // Already have mock photos
+      loadingPhotos.value = true
+      await new Promise(r => setTimeout(r, 300))
+      loadingPhotos.value = false
+      return
+    }
+
+    if (!token.value || !repo.value || loadingPhotos.value) return
     
     loadingPhotos.value = true
     try {
+      const { invoke } = await import('@tauri-apps/api/core')
       const photoUrls = await invoke<string[]>('list_photos', {
         repo: repo.value,
         token: token.value
       })
       
-      // Convert URLs to Photo objects with proper typing
-      photos.value = photoUrls.map(url => ({
-        name: url.split('/').pop() || 'photo',
-        url,
-        sha: url.split('/').pop()?.split('.')[0] || Math.random().toString(36),
-        path: url
-      }))
-    } catch (error) {
-      console.warn('Failed to load photos:', error)
-      photos.value = []
-    } finally {
+      photos.value = photoUrls.map(url => {
+        const filename = url.split('/').pop() || 'photo'
+        return {
+          name: filename,
+          url,
+          sha: filename.replace(/\.[^.]+$/, ''),
+          path: url
+        }
+      })
+    } catch {} finally {
       loadingPhotos.value = false
     }
   }

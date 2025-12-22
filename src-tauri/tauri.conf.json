@@ -33,6 +33,10 @@
     ],
     "android": {
       "minSdkVersion": 24
+    },
+    "iOS": {
+      "developmentTeam": null,
+      "minimumSystemVersion": "14.0"
     }
   }
 }

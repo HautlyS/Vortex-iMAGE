@@ -34,23 +34,23 @@ export interface ThemeConfig {
 
 // Predefined accent colors with complementary pairs
 export const ACCENT_COLORS = [
-  { id: 'matrix', color: '#00ff41', secondary: '#008f11', name: 'Matrix' },
-  { id: 'cyber', color: '#00d4ff', secondary: '#0066ff', name: 'Cyber' },
-  { id: 'neon', color: '#ff00ff', secondary: '#8b00ff', name: 'Neon' },
-  { id: 'sunset', color: '#ff6b35', secondary: '#f7931e', name: 'Sunset' },
-  { id: 'aurora', color: '#00ff88', secondary: '#00ccff', name: 'Aurora' },
-  { id: 'blood', color: '#ff0055', secondary: '#cc0044', name: 'Blood' },
-  { id: 'gold', color: '#ffd700', secondary: '#ff8c00', name: 'Gold' },
+  { id: 'cyber', color: '#00f0ff', secondary: '#b026ff', name: 'Cyber' },
+  { id: 'neon', color: '#ff2d6a', secondary: '#b026ff', name: 'Neon Pink' },
+  { id: 'matrix', color: '#39ff14', secondary: '#00ff88', name: 'Matrix' },
+  { id: 'sunset', color: '#ff6b35', secondary: '#ffd700', name: 'Sunset' },
+  { id: 'aurora', color: '#00ff88', secondary: '#00f0ff', name: 'Aurora' },
+  { id: 'blood', color: '#ff1744', secondary: '#ff2d6a', name: 'Blood' },
+  { id: 'gold', color: '#ffd700', secondary: '#ff6b35', name: 'Gold' },
   { id: 'ice', color: '#88ffff', secondary: '#00bfff', name: 'Ice' },
   { id: 'toxic', color: '#39ff14', secondary: '#ccff00', name: 'Toxic' },
-  { id: 'void', color: '#8b5cf6', secondary: '#6366f1', name: 'Void' },
+  { id: 'void', color: '#b026ff', secondary: '#ff2d6a', name: 'Void' },
 ]
 
-// Border radius presets
+// Border radius presets - 2026 liquid design
 export const BORDER_RADIUS = {
-  sharp: { sm: '2px', md: '4px', lg: '6px', xl: '8px', full: '4px' },
-  soft: { sm: '6px', md: '10px', lg: '14px', xl: '20px', full: '12px' },
-  round: { sm: '12px', md: '16px', lg: '24px', xl: '32px', full: '9999px' },
+  sharp: { sm: '4px', md: '6px', lg: '8px', xl: '12px', full: '6px' },
+  soft: { sm: '8px', md: '12px', lg: '18px', xl: '24px', full: '16px' },
+  round: { sm: '12px', md: '18px', lg: '26px', xl: '36px', full: '9999px' },
 }
 
 // Animation speed presets
@@ -75,15 +75,15 @@ export const FONT_SIZES = {
 }
 
 const DEFAULT_THEME: ThemeConfig = {
-  accentColor: '#00ff41',
-  accentSecondary: '#008f11',
+  accentColor: '#00f0ff',
+  accentSecondary: '#b026ff',
   matrixEffects: true,
   scanlines: false,
   glow: true,
-  glowIntensity: 60,
-  borderRadius: 'soft',
+  glowIntensity: 70,
+  borderRadius: 'round',
   glassMorphism: true,
-  glassOpacity: 80,
+  glassOpacity: 75,
   animationSpeed: 'normal',
   reduceMotion: false,
   fontFamily: 'inter',
@@ -235,11 +235,12 @@ export function useTheme() {
       if (savedTheme) {
         theme.value = { ...DEFAULT_THEME, ...savedTheme }
       }
-      applyTheme(theme.value)
-      initialized = true
     } catch {
-      applyTheme(DEFAULT_THEME)
+      // Use default theme
     }
+    // Always apply theme, even if loading fails
+    applyTheme(theme.value)
+    initialized = true
   }
 
   async function saveTheme(): Promise<void> {

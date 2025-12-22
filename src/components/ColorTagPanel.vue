@@ -77,12 +77,14 @@ function handleKeydown(e: KeyboardEvent) {
 
       <!-- Individual Tags -->
       <div v-for="tag in displayTags" :key="tag.id" class="tag-item-wrapper">
-        <button
+        <div
           v-if="editingTagId !== tag.id"
           class="tag-item"
           :class="{ active: selectedTagId === tag.id }"
           @click="handleSelect(tag.id)"
           @dblclick="startEditing(tag)"
+          role="button"
+          tabindex="0"
         >
           <span class="tag-color" :style="{ backgroundColor: tag.color }" />
           <span class="tag-name">{{ tag.name }}</span>
@@ -93,7 +95,7 @@ function handleKeydown(e: KeyboardEvent) {
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
             </svg>
           </button>
-        </button>
+        </div>
 
         <!-- Edit Mode -->
         <div v-else class="tag-edit">
@@ -128,11 +130,11 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 .panel-header h3 {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #52525b;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
 }
 
 .empty-state {
@@ -142,57 +144,66 @@ function handleKeydown(e: KeyboardEvent) {
 
 .empty-state p {
   font-size: 0.875rem;
-  color: #71717a;
+  color: var(--text-tertiary);
   margin-bottom: 0.25rem;
 }
 
 .empty-state span {
   font-size: 0.75rem;
-  color: #52525b;
+  color: var(--text-muted);
 }
 
 .tag-list {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: 0.25rem;
 }
 
 .tag-item {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 0.625rem;
-  padding: 0.5rem 0.75rem;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
   background: transparent;
   border: none;
-  color: #a1a1aa;
+  color: var(--text-secondary);
   font-size: 0.875rem;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--duration-fast) var(--ease-liquid);
   text-align: left;
 }
 
 .tag-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #fafafa;
+  background: var(--surface-2);
+  color: var(--text-primary);
 }
 
 .tag-item.active {
-  background: rgba(99, 102, 241, 0.15);
-  color: #818cf8;
+  background: var(--accent-light);
+  color: var(--accent-color);
 }
 
 .tag-color {
-  width: 0.875rem;
-  height: 0.875rem;
-  border-radius: 50%;
+  width: 1rem;
+  height: 1rem;
+  border-radius: var(--radius-full);
   flex-shrink: 0;
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.3);
 }
 
 .tag-color.all {
-  background: linear-gradient(135deg, #ef4444, #f97316, #eab308, #22c55e, #3b82f6, #a855f7);
+  background: conic-gradient(
+    var(--cyber-pink),
+    var(--cyber-orange),
+    var(--cyber-yellow),
+    var(--cyber-green),
+    var(--cyber-cyan),
+    var(--cyber-purple),
+    var(--cyber-pink)
+  );
 }
 
 .tag-name {
@@ -203,27 +214,28 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 .tag-count {
-  font-size: 0.75rem;
-  color: #52525b;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 0.125rem 0.375rem;
-  border-radius: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-full);
   flex-shrink: 0;
 }
 
 .edit-btn {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1.5rem;
+  height: 1.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
   background: transparent;
   border: none;
-  color: #52525b;
+  color: var(--text-muted);
   cursor: pointer;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
   opacity: 0;
-  transition: all 0.15s;
+  transition: all var(--duration-fast);
   flex-shrink: 0;
 }
 
@@ -232,13 +244,13 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 .edit-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fafafa;
+  background: var(--surface-3);
+  color: var(--text-primary);
 }
 
 .edit-btn svg {
-  width: 0.75rem;
-  height: 0.75rem;
+  width: 0.875rem;
+  height: 0.875rem;
 }
 
 /* Edit Mode */
@@ -246,37 +258,44 @@ function handleKeydown(e: KeyboardEvent) {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.375rem 0.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
 }
 
 .edit-input {
   flex: 1;
   background: transparent;
   border: none;
-  color: #fafafa;
+  color: var(--text-primary);
   font-size: 0.875rem;
   outline: none;
   min-width: 0;
 }
 
 .save-btn {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.75rem;
+  height: 1.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #22c55e;
+  background: var(--success);
   border: none;
-  border-radius: 0.25rem;
-  color: white;
+  border-radius: var(--radius-sm);
+  color: #000;
   cursor: pointer;
   flex-shrink: 0;
+  transition: all var(--duration-fast);
+}
+
+.save-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 12px rgba(var(--success-rgb), 0.5);
 }
 
 .save-btn svg {
-  width: 0.875rem;
-  height: 0.875rem;
+  width: 1rem;
+  height: 1rem;
 }
 </style>

@@ -1,0 +1,51 @@
+name: Build iOS Unsigned IPA
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-ios-unsigned:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+      
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios
+      
+      - name: Install pnpm
+        run: npm install -g pnpm
+      
+      - name: Install dependencies
+        run: pnpm install
+      
+      - name: Build frontend
+        run: pnpm run build
+      
+      - name: Initialize Tauri iOS project
+        run: cargo tauri ios init
+        env:
+          APPLE_DEVELOPMENT_TEAM: TEMPORARY123456
+      
+      - name: Build unsigned iOS IPA
+        run: cargo tauri ios build
+        env:
+          APPLE_DEVELOPMENT_TEAM: TEMPORARY123456
+      
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ios-unsigned-ipa
+          path: src-tauri/gen/apple/build/arm64/*.ipa
+          retention-days: 7
