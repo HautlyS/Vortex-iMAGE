@@ -37,22 +37,13 @@ jobs:
 
       - name: Disable code signing in Xcode project
         run: |
-          # Modify project.pbxproj to disable code signing
           PBXPROJ="src-tauri/gen/apple/vortex-image.xcodeproj/project.pbxproj"
-          
-          # Replace code signing settings
           sed -i '' 's/CODE_SIGN_IDENTITY = "Apple Development";/CODE_SIGN_IDENTITY = "";/g' "$PBXPROJ"
           sed -i '' 's/CODE_SIGN_IDENTITY = "iPhone Developer";/CODE_SIGN_IDENTITY = "";/g' "$PBXPROJ"
           sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=iphoneos\*\]" = "iPhone Developer";/"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";/g' "$PBXPROJ"
-          
-          # Add/replace signing settings in build settings
           sed -i '' 's/DEVELOPMENT_TEAM = .*;/DEVELOPMENT_TEAM = "";/g' "$PBXPROJ"
-          
-          # Insert CODE_SIGNING_REQUIRED = NO and CODE_SIGNING_ALLOWED = NO after each CODE_SIGN_IDENTITY line
-          sed -i '' '/CODE_SIGN_IDENTITY = "";/a\
-				CODE_SIGNING_ALLOWED = NO;\
-				CODE_SIGNING_REQUIRED = NO;
-          ' "$PBXPROJ"
+          sed -i '' 's/CODE_SIGNING_REQUIRED = YES;/CODE_SIGNING_REQUIRED = NO;/g' "$PBXPROJ"
+          sed -i '' 's/CODE_SIGNING_ALLOWED = YES;/CODE_SIGNING_ALLOWED = NO;/g' "$PBXPROJ"
 
       - name: Build frontend
         run: pnpm run build
