@@ -46,17 +46,10 @@ jobs:
             exit 1
           fi
           echo "Modifying: $PBXPROJ"
-          # More comprehensive code signing disabling
           sed -i '' 's/CODE_SIGN_IDENTITY = "[^"]*";/CODE_SIGN_IDENTITY = "";/g' "$PBXPROJ"
           sed -i '' 's/DEVELOPMENT_TEAM = "[^"]*";/DEVELOPMENT_TEAM = "";/g' "$PBXPROJ"
           sed -i '' 's/CODE_SIGNING_REQUIRED = YES;/CODE_SIGNING_REQUIRED = NO;/g' "$PBXPROJ"
           sed -i '' 's/CODE_SIGNING_ALLOWED = YES;/CODE_SIGNING_ALLOWED = NO;/g' "$PBXPROJ"
-          sed -i '' 's/PROVISIONING_PROFILE_SPECIFIER = "[^"]*";/PROVISIONING_PROFILE_SPECIFIER = "";/g' "$PBXPROJ"
-          # Add these settings if they don't exist
-          if ! grep -q "CODE_SIGNING_REQUIRED = NO" "$PBXPROJ"; then
-            sed -i '' '/CURRENT_PROJECT_VERSION = /a\
-				CODE_SIGNING_REQUIRED = NO;' "$PBXPROJ"
-          fi
 
       - name: Build iOS app with fallback
         run: |
