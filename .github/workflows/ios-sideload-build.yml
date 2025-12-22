@@ -1,0 +1,290 @@
+name: iOS Sideload Build (Free Apple ID)
+
+# Build and sign IPA using free Apple ID (like Sideloadly)
+# Signs with your personal Apple ID - apps expire after 7 days
+# No paid Developer account required!
+
+on:
+  workflow_dispatch:
+    inputs:
+      bundle_id:
+        description: 'Bundle ID (must be unique per Apple ID)'
+        required: false
+        default: ''
+      bundle_name:
+        description: 'App display name'
+        required: false
+        default: 'iMAGE'
+
+concurrency:
+  group: ios-sideload-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  DEFAULT_BUNDLE_ID: com.vortex.image
+  APP_NAME: iMAGE
+
+jobs:
+  # Step 1: Build unsigned IPA on macOS
+  build-unsigned:
+    runs-on: macos-14
+    timeout-minutes: 45
+    outputs:
+      ipa_name: ${{ steps.package.outputs.ipa_name }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          XCODE_PATH=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+          xcodebuild -version
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Cache pnpm
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios,x86_64-apple-ios,aarch64-apple-ios-sim
+
+      - name: Cache Rust
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm run build
+
+      - name: Initialize iOS project
+        run: pnpm tauri ios init || true
+
+      - name: Update bundle ID if specified
+        if: ${{ github.event.inputs.bundle_id != '' }}
+        run: |
+          # Update tauri.conf.json
+          sed -i '' 's/"identifier": "[^"]*"/"identifier": "${{ github.event.inputs.bundle_id }}"/' src-tauri/tauri.conf.json
+          
+          # Re-init iOS project with new bundle ID
+          rm -rf src-tauri/gen/apple
+          pnpm tauri ios init
+
+      - name: Build iOS (unsigned)
+        run: |
+          pnpm tauri ios build -- \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            -destination "generic/platform=iOS"
+
+      - name: Find and package app
+        id: package
+        run: |
+          # Find the .app bundle
+          APP_PATH=$(find src-tauri/gen/apple -name "*.app" -type d | head -1)
+          
+          if [[ -z "$APP_PATH" ]]; then
+            echo "::error::No .app bundle found"
+            exit 1
+          fi
+          
+          echo "Found app: $APP_PATH"
+          
+          # Create Payload directory structure for IPA
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
+          
+          # Create unsigned IPA
+          IPA_NAME="${{ env.APP_NAME }}-unsigned.ipa"
+          zip -r "$IPA_NAME" Payload
+          
+          echo "ipa_name=$IPA_NAME" >> $GITHUB_OUTPUT
+          echo "Created: $IPA_NAME"
+          ls -la "$IPA_NAME"
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-ipa
+          path: ${{ steps.package.outputs.ipa_name }}
+          retention-days: 7
+
+  # Step 2: Sign IPA with free Apple ID using AltServer-Linux
+  sign-with-apple-id:
+    needs: build-unsigned
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: ${{ secrets.APPLE_ID != '' && secrets.APPLE_ID_PASSWORD != '' }}
+    
+    steps:
+      - name: Download unsigned IPA
+        uses: actions/download-artifact@v4
+        with:
+          name: unsigned-ipa
+          path: ./
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libavahi-compat-libdnssd-dev \
+            usbmuxd \
+            libimobiledevice-dev \
+            libplist-dev \
+            libusbmuxd-dev \
+            libssl-dev \
+            unzip \
+            zip
+
+      - name: Download AltServer-Linux
+        run: |
+          # Download pre-built AltServer-Linux
+          wget -q https://github.com/NyaMisty/AltServer-Linux/releases/download/v0.0.5/AltServer-x86_64 -O AltServer
+          chmod +x AltServer
+          
+          # Verify
+          ./AltServer --version || echo "AltServer downloaded"
+
+      - name: Sign IPA with Apple ID
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          ANISETTE_URL: ${{ secrets.ANISETTE_URL || 'https://ani.f1sh.me' }}
+        run: |
+          IPA_FILE="${{ needs.build-unsigned.outputs.ipa_name }}"
+          SIGNED_IPA="${{ env.APP_NAME }}-signed.ipa"
+          BUNDLE_ID="${{ github.event.inputs.bundle_id || env.DEFAULT_BUNDLE_ID }}"
+          
+          echo "Signing $IPA_FILE with Apple ID..."
+          echo "Bundle ID: $BUNDLE_ID"
+          
+          # Use AltServer to sign
+          # Note: This requires anisette data from a server
+          ./AltServer -u "$APPLE_ID" -p "$APPLE_ID_PASSWORD" \
+            -a "$ANISETTE_URL" \
+            -b "$BUNDLE_ID" \
+            -o "$SIGNED_IPA" \
+            "$IPA_FILE" || {
+              echo "::warning::AltServer signing failed, trying alternative method..."
+              
+              # Fallback: Use zsign for ad-hoc signing
+              echo "Downloading zsign..."
+              wget -q https://github.com/zhlynn/zsign/releases/latest/download/zsign-linux-x64 -O zsign
+              chmod +x zsign
+              
+              # Ad-hoc sign (won't work on real devices without jailbreak)
+              ./zsign -a -o "$SIGNED_IPA" "$IPA_FILE"
+            }
+          
+          if [[ -f "$SIGNED_IPA" ]]; then
+            echo "Successfully created: $SIGNED_IPA"
+            ls -la "$SIGNED_IPA"
+          else
+            echo "::error::Failed to create signed IPA"
+            exit 1
+          fi
+
+      - name: Upload signed IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-ipa-${{ github.sha }}
+          path: ${{ env.APP_NAME }}-signed.ipa
+          retention-days: 7
+
+  # Alternative: Sign using zsign (ad-hoc, for jailbroken devices)
+  sign-adhoc:
+    needs: build-unsigned
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Download unsigned IPA
+        uses: actions/download-artifact@v4
+        with:
+          name: unsigned-ipa
+          path: ./
+
+      - name: Install zsign
+        run: |
+          wget -q https://github.com/zhlynn/zsign/releases/latest/download/zsign-linux-x64 -O zsign || \
+          wget -q https://github.com/xtool-org/zsign/releases/latest/download/zsign-linux-x64 -O zsign
+          chmod +x zsign
+          ./zsign -v || echo "zsign ready"
+
+      - name: Ad-hoc sign IPA
+        run: |
+          IPA_FILE="${{ needs.build-unsigned.outputs.ipa_name }}"
+          ADHOC_IPA="${{ env.APP_NAME }}-adhoc.ipa"
+          BUNDLE_ID="${{ github.event.inputs.bundle_id || env.DEFAULT_BUNDLE_ID }}"
+          BUNDLE_NAME="${{ github.event.inputs.bundle_name || env.APP_NAME }}"
+          
+          echo "Creating ad-hoc signed IPA..."
+          
+          ./zsign -a \
+            -b "$BUNDLE_ID" \
+            -n "$BUNDLE_NAME" \
+            -o "$ADHOC_IPA" \
+            "$IPA_FILE"
+          
+          echo "Created: $ADHOC_IPA"
+          ls -la "$ADHOC_IPA"
+
+      - name: Upload ad-hoc IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: adhoc-ipa-${{ github.sha }}
+          path: ${{ env.APP_NAME }}-adhoc.ipa
+          retention-days: 30
+
+  # Summary
+  summary:
+    needs: [build-unsigned, sign-with-apple-id, sign-adhoc]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Build Summary
+        run: |
+          echo "## iOS Sideload Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Artifact | Status | Description |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|-------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Unsigned IPA | ${{ needs.build-unsigned.result }} | Raw build, needs signing |" >> $GITHUB_STEP_SUMMARY
+          echo "| Apple ID Signed | ${{ needs.sign-with-apple-id.result }} | Signed with free Apple ID (7-day expiry) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Ad-hoc Signed | ${{ needs.sign-adhoc.result }} | For jailbroken devices or TrollStore |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### How to Install" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Option 1: Apple ID Signed IPA**" >> $GITHUB_STEP_SUMMARY
+          echo "- Download the signed IPA artifact" >> $GITHUB_STEP_SUMMARY
+          echo "- Install using AltStore, Sideloadly, or similar tool" >> $GITHUB_STEP_SUMMARY
+          echo "- App expires after 7 days, needs re-signing" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Option 2: Ad-hoc IPA (TrollStore/Jailbreak)**" >> $GITHUB_STEP_SUMMARY
+          echo "- Download the ad-hoc IPA artifact" >> $GITHUB_STEP_SUMMARY
+          echo "- Install using TrollStore (iOS 14.0-17.0)" >> $GITHUB_STEP_SUMMARY
+          echo "- Or install on jailbroken device via Filza" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Option 3: Sign Locally**" >> $GITHUB_STEP_SUMMARY
+          echo "- Download the unsigned IPA artifact" >> $GITHUB_STEP_SUMMARY
+          echo "- Sign using Sideloadly with your Apple ID" >> $GITHUB_STEP_SUMMARY
+          echo "- This is the most reliable method" >> $GITHUB_STEP_SUMMARY

@@ -6,8 +6,52 @@ Configure GitHub Actions for building iOS IPA files from your Tauri project.
 
 | Workflow | File | Use Case |
 |----------|------|----------|
+| **iOS Sideload Build** | `ios-sideload-build.yml` | Free Apple ID signing (like Sideloadly) |
 | **iOS Build** | `ios-build.yml` | Standard builds, manual certificate management |
 | **iOS Build (Fastlane)** | `ios-build-sparkfabrik.yml` | Team builds with Match certificate sharing |
+
+## Quick Start: Free Apple ID (No Developer Account)
+
+This is the easiest way to get an IPA you can install on your device.
+
+### Option A: Build + Sign Locally (Recommended)
+
+1. Go to **Actions** → **iOS Sideload Build**
+2. Click **Run workflow**
+3. Download the **unsigned-ipa** artifact
+4. Sign locally using [Sideloadly](https://sideloadly.io/) with your Apple ID
+5. Install on your device
+
+### Option B: CI Signing with Apple ID
+
+1. Add secrets to your repository:
+   - `APPLE_ID`: Your Apple ID email
+   - `APPLE_ID_PASSWORD`: App-specific password (see below)
+   - `ANISETTE_URL`: (optional) Custom anisette server
+
+2. Run the workflow - it will sign automatically
+
+### Creating App-Specific Password
+
+1. Go to [appleid.apple.com](https://appleid.apple.com)
+2. Sign in → Security → App-Specific Passwords
+3. Generate a new password
+4. Use this as `APPLE_ID_PASSWORD` secret
+
+### Limitations of Free Apple ID
+
+- Apps expire after **7 days** (need re-signing)
+- Maximum **3 apps** per device
+- Maximum **10 app IDs** per week
+- No push notifications
+- No App Groups, iCloud, etc.
+
+### Alternative: TrollStore (iOS 14.0-17.0)
+
+If your device supports TrollStore:
+1. Download the **adhoc-ipa** artifact
+2. Install via TrollStore
+3. App never expires!
 
 ## Quick Start (No Signing)
 
