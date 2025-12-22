@@ -35,13 +35,38 @@ jobs:
       - name: Initialize iOS project
         run: pnpm tauri ios init
 
-      - name: Build unsigned IPA
-        run: pnpm tauri ios build
+      - name: Build frontend
+        run: pnpm run build
+
+      - name: Build Rust library for iOS
+        run: |
+          cd src-tauri
+          cargo build --release --target aarch64-apple-ios
+
+      - name: Build unsigned app with xcodebuild
+        run: |
+          xcodebuild -project src-tauri/gen/apple/vortex-image.xcodeproj \
+            -scheme vortex-image_iOS \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM=""
+
+      - name: Create unsigned IPA for sideloading
+        run: |
+          mkdir -p Payload
+          cp -r build/Build/Products/Release-iphoneos/*.app Payload/
+          zip -r vortex-image-unsigned.ipa Payload
+          rm -rf Payload
 
       - uses: actions/upload-artifact@v4
         with:
           name: ios-unsigned-ipa
-          path: src-tauri/gen/apple/build/arm64/*.ipa
+          path: vortex-image-unsigned.ipa
           retention-days: 7
 
   build-android:
