@@ -11,9 +11,15 @@ use thiserror::Error;
 use tokio::fs;
 use tokio::time::sleep;
 
+// Centralized constants
 const CLIENT_ID: &str = "Ov23lijNSMM1i93CQdfQ";
 const MAX_RETRIES: u32 = 3;
 const INITIAL_RETRY_DELAY_MS: u64 = 1000;
+const UPLOAD_TIMEOUT_SECS: u64 = 120;
+const LFS_UPLOAD_TIMEOUT_SECS: u64 = 300;
+const LFS_THRESHOLD_BYTES: u64 = 50 * 1024 * 1024;
+const HTTP_POOL_SIZE: usize = 5;
+const DEFAULT_TIMEOUT_SECS: u64 = 30;
 
 #[derive(Error, Debug)]
 pub enum AppError {
@@ -42,11 +48,25 @@ pub struct HttpClient(pub Arc<Client>);
 impl HttpClient {
     pub fn new() -> Self {
         let client = Client::builder()
-            .pool_max_idle_per_host(5)
-            .timeout(std::time::Duration::from_secs(30))
+            .pool_max_idle_per_host(HTTP_POOL_SIZE)
+            .timeout(Duration::from_secs(DEFAULT_TIMEOUT_SECS))
+            .tcp_keepalive(Duration::from_secs(60))
             .build()
             .expect("Failed to create HTTP client");
         Self(Arc::new(client))
+    }
+    
+    /// Get a reference to the inner client
+    #[inline]
+    #[allow(dead_code)]
+    pub fn inner(&self) -> &Client {
+        &self.0
+    }
+}
+
+impl Default for HttpClient {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -82,10 +102,17 @@ where
 }
 
 /// Check if error is retryable (rate limit, server error, network)
+#[inline]
 fn is_retryable_status(status: reqwest::StatusCode) -> bool {
-    status == reqwest::StatusCode::TOO_MANY_REQUESTS
-        || status.is_server_error()
-        || status == reqwest::StatusCode::REQUEST_TIMEOUT
+    matches!(
+        status,
+        reqwest::StatusCode::TOO_MANY_REQUESTS
+            | reqwest::StatusCode::INTERNAL_SERVER_ERROR
+            | reqwest::StatusCode::BAD_GATEWAY
+            | reqwest::StatusCode::SERVICE_UNAVAILABLE
+            | reqwest::StatusCode::GATEWAY_TIMEOUT
+            | reqwest::StatusCode::REQUEST_TIMEOUT
+    )
 }
 
 #[derive(Serialize, Deserialize)]
@@ -237,7 +264,7 @@ pub async fn upload_photo(
         percent: 0,
     });
 
-    if total_bytes > 50 * 1024 * 1024 {
+    if total_bytes > LFS_THRESHOLD_BYTES {
         return upload_lfs_internal(&app, &client.0, content, &repo, &token, &safe_filename, &upload_id).await;
     }
 
@@ -263,7 +290,7 @@ pub async fn upload_photo(
     let res = client
         .0
         .put(&url)
-        .timeout(std::time::Duration::from_secs(120))
+        .timeout(Duration::from_secs(UPLOAD_TIMEOUT_SECS))
         .header("Authorization", format!("Bearer {}", token))
         .header("User-Agent", "vortex-image")
         .header("Accept", "application/vnd.github+json")
@@ -369,7 +396,7 @@ pub async fn upload_photo_processed(
     let res = client
         .0
         .put(&url)
-        .timeout(std::time::Duration::from_secs(120))
+        .timeout(Duration::from_secs(UPLOAD_TIMEOUT_SECS))
         .header("Authorization", format!("Bearer {}", token))
         .header("User-Agent", "vortex-image")
         .header("Accept", "application/vnd.github+json")
@@ -506,7 +533,7 @@ async fn upload_lfs_internal(
 
     let upload_res = client
         .put(upload_href)
-        .timeout(std::time::Duration::from_secs(300))
+        .timeout(Duration::from_secs(LFS_UPLOAD_TIMEOUT_SECS))
         .header("Content-Type", "application/octet-stream")
         .body(content)
         .send()
@@ -1119,7 +1146,7 @@ async fn upload_single_file(
         || async {
             let res = client
                 .put(&url)
-                .timeout(std::time::Duration::from_secs(120))
+                .timeout(Duration::from_secs(UPLOAD_TIMEOUT_SECS))
                 .header("Authorization", format!("Bearer {}", token))
                 .header("User-Agent", "vortex-image")
                 .header("Accept", "application/vnd.github+json")

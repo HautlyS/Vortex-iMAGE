@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed, onUnmounted } from 'vue'
 import { useGitHubAuth } from './composables/useGitHubAuth'
-import { usePhotoUpload, type Photo } from './composables/usePhotoUpload'
+import { usePhotoUpload, type Photo, type UploadStatus } from './composables/usePhotoUpload'
 import { useUploadToast } from './composables/useUploadToast'
 import { useAccentColor } from './composables/useAccentColor'
 import { useTheme } from './composables/useTheme'
@@ -11,8 +11,14 @@ import { useColorTags, PREDEFINED_COLORS } from './composables/useColorTags'
 import { usePhotoPreviewSize } from './composables/usePhotoPreviewSize'
 import { useDataDriver, type DataDriver } from './composables/useDataDriver'
 import { useBackupSettings } from './composables/useBackupSettings'
+import { useErrorBoundary } from './composables/useErrorBoundary'
+import { useTimeout } from './composables/useTimeout'
 import { open } from '@tauri-apps/plugin-dialog'
 import { invoke } from '@tauri-apps/api/core'
+import { 
+  UPLOAD, SHORTCUTS, TIMING,
+  injectCSSVariables 
+} from './config'
 import SpaceLoader from './components/SpaceLoader.vue'
 import AuthButton from './components/AuthButton.vue'
 import PhotoGallery from './components/PhotoGallery.vue'
@@ -28,6 +34,7 @@ import DataDriverManager from './components/DataDriverManager.vue'
 import BackupSettings from './components/BackupSettings.vue'
 import LocalImageBrowser from './components/LocalImageBrowser.vue'
 import SecuritySettings from './components/SecuritySettings.vue'
+import MobileNav from './components/MobileNav.vue'
 
 interface Album {
   name: string
@@ -47,6 +54,8 @@ const { loadTags, tagItems, getItemsByTag } = useColorTags()
 const { size: previewSize, setSize: setPreviewSize, loadSize: loadPreviewSize } = usePhotoPreviewSize()
 const { activeDriver, loadDrivers, setActiveDriver: _setActiveDriver } = useDataDriver()
 const { loadConfig: loadBackupConfig } = useBackupSettings()
+const { errors, hasError, clearErrors } = useErrorBoundary()
+const { createTimeout } = useTimeout()
 void _setActiveDriver // suppress unused warning
 
 // App state
@@ -62,6 +71,20 @@ const showBackupSettings = ref(false)
 const showLocalBrowser = ref(false)
 const showSecuritySettings = ref(false)
 const searchQuery = ref('')
+const debouncedSearchQuery = ref('')
+
+// Debounce search to improve performance - instance-specific
+const searchTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
+watch(searchQuery, (newQuery) => {
+  if (searchTimeout.value) clearTimeout(searchTimeout.value)
+  searchTimeout.value = createTimeout(() => {
+    debouncedSearchQuery.value = newQuery
+  }, TIMING.debounce.search)
+})
+
+onUnmounted(() => {
+  if (searchTimeout.value) clearTimeout(searchTimeout.value)
+})
 const viewMode = ref<'grid' | 'list'>('grid')
 const uploadError = ref<string | null>(null)
 
@@ -86,9 +109,9 @@ const loadingAlbums = ref(false)
 const filteredPhotos = computed(() => {
   let result = photos.value as Photo[]
   
-  // Filter by search
-  if (searchQuery.value) {
-    const q = searchQuery.value.toLowerCase()
+  // Filter by search (debounced)
+  if (debouncedSearchQuery.value) {
+    const q = debouncedSearchQuery.value.toLowerCase()
     result = result.filter(p => p.name.toLowerCase().includes(q))
   }
   
@@ -132,6 +155,9 @@ async function loadAlbums() {
 }
 
 onMounted(async () => {
+  // Inject CSS variables from config
+  injectCSSVariables()
+  
   await Promise.all([init(), initAccent(), loadTheme(), loadFavorites(), loadTags(), loadPreviewSize(), loadDrivers(), loadBackupConfig()])
   repoInput.value = repo.value
   
@@ -152,19 +178,33 @@ watch([token, repo], () => {
   }
 })
 
-// Sync upload queue with toast notifications
-watch(queue, (newQueue) => {
-  for (const item of newQueue) {
-    if (item.status === 'uploading' || item.status === 'pending') {
-      addTransfer(item.id, item.name, 'upload')
+// Sync upload queue with toast notifications - optimized with computed tracking
+const queueStatusMap = new Map<string, UploadStatus>()
+
+// Use computed for better performance tracking
+const queueItems = computed(() => 
+  queue.value.map(i => ({ id: i.id, status: i.status, progress: i.progress, name: i.name, error: i.error }))
+)
+
+watch(queueItems, (items) => {
+  for (const item of items) {
+    const prevStatus = queueStatusMap.get(item.id)
+    if (prevStatus !== item.status) {
+      queueStatusMap.set(item.id, item.status)
+      
+      if (item.status === 'uploading' || item.status === 'pending') {
+        addTransfer(item.id, item.name, 'upload')
+      } else if (item.status === 'success') {
+        setTransferStatus(item.id, 'completed')
+      } else if (item.status === 'failed') {
+        setTransferStatus(item.id, 'failed', item.error)
+      }
+    }
+    if (item.status === 'uploading') {
       updateProgress(item.id, item.progress)
-    } else if (item.status === 'success') {
-      setTransferStatus(item.id, 'completed')
-    } else if (item.status === 'failed') {
-      setTransferStatus(item.id, 'failed', item.error)
     }
   }
-}, { deep: true })
+}, { deep: false })
 
 // Save view mode when changed
 watch(viewMode, async (mode) => {
@@ -176,10 +216,12 @@ watch(viewMode, async (mode) => {
   } catch {}
 })
 
-// Keyboard shortcuts
+// Keyboard shortcuts using config
 function handleKeydown(e: KeyboardEvent) {
+  const { selectAll: selectAllKey, favorite: favKey, escape: escKey } = SHORTCUTS
+  
   // Ctrl+A - Select all
-  if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+  if ((e.ctrlKey || e.metaKey) && e.key === selectAllKey.key) {
     e.preventDefault()
     selectAll(filteredPhotos.value.map(p => p.sha))
   }
@@ -189,7 +231,7 @@ function handleKeydown(e: KeyboardEvent) {
     // TODO: Implement delete
   }
   // F - Toggle favorite
-  if (e.key === 'f' && selected.value.size > 0) {
+  if (e.key === favKey.key && selected.value.size > 0) {
     e.preventDefault()
     const selectedIds = getSelected()
     for (const id of selectedIds) {
@@ -198,7 +240,7 @@ function handleKeydown(e: KeyboardEvent) {
     }
   }
   // Escape - Clear selection / close menus
-  if (e.key === 'Escape') {
+  if (e.key === escKey.key) {
     clearSelection()
     contextMenu.value = null
   }
@@ -210,7 +252,11 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown))
 async function handleUploadClick() {
   uploadError.value = null
   try {
-    const files = await open({ multiple: true, directory: false, filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'heic', 'raw'] }] })
+    const files = await open({ 
+      multiple: true, 
+      directory: false, 
+      filters: [{ name: 'Images', extensions: [...UPLOAD.supportedFormats] }] 
+    })
     if (files) addToQueue(Array.isArray(files) ? files : [files])
   } catch (e) {
     uploadError.value = e instanceof Error ? e.message : 'Erro ao selecionar arquivos'
@@ -687,7 +733,7 @@ function dismissError() {
   inset: 0;
   background: rgba(10, 10, 11, 0.95);
   backdrop-filter: blur(12px);
-  z-index: 100;
+  z-index: var(--z-lightbox, 300);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -721,7 +767,7 @@ function dismissError() {
 
 /* Sidebar */
 .sidebar {
-  width: 240px;
+  width: var(--sidebar-width, 240px);
   background: #111113;
   border-right: 1px solid rgba(255,255,255,0.06);
   display: flex;
@@ -760,7 +806,7 @@ function dismissError() {
   font-size: 0.875rem;
   border-radius: 0.5rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--duration-fast, 150ms);
 }
 .nav-item:hover { background: rgba(255,255,255,0.05); color: #fafafa; }
 .nav-item.active { background: rgba(var(--accent-rgb, 99, 102, 241), 0.15); color: var(--accent-color, #818cf8); }
@@ -792,7 +838,7 @@ function dismissError() {
   color: #52525b;
   cursor: pointer;
   border-radius: 0.25rem;
-  transition: all 0.2s;
+  transition: all var(--duration-fast, 150ms);
 }
 .section-btn:hover { background: rgba(255,255,255,0.05); color: #a1a1aa; }
 .section-btn svg { width: 0.875rem; height: 0.875rem; }
@@ -837,7 +883,7 @@ function dismissError() {
   font-size: 0.8125rem;
   border-radius: 0.5rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--duration-fast, 150ms);
 }
 .add-driver-btn:hover { border-color: var(--accent-color, #818cf8); color: var(--accent-color, #818cf8); }
 .add-driver-btn svg { width: 0.875rem; height: 0.875rem; }
@@ -864,7 +910,12 @@ function dismissError() {
   gap: 1rem;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid rgba(255,255,255,0.06);
+  min-height: var(--header-height, 64px);
 }
+.header-left { display: flex; align-items: baseline; gap: 0.75rem; }
+.view-title { font-size: 1.25rem; font-weight: 600; margin: 0; }
+.photo-count { font-size: 0.75rem; color: var(--text-muted, #71717a); }
+
 .search-bar {
   flex: 1;
   max-width: 480px;
@@ -886,6 +937,20 @@ function dismissError() {
   outline: none;
 }
 .search-bar input::placeholder { color: #52525b; }
+.search-clear {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.1);
+  border: none;
+  border-radius: 50%;
+  color: #a1a1aa;
+  cursor: pointer;
+}
+.search-clear:hover { background: rgba(255,255,255,0.15); }
+.search-clear svg { width: 0.875rem; height: 0.875rem; }
 
 .header-actions { display: flex; align-items: center; gap: 0.5rem; margin-left: auto; }
 

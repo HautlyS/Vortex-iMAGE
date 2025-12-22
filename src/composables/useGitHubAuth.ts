@@ -19,81 +19,33 @@ interface GitHubUser {
 const token = ref<string | null>(null)
 const user = ref<GitHubUser | null>(null)
 const repo = ref<string>('')
-const tokenSecured = ref(false)
-
-let pollInterval: ReturnType<typeof setInterval> | null = null
-let pollTimeout: ReturnType<typeof setTimeout> | null = null
-
-function clearPolling() {
-  if (pollInterval) {
-    clearInterval(pollInterval)
-    pollInterval = null
-  }
-  if (pollTimeout) {
-    clearTimeout(pollTimeout)
-    pollTimeout = null
-  }
-}
-
-// Secure token storage helpers
-async function secureStoreToken(plainToken: string): Promise<void> {
-  try {
-    const encrypted = await invoke<number[]>('secure_store_token', { token: plainToken })
-    const store = await load('settings.json')
-    await store.set('encryptedToken', encrypted)
-    await store.delete('token') // Remove old plaintext token
-    await store.save()
-    tokenSecured.value = true
-  } catch (e) {
-    console.error('Failed to securely store token:', e)
-    // Fallback to regular storage
-    const store = await load('settings.json')
-    await store.set('token', plainToken)
-    await store.save()
-    tokenSecured.value = false
-  }
-}
-
-async function secureRetrieveToken(): Promise<string | null> {
-  try {
-    const store = await load('settings.json')
-    
-    // Try encrypted token first
-    const encrypted = await store.get<number[]>('encryptedToken')
-    if (encrypted && encrypted.length > 0) {
-      const plainToken = await invoke<string>('secure_retrieve_token', { encrypted })
-      tokenSecured.value = true
-      return plainToken
-    }
-    
-    // Fallback to old plaintext token and migrate it
-    const plainToken = await store.get<string>('token')
-    if (plainToken) {
-      // Migrate to secure storage
-      await secureStoreToken(plainToken)
-      return plainToken
-    }
-    
-    return null
-  } catch (e) {
-    console.error('Failed to retrieve token:', e)
-    // Try plaintext fallback
-    const store = await load('settings.json')
-    return await store.get<string>('token') || null
-  }
-}
 
 export function useGitHubAuth() {
   const loading = ref(false)
   const userCode = ref('')
   const error = ref<string | null>(null)
+  
+  // Instance-specific polling variables to prevent conflicts
+  let pollInterval: ReturnType<typeof setInterval> | null = null
+  let pollTimeout: ReturnType<typeof setTimeout> | null = null
+
+  function clearPolling() {
+    if (pollInterval) {
+      clearInterval(pollInterval)
+      pollInterval = null
+    }
+    if (pollTimeout) {
+      clearTimeout(pollTimeout)
+      pollTimeout = null
+    }
+  }
 
   onUnmounted(clearPolling)
 
   async function init() {
     try {
       const store = await load('settings.json')
-      token.value = await secureRetrieveToken()
+      token.value = await store.get<string>('token') || null
       repo.value = await store.get<string>('repo') || ''
       if (token.value) {
         user.value = await invoke<GitHubUser>('get_user', { token: token.value })
@@ -101,25 +53,27 @@ export function useGitHubAuth() {
     } catch {
       token.value = null
       user.value = null
-      const store = await load('settings.json')
-      await store.delete('token')
-      await store.delete('encryptedToken')
-      await store.save()
+      try {
+        const store = await load('settings.json')
+        await store.delete('token')
+        await store.save()
+      } catch {
+        // Silent fail on cleanup
+      }
     }
   }
 
   async function startLogin() {
     if (loading.value) return // Prevent multiple calls
-    
     clearPolling()
     loading.value = true
     error.value = null
-
+    
     try {
       const res = await invoke<DeviceCodeResponse>('start_oauth')
       userCode.value = res.user_code
       await open(res.verification_uri)
-
+      
       // Set timeout for expiration
       pollTimeout = setTimeout(() => {
         clearPolling()
@@ -128,42 +82,32 @@ export function useGitHubAuth() {
         error.value = 'Authentication expired. Please try again.'
       }, res.expires_in * 1000)
 
-      // Poll every 5 seconds (GitHub's minimum interval)
-      const pollIntervalMs = Math.max(res.interval * 1000, 5000)
-      
       pollInterval = setInterval(async () => {
         try {
-          const result = await invoke<string | null>('poll_oauth', { deviceCode: res.device_code })
-          
-          // Check if we got a token (non-null, non-empty string)
-          if (result && typeof result === 'string' && result.length > 0) {
+          const t = await invoke<string | null>('poll_oauth', { deviceCode: res.device_code })
+          if (t) {
             clearPolling()
-            token.value = result
+            token.value = t
+            user.value = await invoke<GitHubUser>('get_user', { token: t })
             
             try {
-              const fetchedUser = await invoke<GitHubUser>('get_user', { token: result })
-              user.value = fetchedUser
-            } catch (userErr) {
-              console.error('Failed to fetch user:', userErr)
+              const store = await load('settings.json')
+              await store.set('token', t)
+              await store.save()
+            } catch {
+              // Continue even if save fails
             }
             
-            // Store token securely
-            await secureStoreToken(result)
-            
-            userCode.value = ''
             loading.value = false
+            userCode.value = ''
           }
         } catch (e) {
-          const errStr = String(e)
-          // Only stop polling on real errors, not pending states
-          if (!errStr.includes('pending') && !errStr.includes('slow_down')) {
-            clearPolling()
-            loading.value = false
-            userCode.value = ''
-            error.value = errStr
-          }
+          clearPolling()
+          loading.value = false
+          userCode.value = ''
+          error.value = String(e)
         }
-      }, pollIntervalMs)
+      }, res.interval * 1000)
     } catch (e) {
       loading.value = false
       error.value = String(e)
@@ -174,31 +118,37 @@ export function useGitHubAuth() {
     clearPolling()
     token.value = null
     user.value = null
-    tokenSecured.value = false
-    const store = await load('settings.json')
-    await store.delete('token')
-    await store.delete('encryptedToken')
-    await store.save()
+    
+    try {
+      const store = await load('settings.json')
+      await store.delete('token')
+      await store.save()
+    } catch {
+      // Silent fail
+    }
   }
 
   async function setRepo(r: string) {
     repo.value = r
-    const store = await load('settings.json')
-    await store.set('repo', r)
-    await store.save()
+    try {
+      const store = await load('settings.json')
+      await store.set('repo', r)
+      await store.save()
+    } catch {
+      // Silent fail
+    }
   }
 
-  return { 
-    token, 
-    user, 
-    repo, 
-    loading, 
-    userCode, 
-    error, 
-    tokenSecured,
-    init, 
-    startLogin, 
-    logout, 
-    setRepo 
+  return {
+    token,
+    user,
+    repo,
+    loading,
+    userCode,
+    error,
+    init,
+    startLogin,
+    logout,
+    setRepo
   }
 }

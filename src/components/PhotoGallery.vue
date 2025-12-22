@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import PhotoPreview from './PhotoPreview.vue'
 import { useSelection } from '../composables/useSelection'
 import { useFavorites } from '../composables/useFavorites'
 import { useColorTags } from '../composables/useColorTags'
+import { GALLERY, SHORTCUTS } from '../config'
 
 interface Photo {
   name: string
@@ -32,9 +33,12 @@ const { getItemTags } = useColorTags()
 
 const selectedPhoto = ref<Photo | null>(null)
 const selectedIndex = computed(() => props.photos.findIndex(p => p.sha === selectedPhoto.value?.sha))
+const galleryRef = ref<HTMLElement | null>(null)
 
+// Use config for grid sizing
 const gridStyle = computed(() => ({
-  gridTemplateColumns: `repeat(auto-fill, minmax(${props.previewSize || 180}px, 1fr))`
+  gridTemplateColumns: `repeat(auto-fill, minmax(${props.previewSize || GALLERY.preview.defaultSize}px, 1fr))`,
+  gap: `${GALLERY.grid.gap}px`
 }))
 
 const allPhotoIds = computed(() => props.photos.map(p => p.sha))
@@ -86,10 +90,27 @@ function prevPhoto() {
 
 function handleKeydown(e: KeyboardEvent) {
   if (!selectedPhoto.value) return
-  if (e.key === 'Escape') closeLightbox()
+  if (e.key === SHORTCUTS.escape.key) closeLightbox()
   if (e.key === 'ArrowRight') nextPhoto()
   if (e.key === 'ArrowLeft') prevPhoto()
+  if (e.key === SHORTCUTS.favorite.key) handlePhotoFavorite(selectedPhoto.value)
 }
+
+// Focus management for accessibility - instance-specific
+const keydownHandler = ref<((e: KeyboardEvent) => void) | null>(null)
+
+onMounted(() => {
+  keydownHandler.value = handleKeydown
+  document.addEventListener('keydown', keydownHandler.value)
+  galleryRef.value?.focus()
+})
+
+onUnmounted(() => {
+  if (keydownHandler.value) {
+    document.removeEventListener('keydown', keydownHandler.value)
+    keydownHandler.value = null
+  }
+})
 
 function formatSize(bytes?: number): string {
   if (!bytes) return '-'
@@ -104,11 +125,20 @@ function copyUrl(url: string) {
 </script>
 
 <template>
-  <div class="gallery" @keydown="handleKeydown" tabindex="0">
-    <!-- Loading -->
-    <div v-if="loading" class="loading">
-      <div class="spinner"></div>
+  <div 
+    ref="galleryRef" 
+    class="gallery" 
+    @keydown="handleKeydown" 
+    tabindex="0"
+    role="grid"
+    :aria-label="`Galeria com ${photos.length} fotos`"
+    aria-busy="false"
+  >
+    <!-- Loading with skeleton -->
+    <div v-if="loading" class="loading" role="status" aria-live="polite">
+      <div class="spinner" aria-hidden="true"></div>
       <p>Carregando fotos...</p>
+      <span class="sr-only">Carregando galeria de fotos</span>
     </div>
 
     <!-- Empty -->
@@ -129,15 +159,17 @@ function copyUrl(url: string) {
     </div>
 
     <!-- Grid View -->
-    <div v-else-if="viewMode === 'grid'" class="photo-grid" :style="gridStyle">
+    <div v-else-if="viewMode === 'grid'" class="photo-grid" :style="gridStyle" role="list">
       <PhotoPreview
-        v-for="photo in photos"
+        v-for="(photo, index) in photos"
         :key="photo.sha"
         :photo="photo"
-        :size="previewSize || 180"
+        :size="previewSize || GALLERY.preview.defaultSize"
         :selected="isSelected(photo.sha)"
         :favorited="isFavorite(photo.sha)"
         :color-tag="getPhotoColorTag(photo)"
+        :tabindex="index === 0 ? 0 : -1"
+        role="listitem"
         @select="handlePhotoSelect"
         @favorite="handlePhotoFavorite"
         @contextmenu="handlePhotoContextMenu"
@@ -238,6 +270,19 @@ function copyUrl(url: string) {
 
 <style scoped>
 .gallery { outline: none; }
+
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 
 /* Loading */
 .loading {

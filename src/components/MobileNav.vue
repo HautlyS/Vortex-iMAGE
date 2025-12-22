@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useTheme } from '../composables/useTheme'
+import { TOUCH } from '../config'
 
 defineProps<{
   currentView: 'photos' | 'favorites' | 'albums' | 'tags'
@@ -12,6 +13,13 @@ const emit = defineEmits<{
 }>()
 
 const { accentColor } = useTheme()
+
+// Touch feedback helper
+function triggerHaptic() {
+  if ('vibrate' in navigator) {
+    navigator.vibrate(10)
+  }
+}
 
 const navItems = computed(() => [
   {
@@ -65,6 +73,7 @@ const navItems = computed(() => [
 ])
 
 function handleClick(item: typeof navItems.value[0]) {
+  triggerHaptic()
   if (item.id === 'settings') {
     emit('settings')
   } else {
@@ -74,20 +83,28 @@ function handleClick(item: typeof navItems.value[0]) {
 </script>
 
 <template>
-  <nav class="mobile-nav" :style="{ '--nav-accent': accentColor }">
+  <nav 
+    class="mobile-nav" 
+    :style="{ '--nav-accent': accentColor, '--touch-min': `${TOUCH.minTarget}px` }"
+    role="navigation"
+    aria-label="Navegação principal"
+  >
     <button 
       v-for="item in navItems"
       :key="item.id"
       class="mobile-nav-item" 
       :class="{ active: currentView === item.id }"
+      :aria-current="currentView === item.id ? 'page' : undefined"
+      :aria-label="item.label"
       @click="handleClick(item)"
     >
       <span 
         class="nav-icon" 
         v-html="currentView === item.id ? item.iconFilled : item.icon"
+        aria-hidden="true"
       />
       <span class="nav-label">{{ item.label }}</span>
-      <span v-if="currentView === item.id" class="active-indicator" />
+      <span v-if="currentView === item.id" class="active-indicator" aria-hidden="true" />
     </button>
   </nav>
 </template>
@@ -101,15 +118,15 @@ function handleClick(item: typeof navItems.value[0]) {
   .mobile-nav {
     display: flex;
     position: fixed;
-    bottom: var(--mobile-gap-md, 12px);
-    left: var(--mobile-gap-md, 12px);
-    right: var(--mobile-gap-md, 12px);
-    bottom: calc(var(--mobile-gap-md, 12px) + env(safe-area-inset-bottom, 0px));
+    bottom: var(--mobile-nav-gap, 12px);
+    left: var(--mobile-nav-gap, 12px);
+    right: var(--mobile-nav-gap, 12px);
+    bottom: calc(var(--mobile-nav-gap, 12px) + env(safe-area-inset-bottom, 0px));
     height: var(--mobile-nav-height, 64px);
     background: var(--amoled-surface-2, #121212);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: var(--radius-xl, 20px);
-    z-index: 100;
+    z-index: var(--z-mobileNav, 100);
     justify-content: space-around;
     align-items: center;
     box-shadow: 
@@ -125,6 +142,8 @@ function handleClick(item: typeof navItems.value[0]) {
     align-items: center;
     justify-content: center;
     gap: 4px;
+    min-width: var(--touch-min, 44px);
+    min-height: var(--touch-min, 44px);
     padding: var(--mobile-gap-sm, 8px) var(--mobile-gap-lg, 16px);
     background: transparent;
     border: none;
@@ -133,10 +152,11 @@ function handleClick(item: typeof navItems.value[0]) {
     font-weight: 600;
     letter-spacing: 0.02em;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all var(--duration-fast, 150ms) var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
     -webkit-tap-highlight-color: transparent;
     border-radius: var(--radius-lg, 14px);
     position: relative;
+    touch-action: manipulation;
   }
 
   .nav-icon {
@@ -145,7 +165,7 @@ function handleClick(item: typeof navItems.value[0]) {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all var(--duration-fast, 150ms) var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
   }
 
   .nav-icon :deep(svg) {
@@ -154,7 +174,7 @@ function handleClick(item: typeof navItems.value[0]) {
   }
 
   .nav-label {
-    transition: all 0.2s ease;
+    transition: all var(--duration-fast, 150ms) ease;
   }
 
   .mobile-nav-item.active {
@@ -176,7 +196,7 @@ function handleClick(item: typeof navItems.value[0]) {
     background: var(--nav-accent, var(--accent-color, #00ff41));
     border-radius: var(--radius-full, 9999px);
     box-shadow: 0 0 12px var(--nav-accent, var(--accent-color, #00ff41));
-    animation: indicator-appear 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: indicator-appear 0.3s var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
   }
 
   @keyframes indicator-appear {
@@ -192,6 +212,16 @@ function handleClick(item: typeof navItems.value[0]) {
 
   .mobile-nav-item:active {
     transform: scale(0.92);
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-nav-item,
+    .nav-icon,
+    .active-indicator {
+      transition: none;
+      animation: none;
+    }
   }
 }
 </style>
