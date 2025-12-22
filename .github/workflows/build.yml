@@ -35,34 +35,30 @@ jobs:
       - name: Initialize iOS project
         run: pnpm tauri ios init
 
+      - name: Disable code signing in Xcode project
+        run: |
+          # Modify project.pbxproj to disable code signing
+          PBXPROJ="src-tauri/gen/apple/vortex-image.xcodeproj/project.pbxproj"
+          
+          # Replace code signing settings
+          sed -i '' 's/CODE_SIGN_IDENTITY = "Apple Development";/CODE_SIGN_IDENTITY = "";/g' "$PBXPROJ"
+          sed -i '' 's/CODE_SIGN_IDENTITY = "iPhone Developer";/CODE_SIGN_IDENTITY = "";/g' "$PBXPROJ"
+          sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=iphoneos\*\]" = "iPhone Developer";/"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";/g' "$PBXPROJ"
+          
+          # Add/replace signing settings in build settings
+          sed -i '' 's/DEVELOPMENT_TEAM = .*;/DEVELOPMENT_TEAM = "";/g' "$PBXPROJ"
+          
+          # Insert CODE_SIGNING_REQUIRED = NO and CODE_SIGNING_ALLOWED = NO after each CODE_SIGN_IDENTITY line
+          sed -i '' '/CODE_SIGN_IDENTITY = "";/a\
+				CODE_SIGNING_ALLOWED = NO;\
+				CODE_SIGNING_REQUIRED = NO;
+          ' "$PBXPROJ"
+
       - name: Build frontend
         run: pnpm run build
 
-      - name: Create export options plist
-        run: |
-          cat > ExportOptions.plist << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key>
-            <string>development</string>
-            <key>compileBitcode</key>
-            <false/>
-            <key>signingStyle</key>
-            <string>manual</string>
-          </dict>
-          </plist>
-          EOF
-
-      - name: Build iOS app (unsigned)
-        run: |
-          pnpm tauri ios build -- \
-            -allowProvisioningUpdates \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="-" \
-            AD_HOC_CODE_SIGNING_ALLOWED=YES
+      - name: Build iOS app
+        run: pnpm tauri ios build
 
       - name: Create unsigned IPA for sideloading
         run: |
