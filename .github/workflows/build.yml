@@ -38,28 +38,42 @@ jobs:
       - name: Build frontend
         run: pnpm run build
 
-      - name: Build Rust library for iOS
+      - name: Create export options plist
         run: |
-          cd src-tauri
-          cargo build --release --target aarch64-apple-ios
+          cat > ExportOptions.plist << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>development</string>
+            <key>compileBitcode</key>
+            <false/>
+            <key>signingStyle</key>
+            <string>manual</string>
+          </dict>
+          </plist>
+          EOF
 
-      - name: Build unsigned app with xcodebuild
+      - name: Build iOS app (unsigned)
         run: |
-          xcodebuild -project src-tauri/gen/apple/vortex-image.xcodeproj \
-            -scheme vortex-image_iOS \
-            -configuration Release \
-            -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
-            -derivedDataPath build \
+          pnpm tauri ios build -- \
+            -allowProvisioningUpdates \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
-            DEVELOPMENT_TEAM=""
+            CODE_SIGN_IDENTITY="-" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES
 
       - name: Create unsigned IPA for sideloading
         run: |
+          APP_PATH=$(find src-tauri/gen/apple/build -name "*.app" -type d | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Looking in DerivedData..."
+            APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "vortex-image_iOS.app" -type d 2>/dev/null | head -1)
+          fi
+          echo "Found app at: $APP_PATH"
           mkdir -p Payload
-          cp -r build/Build/Products/Release-iphoneos/*.app Payload/
+          cp -r "$APP_PATH" Payload/
           zip -r vortex-image-unsigned.ipa Payload
           rm -rf Payload
 
