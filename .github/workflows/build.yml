@@ -75,57 +75,56 @@ jobs:
           set -e
           echo "Starting iOS build..."
           
-          if pnpm tauri ios build --release --verbose; then
-            echo "Tauri build succeeded"
+          # Skip Tauri build, go directly to xcodebuild with proper configuration
+          echo "Using xcodebuild directly for better control..."
+          
+          # Find workspace or project
+          WORKSPACE=$(find src-tauri/gen/apple -name "*.xcworkspace" | head -1)
+          PROJECT=$(find src-tauri/gen/apple -name "*.xcodeproj" | head -1)
+          
+          if [ -n "$WORKSPACE" ]; then
+            echo "Using workspace: $WORKSPACE"
+            SCHEME=$(xcodebuild -workspace "$WORKSPACE" -list | grep -A 100 "Schemes:" | grep -v "Schemes:" | sed 's/^[[:space:]]*//' | head -1)
+            echo "Using scheme: $SCHEME"
+            
+            xcodebuild clean -workspace "$WORKSPACE" -scheme "$SCHEME" -configuration Release
+            xcodebuild archive \
+              -workspace "$WORKSPACE" \
+              -scheme "$SCHEME" \
+              -configuration Release \
+              -sdk iphoneos \
+              -destination generic/platform=iOS \
+              -archivePath ./build/app.xcarchive \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGNING_ALLOWED=NO \
+              DEVELOPMENT_TEAM="" \
+              CODE_SIGN_IDENTITY="" \
+              PROVISIONING_PROFILE_SPECIFIER="" \
+              -allowProvisioningUpdates
+              
+          elif [ -n "$PROJECT" ]; then
+            echo "Using project: $PROJECT"
+            SCHEME=$(xcodebuild -project "$PROJECT" -list | grep -A 100 "Schemes:" | grep -v "Schemes:" | sed 's/^[[:space:]]*//' | head -1)
+            echo "Using scheme: $SCHEME"
+            
+            xcodebuild clean -project "$PROJECT" -scheme "$SCHEME" -configuration Release
+            xcodebuild archive \
+              -project "$PROJECT" \
+              -scheme "$SCHEME" \
+              -configuration Release \
+              -sdk iphoneos \
+              -destination generic/platform=iOS \
+              -archivePath ./build/app.xcarchive \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGNING_ALLOWED=NO \
+              DEVELOPMENT_TEAM="" \
+              CODE_SIGN_IDENTITY="" \
+              PROVISIONING_PROFILE_SPECIFIER="" \
+              -allowProvisioningUpdates
           else
-            echo "Tauri build failed, trying xcodebuild directly..."
-            
-            # Find workspace or project
-            WORKSPACE=$(find src-tauri/gen/apple -name "*.xcworkspace" | head -1)
-            PROJECT=$(find src-tauri/gen/apple -name "*.xcodeproj" | head -1)
-            
-            if [ -n "$WORKSPACE" ]; then
-              echo "Using workspace: $WORKSPACE"
-              SCHEME=$(xcodebuild -workspace "$WORKSPACE" -list | grep -A 100 "Schemes:" | grep -v "Schemes:" | sed 's/^[[:space:]]*//' | head -1)
-              echo "Using scheme: $SCHEME"
-              
-              xcodebuild clean -workspace "$WORKSPACE" -scheme "$SCHEME" -configuration Release
-              xcodebuild archive \
-                -workspace "$WORKSPACE" \
-                -scheme "$SCHEME" \
-                -configuration Release \
-                -sdk iphoneos \
-                -destination generic/platform=iOS \
-                -archivePath ./build/app.xcarchive \
-                CODE_SIGNING_REQUIRED=NO \
-                CODE_SIGNING_ALLOWED=NO \
-                DEVELOPMENT_TEAM="" \
-                CODE_SIGN_IDENTITY="" \
-                -allowProvisioningUpdates
-                
-            elif [ -n "$PROJECT" ]; then
-              echo "Using project: $PROJECT"
-              SCHEME=$(xcodebuild -project "$PROJECT" -list | grep -A 100 "Schemes:" | grep -v "Schemes:" | sed 's/^[[:space:]]*//' | head -1)
-              echo "Using scheme: $SCHEME"
-              
-              xcodebuild clean -project "$PROJECT" -scheme "$SCHEME" -configuration Release
-              xcodebuild archive \
-                -project "$PROJECT" \
-                -scheme "$SCHEME" \
-                -configuration Release \
-                -sdk iphoneos \
-                -destination generic/platform=iOS \
-                -archivePath ./build/app.xcarchive \
-                CODE_SIGNING_REQUIRED=NO \
-                CODE_SIGNING_ALLOWED=NO \
-                DEVELOPMENT_TEAM="" \
-                CODE_SIGN_IDENTITY="" \
-                -allowProvisioningUpdates
-            else
-              echo "No Xcode project found"
-              find src-tauri/gen/apple -name "*.xc*" || echo "No Xcode files found"
-              exit 1
-            fi
+            echo "No Xcode project found"
+            find src-tauri/gen/apple -name "*.xc*" || echo "No Xcode files found"
+            exit 1
           fi
 
       - name: Create unsigned IPA
