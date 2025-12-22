@@ -80,7 +80,7 @@ jobs:
         run: pnpm tauri android init
 
       - name: Build Android APK
-        run: pnpm tauri android build --apk
+        run: pnpm tauri android build
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
 
