@@ -71,12 +71,11 @@ jobs:
         id: build
         run: |
           # Build for iOS device (arm64) - creates .app bundle
-          # Note: Without signing, we can't create a proper IPA for device installation
-          # But we can build the .app for simulator or manual signing later
+          # Tauri iOS targets: aarch64, aarch64-sim, x86_64
           
-          pnpm tauri ios build --target aarch64-apple-ios 2>&1 || {
-            echo "::warning::Full iOS build failed, trying simulator build..."
-            pnpm tauri ios build --target aarch64-apple-ios-sim 2>&1 || true
+          pnpm tauri ios build --target aarch64 2>&1 || {
+            echo "::warning::Device build failed, trying simulator build..."
+            pnpm tauri ios build --target aarch64-sim 2>&1 || true
           }
           
           # Find built artifacts
