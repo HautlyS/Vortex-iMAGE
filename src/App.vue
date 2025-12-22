@@ -54,7 +54,7 @@ const { loadTags, tagItems, getItemsByTag } = useColorTags()
 const { size: previewSize, setSize: setPreviewSize, loadSize: loadPreviewSize } = usePhotoPreviewSize()
 const { activeDriver, loadDrivers, setActiveDriver: _setActiveDriver } = useDataDriver()
 const { loadConfig: loadBackupConfig } = useBackupSettings()
-const { errors, hasError, clearErrors } = useErrorBoundary()
+const { clearErrors } = useErrorBoundary()
 const { createTimeout } = useTimeout()
 void _setActiveDriver // suppress unused warning
 
