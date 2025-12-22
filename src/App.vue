@@ -11,7 +11,6 @@ import { useColorTags, PREDEFINED_COLORS } from './composables/useColorTags'
 import { usePhotoPreviewSize } from './composables/usePhotoPreviewSize'
 import { useDataDriver, type DataDriver } from './composables/useDataDriver'
 import { useBackupSettings } from './composables/useBackupSettings'
-import { useErrorBoundary } from './composables/useErrorBoundary'
 import { useTimeout } from './composables/useTimeout'
 import { open } from '@tauri-apps/plugin-dialog'
 import { invoke } from '@tauri-apps/api/core'
@@ -54,7 +53,6 @@ const { loadTags, tagItems, getItemsByTag } = useColorTags()
 const { size: previewSize, setSize: setPreviewSize, loadSize: loadPreviewSize } = usePhotoPreviewSize()
 const { activeDriver, loadDrivers, setActiveDriver: _setActiveDriver } = useDataDriver()
 const { loadConfig: loadBackupConfig } = useBackupSettings()
-const { clearErrors } = useErrorBoundary()
 const { createTimeout } = useTimeout()
 void _setActiveDriver // suppress unused warning
 
