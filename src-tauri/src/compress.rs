@@ -54,6 +54,20 @@ impl From<&str> for Algorithm {
     }
 }
 
+impl Algorithm {
+    pub fn try_from_str(s: &str) -> Result<Self, CompressError> {
+        match s.to_lowercase().as_str() {
+            "zstd" => Ok(Self::Zstd),
+            "lz4" => Ok(Self::Lz4),
+            "snap" | "snappy" => Ok(Self::Snap),
+            "brotli" | "br" => Ok(Self::Brotli),
+            "gzip" | "gz" => Ok(Self::Gzip),
+            "none" => Ok(Self::None),
+            _ => Err(CompressError::UnsupportedAlgorithm(s.to_string())),
+        }
+    }
+}
+
 /// Compression settings
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CompressionSettings {
@@ -413,6 +427,24 @@ pub fn decompress_file_data(
 // ============================================================================
 
 use crate::github::AppError;
+
+/// Compress data with specified algorithm (strict mode - errors on unknown algorithm)
+#[tauri::command]
+pub async fn compress_data_strict(
+    data: Vec<u8>,
+    algorithm: String,
+    level: Option<i32>,
+) -> Result<CompressionResult, AppError> {
+    let algo = Algorithm::try_from_str(&algorithm)
+        .map_err(|e| AppError::Validation(e.to_string()))?;
+    let settings = CompressionSettings {
+        algorithm: algo,
+        level: level.unwrap_or(3),
+        prefer_speed: false,
+    };
+    compress(&data, &settings)
+        .map_err(|e| AppError::Validation(e.to_string()))
+}
 
 /// Compress data with specified algorithm
 #[tauri::command]

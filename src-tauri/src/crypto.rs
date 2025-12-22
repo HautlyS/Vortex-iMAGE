@@ -322,6 +322,22 @@ impl HybridKeypair {
 }
 
 
+/// Check if pqcrypto backend is available
+pub fn is_pqcrypto_backend() -> bool {
+    #[cfg(feature = "pqcrypto-backend")]
+    { true }
+    #[cfg(not(feature = "pqcrypto-backend"))]
+    { false }
+}
+
+/// Require pqcrypto backend or return NotSupported
+pub fn require_pqcrypto_backend() -> Result<(), CryptoError> {
+    if !is_pqcrypto_backend() {
+        return Err(CryptoError::NotSupported);
+    }
+    Ok(())
+}
+
 // ============================================================================
 // Serialization for HybridKeypair
 // ============================================================================
@@ -971,6 +987,16 @@ pub async fn verify_signature(data: Vec<u8>, signature: Vec<u8>, public_bundle: 
     }
 }
 
+#[tauri::command]
+pub async fn verify_signature_with_keypair(data: Vec<u8>, signature: Vec<u8>, keypair_bytes: Vec<u8>) -> Result<bool, AppError> {
+    let keypair = HybridKeypair::from_bytes(&keypair_bytes)
+        .map_err(|e| AppError::Validation(e.to_string()))?;
+    match keypair.verify(&data, &signature) {
+        Ok(()) => Ok(true),
+        Err(_) => Ok(false),
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SessionKeysResult {
     pub encryption_key: Vec<u8>,
@@ -1038,6 +1064,20 @@ pub async fn secure_store_token(token: String) -> Result<Vec<u8>, AppError> {
 #[tauri::command]
 pub async fn secure_retrieve_token(encrypted: Vec<u8>) -> Result<String, AppError> {
     decrypt_token(&encrypted).map_err(|e| AppError::Validation(e.to_string()))
+}
+
+#[tauri::command]
+pub fn check_pqcrypto_backend() -> serde_json::Value {
+    serde_json::json!({
+        "available": is_pqcrypto_backend(),
+        "backend": if is_pqcrypto_backend() { "pqcrypto" } else { "pure-rust" }
+    })
+}
+
+#[tauri::command]
+pub fn require_optimized_backend() -> Result<(), AppError> {
+    require_pqcrypto_backend()
+        .map_err(|e| AppError::Validation(e.to_string()))
 }
 
 #[tauri::command]

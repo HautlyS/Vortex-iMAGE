@@ -11,15 +11,16 @@ use github::{
 };
 
 use compress::{
-    compress_data, decompress_data, estimate_compression, list_compression_algorithms,
+    compress_data, compress_data_strict, decompress_data, estimate_compression, list_compression_algorithms,
     compress_data_auto, compress_file, decompress_file, get_compression_recommendation
 };
 
 use crypto::{
     generate_keypair, encrypt_data_password, decrypt_data_password,
     hash_data_blake3, get_crypto_info, encrypt_keypair, decrypt_keypair,
-    encrypt_hybrid, decrypt_hybrid, sign_data, verify_signature, derive_session_keys,
-    secure_store_token, secure_retrieve_token, encrypt_file, decrypt_file
+    encrypt_hybrid, decrypt_hybrid, sign_data, verify_signature, verify_signature_with_keypair,
+    derive_session_keys, secure_store_token, secure_retrieve_token, encrypt_file, decrypt_file,
+    check_pqcrypto_backend, require_optimized_backend
 };
 
 use pipeline::{
@@ -64,6 +65,7 @@ pub fn run() {
             get_local_image_info,
             // Compression
             compress_data,
+            compress_data_strict,
             compress_data_auto,
             decompress_data,
             estimate_compression,
@@ -86,6 +88,7 @@ pub fn run() {
             // Cryptography - Signatures
             sign_data,
             verify_signature,
+            verify_signature_with_keypair,
             // Cryptography - Session keys
             derive_session_keys,
             // Cryptography - Secure token storage
@@ -94,6 +97,9 @@ pub fn run() {
             // Cryptography - File encryption
             encrypt_file,
             decrypt_file,
+            // Cryptography - Backend info
+            check_pqcrypto_backend,
+            require_optimized_backend,
             // Pipeline processing
             pipeline_process,
             pipeline_reverse,
