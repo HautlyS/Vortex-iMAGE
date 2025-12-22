@@ -206,19 +206,25 @@ jobs:
           echo "Disabling code signing in: $PBXPROJ"
           
           # Disable code signing completely
-          sed -i '' 's/CODE_SIGN_IDENTITY = "[^"]*"/CODE_SIGN_IDENTITY = ""/g' "$PBXPROJ"
-          sed -i '' 's/CODE_SIGN_IDENTITY = -/CODE_SIGN_IDENTITY = ""/g' "$PBXPROJ"
-          sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=iphoneos\*\]" = "[^"]*"/"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = ""/g' "$PBXPROJ"
-          sed -i '' 's/CODE_SIGNING_REQUIRED = YES/CODE_SIGNING_REQUIRED = NO/g' "$PBXPROJ"
-          sed -i '' 's/CODE_SIGNING_ALLOWED = YES/CODE_SIGNING_ALLOWED = NO/g' "$PBXPROJ"
-          sed -i '' 's/DEVELOPMENT_TEAM = "[^"]*"/DEVELOPMENT_TEAM = ""/g' "$PBXPROJ"
+          sed -i '' 's/CODE_SIGN_IDENTITY = "[^"]*";/CODE_SIGN_IDENTITY = "";/g' "$PBXPROJ"
+          sed -i '' 's/CODE_SIGN_IDENTITY = -;/CODE_SIGN_IDENTITY = "";/g' "$PBXPROJ"
+          sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=iphoneos\*\]" = "[^"]*";/"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";/g' "$PBXPROJ"
+          sed -i '' 's/CODE_SIGNING_REQUIRED = YES;/CODE_SIGNING_REQUIRED = NO;/g' "$PBXPROJ"
+          sed -i '' 's/CODE_SIGNING_ALLOWED = YES;/CODE_SIGNING_ALLOWED = NO;/g' "$PBXPROJ"
+          sed -i '' 's/DEVELOPMENT_TEAM = "[^"]*";/DEVELOPMENT_TEAM = "";/g' "$PBXPROJ"
           
-          # Remove or modify the "Build Rust Code" script phase to not use tauri xcode-script
-          # This script requires a dev server which doesn't exist in CI
-          # We'll build Rust separately and skip this phase
+          # The Build Rust Code script phase calls tauri xcode-script which needs a dev server
+          # We need to make it exit successfully without doing anything
+          # Find the shellScript line and replace the tauri command with exit 0
+          sed -i '' 's|shellScript = ".*tauri ios xcode-script.*";|shellScript = "echo \\"Skipping Rust build in CI - pre-built\\"; exit 0;";|g' "$PBXPROJ"
           
-          # Comment out the script content by replacing it with a no-op
-          sed -i '' 's|pnpm tauri ios xcode-script|echo "Skipping tauri xcode-script in CI - Rust built separately"|g' "$PBXPROJ"
+          # Verify the file is still valid
+          if ! plutil -lint "$PBXPROJ" > /dev/null 2>&1; then
+            echo "::warning::pbxproj may be corrupted, checking..."
+            head -300 "$PBXPROJ" | tail -100
+          fi
+          
+          echo "Code signing disabled"
 
       - name: Build Rust library for iOS
         run: |

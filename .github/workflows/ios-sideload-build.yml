@@ -105,22 +105,24 @@ jobs:
           
           echo "Modifying: $PBXPROJ"
           
-          # Disable code signing completely
-          sed -i '' 's/CODE_SIGN_IDENTITY = "[^"]*"/CODE_SIGN_IDENTITY = ""/g' "$PBXPROJ"
-          sed -i '' 's/CODE_SIGN_IDENTITY = -/CODE_SIGN_IDENTITY = ""/g' "$PBXPROJ"
-          sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=iphoneos\*\]" = "[^"]*"/"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = ""/g' "$PBXPROJ"
+          # Disable code signing - preserve semicolons!
+          sed -i '' 's/CODE_SIGN_IDENTITY = "[^"]*";/CODE_SIGN_IDENTITY = "";/g' "$PBXPROJ"
+          sed -i '' 's/CODE_SIGN_IDENTITY = -;/CODE_SIGN_IDENTITY = "";/g' "$PBXPROJ"
+          sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=iphoneos\*\]" = "[^"]*";/"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";/g' "$PBXPROJ"
+          sed -i '' 's/CODE_SIGNING_REQUIRED = YES;/CODE_SIGNING_REQUIRED = NO;/g' "$PBXPROJ"
+          sed -i '' 's/CODE_SIGNING_ALLOWED = YES;/CODE_SIGNING_ALLOWED = NO;/g' "$PBXPROJ"
+          sed -i '' 's/DEVELOPMENT_TEAM = "[^"]*";/DEVELOPMENT_TEAM = "";/g' "$PBXPROJ"
           
-          # Set signing to manual and disable
-          sed -i '' 's/CODE_SIGNING_REQUIRED = YES/CODE_SIGNING_REQUIRED = NO/g' "$PBXPROJ"
-          sed -i '' 's/CODE_SIGNING_ALLOWED = YES/CODE_SIGNING_ALLOWED = NO/g' "$PBXPROJ"
+          # Replace the tauri xcode-script with exit 0 (proper shell script)
+          sed -i '' 's|shellScript = ".*tauri ios xcode-script.*";|shellScript = "echo \\"Skipping Rust build in CI\\"; exit 0;";|g' "$PBXPROJ"
           
-          # Remove development team requirement
-          sed -i '' 's/DEVELOPMENT_TEAM = "[^"]*"/DEVELOPMENT_TEAM = ""/g' "$PBXPROJ"
-          
-          # Replace the tauri xcode-script with a no-op (it requires dev server)
-          sed -i '' 's|pnpm tauri ios xcode-script|echo "Skipping tauri xcode-script in CI"|g' "$PBXPROJ"
-          
-          echo "Code signing disabled in project"
+          # Verify pbxproj is valid
+          if plutil -lint "$PBXPROJ" > /dev/null 2>&1; then
+            echo "✓ project.pbxproj is valid"
+          else
+            echo "::error::project.pbxproj is corrupted!"
+            exit 1
+          fi
 
       - name: Build Rust library for iOS
         run: |
