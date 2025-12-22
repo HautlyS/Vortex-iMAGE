@@ -1,0 +1,75 @@
+﻿2025-12-22T02:08:15.0250340Z ##[group]Run pnpm tauri ios init || true
+2025-12-22T02:08:15.0250660Z [36;1mpnpm tauri ios init || true[0m
+2025-12-22T02:08:15.0250860Z [36;1m[0m
+2025-12-22T02:08:15.0251070Z [36;1m# Verify iOS project was created[0m
+2025-12-22T02:08:15.0251350Z [36;1mif [[ ! -d "src-tauri/gen/apple" ]]; then[0m
+2025-12-22T02:08:15.0251700Z [36;1m  echo "::error::Failed to initialize iOS project"[0m
+2025-12-22T02:08:15.0251950Z [36;1m  exit 1[0m
+2025-12-22T02:08:15.0252100Z [36;1mfi[0m
+2025-12-22T02:08:15.0308640Z shell: /bin/bash -e {0}
+2025-12-22T02:08:15.0308870Z env:
+2025-12-22T02:08:15.0309090Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:15.0309310Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:15.0309480Z   APP_NAME: iMAGE
+2025-12-22T02:08:15.0309660Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:15.0309920Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:15.0310250Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:15.0310560Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:15.0310880Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:08:15.0311150Z   CACHE_ON_FAILURE: true
+2025-12-22T02:08:15.0311330Z ##[endgroup]
+2025-12-22T02:08:15.3140010Z 
+2025-12-22T02:08:15.3140860Z > vortex-image@0.1.0 tauri /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE
+2025-12-22T02:08:15.3141420Z > tauri ios init
+2025-12-22T02:08:15.3141840Z 
+2025-12-22T02:08:15.4918690Z         Warn No code signing certificates found. You must add one and set the certificate development team ID on the `bundle > iOS > developmentTeam` config value or the `APPLE_DEVELOPMENT_TEAM` environment variable. To list the available certificates, run `tauri info`.
+2025-12-22T02:08:15.6194820Z         Info package `xcodegen` not found
+2025-12-22T02:08:15.6196010Z         Info Installing `xcodegen` with brew...
+2025-12-22T02:08:17.6879040Z ✔︎ JSON API formula_tap_migrations.jws.json
+2025-12-22T02:08:17.6879530Z ✔︎ JSON API cask_tap_migrations.jws.json
+2025-12-22T02:08:19.1146010Z [32m==>[0m [1mFetching downloads for: [32mxcodegen[39m[0m
+2025-12-22T02:08:19.5526400Z ✔︎ Bottle Manifest xcodegen (2.44.1)
+2025-12-22T02:08:20.5672380Z ✔︎ Bottle xcodegen (2.44.1)
+2025-12-22T02:08:20.7652840Z [32m==>[0m [1mReinstalling [32mxcodegen[39m [0m
+2025-12-22T02:08:20.7777760Z [34m==>[0m [1mPouring xcodegen--2.44.1.arm64_sonoma.bottle.tar.gz[0m
+2025-12-22T02:08:20.9029490Z 🍺  /opt/homebrew/Cellar/xcodegen/2.44.1: 38 files, 7.4MB
+2025-12-22T02:08:20.9260270Z         Info package `libimobiledevice` not found
+2025-12-22T02:08:20.9260810Z         Info Installing `libimobiledevice` with brew...
+2025-12-22T02:08:22.1460130Z [32m==>[0m [1mFetching downloads for: [32mlibimobiledevice[39m[0m
+2025-12-22T02:08:22.5382420Z ✔︎ Bottle Manifest libimobiledevice (1.4.0)
+2025-12-22T02:08:23.1176350Z ✔︎ Bottle Manifest libplist (2.7.0)
+2025-12-22T02:08:23.1747900Z ✔︎ Bottle Manifest libimobiledevice-glue (1.3.2)
+2025-12-22T02:08:23.1767050Z ✔︎ Bottle Manifest libtatsu (1.0.5)
+2025-12-22T02:08:23.3298700Z ✔︎ Bottle libplist (2.7.0)
+2025-12-22T02:08:23.3300440Z ✔︎ Bottle libimobiledevice-glue (1.3.2)
+2025-12-22T02:08:23.3300990Z ✔︎ Bottle libtatsu (1.0.5)
+2025-12-22T02:08:23.5032950Z ✔︎ Bottle Manifest libusbmuxd (2.1.1)
+2025-12-22T02:08:23.5595460Z ✔︎ Bottle libusbmuxd (2.1.1)
+2025-12-22T02:08:23.6113740Z ✔︎ Bottle libimobiledevice (1.4.0)
+2025-12-22T02:08:23.6754630Z [32m==>[0m [1mReinstalling [32mlibimobiledevice[39m [0m
+2025-12-22T02:08:23.6983690Z [32m==>[0m [1mInstalling dependencies for libimobiledevice: [32mlibplist[39m, [32mlibimobiledevice-glue[39m, [32mlibtatsu[39m and [32mlibusbmuxd[39m[0m
+2025-12-22T02:08:23.6985190Z [32m==>[0m [1mInstalling libimobiledevice dependency: [32mlibplist[39m[0m
+2025-12-22T02:08:23.7040070Z [34m==>[0m [1mPouring libplist--2.7.0.arm64_sonoma.bottle.tar.gz[0m
+2025-12-22T02:08:23.9324850Z 🍺  /opt/homebrew/Cellar/libplist/2.7.0: 32 files, 662KB
+2025-12-22T02:08:23.9329050Z [32m==>[0m [1mInstalling libimobiledevice dependency: [32mlibimobiledevice-glue[39m[0m
+2025-12-22T02:08:23.9461660Z [34m==>[0m [1mPouring libimobiledevice-glue--1.3.2.arm64_sonoma.bottle.tar.gz[0m
+2025-12-22T02:08:24.0511700Z 🍺  /opt/homebrew/Cellar/libimobiledevice-glue/1.3.2: 21 files, 254.2KB
+2025-12-22T02:08:24.0514340Z [32m==>[0m [1mInstalling libimobiledevice dependency: [32mlibtatsu[39m[0m
+2025-12-22T02:08:24.0654690Z [34m==>[0m [1mPouring libtatsu--1.0.5.arm64_sonoma.bottle.tar.gz[0m
+2025-12-22T02:08:24.1649380Z 🍺  /opt/homebrew/Cellar/libtatsu/1.0.5: 12 files, 180.5KB
+2025-12-22T02:08:24.1653230Z [32m==>[0m [1mInstalling libimobiledevice dependency: [32mlibusbmuxd[39m[0m
+2025-12-22T02:08:24.1871750Z [34m==>[0m [1mPouring libusbmuxd--2.1.1.arm64_sonoma.bottle.tar.gz[0m
+2025-12-22T02:08:24.3814560Z 🍺  /opt/homebrew/Cellar/libusbmuxd/2.1.1: 17 files, 302.4KB
+2025-12-22T02:08:24.3817700Z [32m==>[0m [1mInstalling [32mlibimobiledevice[39m[0m
+2025-12-22T02:08:24.3821930Z [34m==>[0m [1mPouring libimobiledevice--1.4.0.arm64_sonoma.bottle.tar.gz[0m
+2025-12-22T02:08:25.3710150Z 🍺  /opt/homebrew/Cellar/libimobiledevice/1.4.0: 82 files, 2.6MB
+2025-12-22T02:08:25.3985840Z /opt/homebrew/lib/ruby/gems/3.3.0/bin/pod
+2025-12-22T02:08:35.2430220Z Apple dependencies are up to date
+2025-12-22T02:08:35.2434310Z         Info "/Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src-tauri" relative to "/Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src-tauri/gen/apple" is "../../"
+2025-12-22T02:08:35.2549640Z Generating Xcode project...
+2025-12-22T02:08:35.3334490Z ⚙️  Generating plists...
+2025-12-22T02:08:35.3352500Z ⚙️  Generating project...
+2025-12-22T02:08:35.3478120Z ⚙️  Writing project...
+2025-12-22T02:08:35.3570600Z Created project at /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src-tauri/gen/apple/vortex-image.xcodeproj
+2025-12-22T02:08:35.3595070Z victory: Project generated successfully!
+2025-12-22T02:08:35.3595540Z     Make cool apps! 🌻 🐕 🎉

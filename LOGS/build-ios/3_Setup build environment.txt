@@ -1,0 +1,26 @@
+﻿2025-12-22T02:07:50.7393230Z ##[group]Run # Determine build configuration
+2025-12-22T02:07:50.7393760Z [36;1m# Determine build configuration[0m
+2025-12-22T02:07:50.7394030Z [36;1mif [[ "push" == "push" && "branch" == "tag" ]]; then[0m
+2025-12-22T02:07:50.7394300Z [36;1m  echo "build_type=release" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:50.7394590Z [36;1m  echo "export_method=app-store" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:50.7394840Z [36;1melif [[ "" == "release" ]]; then[0m
+2025-12-22T02:07:50.7395060Z [36;1m  echo "build_type=release" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:50.7395320Z [36;1m  echo "export_method=development" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:50.7395550Z [36;1melse[0m
+2025-12-22T02:07:50.7395730Z [36;1m  echo "build_type=debug" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:50.7395970Z [36;1m  echo "export_method=development" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:50.7396180Z [36;1mfi[0m
+2025-12-22T02:07:50.7396300Z [36;1m[0m
+2025-12-22T02:07:50.7396430Z [36;1m# Check if signing is available[0m
+2025-12-22T02:07:50.7396700Z [36;1mif [[ -n "" ]]; then[0m
+2025-12-22T02:07:50.7396920Z [36;1m  echo "has_signing=true" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:50.7397150Z [36;1melse[0m
+2025-12-22T02:07:50.7397310Z [36;1m  echo "has_signing=false" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:50.7397500Z [36;1mfi[0m
+2025-12-22T02:07:50.7460880Z shell: /bin/bash -e {0}
+2025-12-22T02:07:50.7461190Z env:
+2025-12-22T02:07:50.7461330Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:50.7461490Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:50.7461620Z   APP_NAME: iMAGE
+2025-12-22T02:07:50.7461780Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:50.7461950Z ##[endgroup]

@@ -230,8 +230,12 @@ jobs:
         run: |
           cd src-tauri
           
+          # IMPORTANT: Build WITHOUT pqcrypto-backend feature for iOS
+          # The pure-Rust ml-kem/ml-dsa crates work on iOS ARM
+          # pqcrypto has SHA3 assembly that fails on iOS
+          
           # Build for iOS Simulator (arm64)
-          echo "Building for aarch64-apple-ios-sim..."
+          echo "Building for aarch64-apple-ios-sim (pure-Rust PQ crypto)..."
           cargo build --target aarch64-apple-ios-sim --release
           
           # Also build for x86_64 simulator if needed
@@ -300,8 +304,10 @@ jobs:
               -derivedDataPath ./build \
               DEVELOPMENT_TEAM="$TEAM_ID"
           else
-            # Build Rust for real iOS device
+            # Build Rust for real iOS device WITHOUT pqcrypto-backend
+            # Pure-Rust ml-kem/ml-dsa works on iOS ARM
             cd src-tauri
+            echo "Building for aarch64-apple-ios (pure-Rust PQ crypto)..."
             cargo build --release --target aarch64-apple-ios
             cd ..
             

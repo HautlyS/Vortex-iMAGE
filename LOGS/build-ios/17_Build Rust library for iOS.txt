@@ -1,0 +1,715 @@
+﻿2025-12-22T02:08:38.3392130Z ##[group]Run cd src-tauri
+2025-12-22T02:08:38.3392500Z [36;1mcd src-tauri[0m
+2025-12-22T02:08:38.3392740Z [36;1m[0m
+2025-12-22T02:08:38.3392890Z [36;1m# Build for iOS Simulator (arm64)[0m
+2025-12-22T02:08:38.3393150Z [36;1mecho "Building for aarch64-apple-ios-sim..."[0m
+2025-12-22T02:08:38.3393550Z [36;1mcargo build --target aarch64-apple-ios-sim --release[0m
+2025-12-22T02:08:38.3393820Z [36;1m[0m
+2025-12-22T02:08:38.3393990Z [36;1m# Also build for x86_64 simulator if needed[0m
+2025-12-22T02:08:38.3394240Z [36;1mecho "Building for x86_64-apple-ios..."[0m
+2025-12-22T02:08:38.3394540Z [36;1mcargo build --target x86_64-apple-ios --release || true[0m
+2025-12-22T02:08:38.3394840Z [36;1m[0m
+2025-12-22T02:08:38.3395000Z [36;1m# Create universal library for simulator[0m
+2025-12-22T02:08:38.3395240Z [36;1mmkdir -p ../build/libs[0m
+2025-12-22T02:08:38.3395410Z [36;1m[0m
+2025-12-22T02:08:38.3395550Z [36;1m# Copy the built library[0m
+2025-12-22T02:08:38.3395880Z [36;1mif [[ -f "target/aarch64-apple-ios-sim/release/libvortex_image_lib.a" ]]; then[0m
+2025-12-22T02:08:38.3396540Z [36;1m  cp target/aarch64-apple-ios-sim/release/libvortex_image_lib.a ../build/libs/[0m
+2025-12-22T02:08:38.3397000Z [36;1melif [[ -f "target/aarch64-apple-ios-sim/release/libapp_lib.a" ]]; then[0m
+2025-12-22T02:08:38.3397410Z [36;1m  cp target/aarch64-apple-ios-sim/release/libapp_lib.a ../build/libs/[0m
+2025-12-22T02:08:38.3397670Z [36;1mfi[0m
+2025-12-22T02:08:38.3397800Z [36;1m[0m
+2025-12-22T02:08:38.3397950Z [36;1m# Find the actual library name[0m
+2025-12-22T02:08:38.3398200Z [36;1mfind target -name "*.a" -type f 2>/dev/null | head -5[0m
+2025-12-22T02:08:38.3398450Z [36;1m[0m
+2025-12-22T02:08:38.3398570Z [36;1mcd ..[0m
+2025-12-22T02:08:38.3461140Z shell: /bin/bash -e {0}
+2025-12-22T02:08:38.3461350Z env:
+2025-12-22T02:08:38.3461500Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:38.3461680Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:38.3461910Z   APP_NAME: iMAGE
+2025-12-22T02:08:38.3462090Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:38.3462340Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:38.3462770Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:38.3463060Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:38.3463250Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:08:38.3463430Z   CACHE_ON_FAILURE: true
+2025-12-22T02:08:38.3463580Z ##[endgroup]
+2025-12-22T02:08:38.4107000Z Building for aarch64-apple-ios-sim...
+2025-12-22T02:08:40.4385160Z [1m[92m    Updating[0m crates.io index
+2025-12-22T02:08:45.8862160Z [1m[92m   Compiling[0m proc-macro2 v1.0.103
+2025-12-22T02:08:45.8890960Z [1m[92m   Compiling[0m unicode-ident v1.0.22
+2025-12-22T02:08:45.8900580Z [1m[92m   Compiling[0m quote v1.0.42
+2025-12-22T02:08:46.4400330Z [1m[92m   Compiling[0m libc v0.2.178
+2025-12-22T02:08:48.4024720Z [1m[92m   Compiling[0m cfg-if v1.0.4
+2025-12-22T02:08:48.4365450Z [1m[92m   Compiling[0m serde_core v1.0.228
+2025-12-22T02:08:48.8345170Z [1m[92m   Compiling[0m zerocopy v0.8.31
+2025-12-22T02:08:49.1780110Z [1m[92m   Compiling[0m syn v2.0.111
+2025-12-22T02:08:49.1992630Z [1m[92m   Compiling[0m jobserver v0.1.34
+2025-12-22T02:08:49.4259860Z [1m[92m   Compiling[0m find-msvc-tools v0.1.5
+2025-12-22T02:08:49.5824250Z [1m[92m   Compiling[0m shlex v1.3.0
+2025-12-22T02:08:49.6806290Z [1m[92m   Compiling[0m cc v1.2.50
+2025-12-22T02:08:50.9080640Z [1m[92m   Compiling[0m icu_properties_data v2.1.2
+2025-12-22T02:08:50.9932150Z [1m[92m   Compiling[0m icu_normalizer_data v2.1.1
+2025-12-22T02:08:51.0793540Z [1m[92m   Compiling[0m getrandom v0.2.16
+2025-12-22T02:08:51.1517410Z [1m[92m   Compiling[0m serde v1.0.228
+2025-12-22T02:08:51.3561160Z [1m[92m   Compiling[0m rand_core v0.6.4
+2025-12-22T02:08:51.7408040Z [1m[92m   Compiling[0m synstructure v0.13.2
+2025-12-22T02:08:52.0656280Z [1m[92m   Compiling[0m ppv-lite86 v0.2.21
+2025-12-22T02:08:52.1437700Z [1m[92m   Compiling[0m memchr v2.7.6
+2025-12-22T02:08:52.2127550Z [1m[92m   Compiling[0m rand_chacha v0.3.1
+2025-12-22T02:08:52.3867760Z [1m[92m   Compiling[0m rand v0.8.5
+2025-12-22T02:08:52.8338720Z [1m[92m   Compiling[0m serde_derive v1.0.228
+2025-12-22T02:08:52.9360370Z [1m[92m   Compiling[0m zerofrom-derive v0.1.6
+2025-12-22T02:08:53.6457940Z [1m[92m   Compiling[0m yoke-derive v0.8.1
+2025-12-22T02:08:54.2242870Z [1m[92m   Compiling[0m zerovec-derive v0.11.2
+2025-12-22T02:08:54.2379430Z [1m[92m   Compiling[0m displaydoc v0.2.5
+2025-12-22T02:08:54.6398780Z [1m[92m   Compiling[0m stable_deref_trait v1.2.1
+2025-12-22T02:08:54.6566000Z [1m[92m   Compiling[0m itoa v1.0.16
+2025-12-22T02:08:54.7318110Z [1m[92m   Compiling[0m version_check v0.9.5
+2025-12-22T02:08:54.8659190Z [1m[92m   Compiling[0m siphasher v1.0.1
+2025-12-22T02:08:54.8816690Z [1m[92m   Compiling[0m zerofrom v0.1.6
+2025-12-22T02:08:54.9300750Z [1m[92m   Compiling[0m yoke v0.8.1
+2025-12-22T02:08:54.9586810Z [1m[92m   Compiling[0m phf_shared v0.11.3
+2025-12-22T02:08:55.0060300Z [1m[92m   Compiling[0m smallvec v1.15.1
+2025-12-22T02:08:55.0125390Z [1m[92m   Compiling[0m siphasher v0.3.11
+2025-12-22T02:08:55.0257200Z [1m[92m   Compiling[0m phf_generator v0.11.3
+2025-12-22T02:08:55.0946280Z [1m[92m   Compiling[0m zerovec v0.11.5
+2025-12-22T02:08:55.0958050Z [1m[92m   Compiling[0m getrandom v0.1.16
+2025-12-22T02:08:55.1082810Z [1m[92m   Compiling[0m serde_json v1.0.145
+2025-12-22T02:08:55.2188590Z [1m[92m   Compiling[0m fnv v1.0.7
+2025-12-22T02:08:55.2289090Z [1m[92m   Compiling[0m typeid v1.0.3
+2025-12-22T02:08:55.2592110Z [1m[92m   Compiling[0m ryu v1.0.21
+2025-12-22T02:08:55.3411950Z [1m[92m   Compiling[0m getrandom v0.3.4
+2025-12-22T02:08:55.4940840Z [1m[92m   Compiling[0m autocfg v1.5.0
+2025-12-22T02:08:55.5671680Z [1m[92m   Compiling[0m rand_core v0.5.1
+2025-12-22T02:08:55.6561850Z [1m[92m   Compiling[0m tinystr v0.8.2
+2025-12-22T02:08:55.6742560Z [1m[92m   Compiling[0m semver v1.0.27
+2025-12-22T02:08:55.8226560Z [1m[92m   Compiling[0m strsim v0.11.1
+2025-12-22T02:08:55.9141640Z [1m[92m   Compiling[0m writeable v0.6.2
+2025-12-22T02:08:56.0470610Z [1m[92m   Compiling[0m erased-serde v0.4.9
+2025-12-22T02:08:56.0914570Z [1m[92m   Compiling[0m thiserror v1.0.69
+2025-12-22T02:08:56.1024510Z [1m[92m   Compiling[0m thiserror v2.0.17
+2025-12-22T02:08:56.2501270Z [1m[92m   Compiling[0m syn v1.0.109
+2025-12-22T02:08:56.3183060Z [1m[92m   Compiling[0m typenum v1.19.0
+2025-12-22T02:08:56.4987180Z [1m[92m   Compiling[0m ident_case v1.0.1
+2025-12-22T02:08:56.5335090Z [1m[92m   Compiling[0m litemap v0.8.1
+2025-12-22T02:08:56.6487980Z [1m[92m   Compiling[0m darling_core v0.21.3
+2025-12-22T02:08:56.6810740Z [1m[92m   Compiling[0m icu_locale_core v2.1.1
+2025-12-22T02:08:56.7118040Z [1m[92m   Compiling[0m potential_utf v0.1.4
+2025-12-22T02:08:56.8158470Z [1m[92m   Compiling[0m phf_macros v0.11.3
+2025-12-22T02:08:57.4029620Z [1m[92m   Compiling[0m zerotrie v0.2.3
+2025-12-22T02:08:57.5413070Z [1m[92m   Compiling[0m dunce v1.0.5
+2025-12-22T02:08:57.6110310Z [1m[92m   Compiling[0m icu_provider v2.1.1
+2025-12-22T02:08:57.6248980Z [1m[92m   Compiling[0m icu_collections v2.1.1
+2025-12-22T02:08:58.6878420Z [1m[92m   Compiling[0m rand_chacha v0.2.2
+2025-12-22T02:08:58.8854540Z [1m[92m   Compiling[0m rand_pcg v0.2.1
+2025-12-22T02:08:58.9544300Z [1m[92m   Compiling[0m phf_shared v0.8.0
+2025-12-22T02:08:59.1670020Z [1m[92m   Compiling[0m generic-array v0.14.7
+2025-12-22T02:08:59.2506630Z [1m[92m   Compiling[0m darling_macro v0.21.3
+2025-12-22T02:08:59.3322840Z [1m[92m   Compiling[0m thiserror-impl v2.0.17
+2025-12-22T02:08:59.6170750Z [1m[92m   Compiling[0m thiserror-impl v1.0.69
+2025-12-22T02:09:01.6853490Z [1m[92m   Compiling[0m parking_lot_core v0.9.12
+2025-12-22T02:09:01.6972260Z [1m[92m   Compiling[0m proc-macro-hack v0.5.20+deprecated
+2025-12-22T02:09:01.8885350Z [1m[92m   Compiling[0m anyhow v1.0.100
+2025-12-22T02:09:02.1795150Z [1m[92m   Compiling[0m darling v0.21.3
+2025-12-22T02:09:02.2104700Z [1m[92m   Compiling[0m rand v0.7.3
+2025-12-22T02:09:02.3071400Z [1m[92m   Compiling[0m phf_shared v0.10.0
+2025-12-22T02:09:02.4818500Z [1m[92m   Compiling[0m time-core v0.1.6
+2025-12-22T02:09:02.5963740Z [1m[92m   Compiling[0m new_debug_unreachable v1.0.6
+2025-12-22T02:09:02.6272260Z [1m[92m   Compiling[0m byteorder v1.5.0
+2025-12-22T02:09:02.8834880Z [1m[92m   Compiling[0m glob v0.3.3
+2025-12-22T02:09:03.1455440Z [1m[92m   Compiling[0m num-conv v0.1.0
+2025-12-22T02:09:03.2401030Z [1m[92m   Compiling[0m scopeguard v1.2.0
+2025-12-22T02:09:03.2835270Z [1m[92m   Compiling[0m lock_api v0.4.14
+2025-12-22T02:09:03.5769900Z [1m[92m   Compiling[0m phf_generator v0.10.0
+2025-12-22T02:09:03.6298950Z [1m[92m   Compiling[0m serde_with_macros v3.16.1
+2025-12-22T02:09:03.9312650Z [1m[92m   Compiling[0m phf_generator v0.8.0
+2025-12-22T02:09:03.9731210Z [1m[92m   Compiling[0m icu_normalizer v2.1.1
+2025-12-22T02:09:05.0501590Z [1m[92m   Compiling[0m icu_properties v2.1.2
+2025-12-22T02:09:06.1178510Z [1m[92m   Compiling[0m phf_codegen v0.11.3
+2025-12-22T02:09:06.1807880Z [1m[92m   Compiling[0m string_cache_codegen v0.5.4
+2025-12-22T02:09:06.5116410Z [1m[92m   Compiling[0m mac v0.1.1
+2025-12-22T02:09:06.5557510Z [1m[92m   Compiling[0m precomputed-hash v0.1.1
+2025-12-22T02:09:06.5858740Z [1m[92m   Compiling[0m winnow v0.7.14
+2025-12-22T02:09:06.7444510Z [1m[92m   Compiling[0m futf v0.1.5
+2025-12-22T02:09:06.8186760Z [1m[92m   Compiling[0m markup5ever v0.14.1
+2025-12-22T02:09:06.9041820Z [1m[92m   Compiling[0m cssparser v0.29.6
+2025-12-22T02:09:07.3251200Z [1m[92m   Compiling[0m phf_macros v0.10.0
+2025-12-22T02:09:07.8665810Z [1m[92m   Compiling[0m toml_parser v1.0.6+spec-1.1.0
+2025-12-22T02:09:07.8982420Z [1m[92m   Compiling[0m idna_adapter v1.2.1
+2025-12-22T02:09:07.9489940Z [1m[92m   Compiling[0m parking_lot v0.12.5
+2025-12-22T02:09:07.9691620Z [1m[92m   Compiling[0m phf_codegen v0.8.0
+2025-12-22T02:09:08.0119890Z [1m[92m   Compiling[0m serde_spanned v1.0.4
+2025-12-22T02:09:08.0941840Z [1m[92m   Compiling[0m toml_datetime v0.7.5+spec-1.1.0
+2025-12-22T02:09:08.1246430Z [1m[92m   Compiling[0m bitflags v1.3.2
+2025-12-22T02:09:08.1563400Z [1m[92m   Compiling[0m log v0.4.29
+2025-12-22T02:09:08.2210250Z [1m[92m   Compiling[0m percent-encoding v2.3.2
+2025-12-22T02:09:08.2263100Z [1m[92m   Compiling[0m dtoa v1.0.10
+2025-12-22T02:09:08.2264490Z [1m[92m   Compiling[0m utf-8 v0.7.6
+2025-12-22T02:09:08.2781260Z [1m[92m   Compiling[0m toml_writer v1.0.6+spec-1.1.0
+2025-12-22T02:09:08.2792290Z [1m[92m   Compiling[0m utf8_iter v1.0.4
+2025-12-22T02:09:08.2856630Z [1m[92m   Compiling[0m dtoa-short v0.3.5
+2025-12-22T02:09:08.3203670Z [1m[92m   Compiling[0m idna v1.1.0
+2025-12-22T02:09:08.3253410Z [1m[92m   Compiling[0m tendril v0.4.3
+2025-12-22T02:09:08.3663830Z [1m[92m   Compiling[0m toml v0.9.10+spec-1.1.0
+2025-12-22T02:09:08.4507490Z [1m[92m   Compiling[0m form_urlencoded v1.2.2
+2025-12-22T02:09:08.5039240Z [1m[92m   Compiling[0m string_cache v0.8.9
+2025-12-22T02:09:08.5937620Z [1m[92m   Compiling[0m selectors v0.24.0
+2025-12-22T02:09:08.6700280Z [1m[92m   Compiling[0m uuid v1.19.0
+2025-12-22T02:09:08.8718750Z [1m[92m   Compiling[0m phf v0.10.1
+2025-12-22T02:09:08.9433570Z [1m[92m   Compiling[0m phf v0.11.3
+2025-12-22T02:09:09.0139340Z [1m[92m   Compiling[0m indexmap v1.9.3
+2025-12-22T02:09:09.1582190Z [1m[92m   Compiling[0m ctor v0.2.9
+2025-12-22T02:09:09.1688440Z [1m[92m   Compiling[0m cssparser-macros v0.6.1
+2025-12-22T02:09:09.1793240Z [1m[92m   Compiling[0m aho-corasick v1.1.4
+2025-12-22T02:09:09.4214260Z [1m[92m   Compiling[0m unic-char-range v0.9.0
+2025-12-22T02:09:09.4717850Z [1m[92m   Compiling[0m hashbrown v0.16.1
+2025-12-22T02:09:09.4818200Z [1m[92m   Compiling[0m regex-syntax v0.8.8
+2025-12-22T02:09:09.7709830Z [1m[92m   Compiling[0m convert_case v0.4.0
+2025-12-22T02:09:09.9355060Z [1m[92m   Compiling[0m equivalent v1.0.2
+2025-12-22T02:09:09.9659510Z [1m[92m   Compiling[0m alloc-no-stdlib v2.0.4
+2025-12-22T02:09:10.0105110Z [1m[92m   Compiling[0m camino v1.2.2
+2025-12-22T02:09:10.0809740Z [1m[92m   Compiling[0m matches v0.1.10
+2025-12-22T02:09:10.1111850Z [1m[92m   Compiling[0m unic-common v0.9.0
+2025-12-22T02:09:10.1679080Z [1m[92m   Compiling[0m nodrop v0.1.14
+2025-12-22T02:09:10.1983470Z [1m[92m   Compiling[0m servo_arc v0.2.0
+2025-12-22T02:09:10.2051230Z [1m[92m   Compiling[0m unic-ucd-version v0.9.0
+2025-12-22T02:09:10.2876520Z [1m[92m   Compiling[0m alloc-stdlib v0.2.2
+2025-12-22T02:09:10.3261520Z [1m[92m   Compiling[0m indexmap v2.12.1
+2025-12-22T02:09:10.6248570Z [1m[92m   Compiling[0m regex-automata v0.4.13
+2025-12-22T02:09:10.6774120Z [1m[92m   Compiling[0m derive_more v0.99.20
+2025-12-22T02:09:10.8927610Z [1m[92m   Compiling[0m unic-char-property v0.9.0
+2025-12-22T02:09:11.4608980Z [1m[92m   Compiling[0m url v2.5.7
+2025-12-22T02:09:11.9348220Z [1m[92m   Compiling[0m fxhash v0.2.1
+2025-12-22T02:09:11.9784920Z [1m[92m   Compiling[0m phf v0.8.0
+2025-12-22T02:09:12.1186140Z [1m[92m   Compiling[0m swift-rs v1.0.7
+2025-12-22T02:09:12.2431550Z [1m[92m   Compiling[0m match_token v0.1.0
+2025-12-22T02:09:12.4623850Z [1m[92m   Compiling[0m serde_derive_internals v0.29.1
+2025-12-22T02:09:12.4951620Z [1m[92m   Compiling[0m hashbrown v0.12.3
+2025-12-22T02:09:12.5474190Z [1m[92m   Compiling[0m schemars v0.8.22
+2025-12-22T02:09:12.7592270Z [1m[92m   Compiling[0m html5ever v0.29.1
+2025-12-22T02:09:12.9659300Z [1m[92m   Compiling[0m schemars_derive v0.8.22
+2025-12-22T02:09:13.4144650Z [1m[92m   Compiling[0m regex v1.12.2
+2025-12-22T02:09:13.4649410Z [1m[92m   Compiling[0m unic-ucd-ident v0.9.0
+2025-12-22T02:09:13.5853510Z [1m[92m   Compiling[0m brotli-decompressor v5.0.0
+2025-12-22T02:09:13.6742040Z [1m[92m   Compiling[0m cfb v0.7.3
+2025-12-22T02:09:13.8250670Z [1m[92m   Compiling[0m jsonptr v0.6.3
+2025-12-22T02:09:14.0510240Z [1m[92m   Compiling[0m cargo-platform v0.1.9
+2025-12-22T02:09:14.0623350Z [1m[92m   Compiling[0m same-file v1.0.6
+2025-12-22T02:09:14.1152300Z [1m[92m   Compiling[0m bytes v1.11.0
+2025-12-22T02:09:14.1613770Z [1m[92m   Compiling[0m dyn-clone v1.0.20
+2025-12-22T02:09:14.2004890Z [1m[92m   Compiling[0m base64 v0.21.7
+2025-12-22T02:09:14.4555330Z [1m[92m   Compiling[0m http v1.4.0
+2025-12-22T02:09:14.5499150Z [1m[92m   Compiling[0m cargo_metadata v0.19.2
+2025-12-22T02:09:14.9817200Z [1m[92m   Compiling[0m walkdir v2.5.0
+2025-12-22T02:09:15.0793000Z [1m[92m   Compiling[0m brotli v8.0.2
+2025-12-22T02:09:15.1253450Z [1m[92m   Compiling[0m json-patch v3.0.1
+2025-12-22T02:09:15.3773060Z [1m[92m   Compiling[0m infer v0.19.0
+2025-12-22T02:09:15.5674020Z [1m[92m   Compiling[0m urlpattern v0.3.0
+2025-12-22T02:09:15.6342240Z [1m[92m   Compiling[0m serde-untagged v0.1.9
+2025-12-22T02:09:15.7747510Z [1m[92m   Compiling[0m kuchikiki v0.8.8-speedreader
+2025-12-22T02:09:16.1475270Z [1m[92m   Compiling[0m serde_with v3.16.1
+2025-12-22T02:09:17.8230840Z [1m[92m   Compiling[0m powerfmt v0.2.0
+2025-12-22T02:09:17.8336880Z [1m[92m   Compiling[0m rustc_version v0.4.1
+2025-12-22T02:09:17.9528260Z [1m[92m   Compiling[0m deranged v0.5.5
+2025-12-22T02:09:18.0337770Z [1m[92m   Compiling[0m tauri-utils v2.8.1
+2025-12-22T02:09:19.1571840Z [1m[92m   Compiling[0m quick-xml v0.38.4
+2025-12-22T02:09:19.2782310Z [1m[92m   Compiling[0m time v0.3.44
+2025-12-22T02:09:20.2234610Z [1m[92m   Compiling[0m base64 v0.22.1
+2025-12-22T02:09:20.5536490Z [1m[92m   Compiling[0m subtle v2.6.1
+2025-12-22T02:09:20.6448700Z [1m[92m   Compiling[0m plist v1.8.0
+2025-12-22T02:09:22.5779210Z [1m[92m   Compiling[0m pin-project-lite v0.2.16
+2025-12-22T02:09:22.7929140Z [1m[92m   Compiling[0m zeroize_derive v1.4.2
+2025-12-22T02:09:22.8054140Z [1m[92m   Compiling[0m futures-core v0.3.31
+2025-12-22T02:09:23.1946240Z [1m[92m   Compiling[0m zeroize v1.8.2
+2025-12-22T02:09:23.8497180Z [1m[92m   Compiling[0m objc2-exception-helper v0.1.1
+2025-12-22T02:09:24.0134480Z [1m[92m   Compiling[0m option-ext v0.2.0
+2025-12-22T02:09:24.0448750Z [1m[92m   Compiling[0m dirs-sys v0.5.0
+2025-12-22T02:09:24.0857560Z [1m[92m   Compiling[0m tauri-plugin v2.5.2
+2025-12-22T02:09:26.2628770Z [1m[92m   Compiling[0m embed-resource v3.0.6
+2025-12-22T02:09:26.6028880Z [1m[92m   Compiling[0m futures-sink v0.3.31
+2025-12-22T02:09:26.6340430Z [1m[92m   Compiling[0m bitflags v2.10.0
+2025-12-22T02:09:26.8608380Z [1m[92m   Compiling[0m crc32fast v1.5.0
+2025-12-22T02:09:26.9750380Z [1m[92m   Compiling[0m heck v0.5.0
+2025-12-22T02:09:27.7422210Z [1m[92m   Compiling[0m tauri-winres v0.3.5
+2025-12-22T02:09:27.8901010Z [1m[92m   Compiling[0m dirs v6.0.0
+2025-12-22T02:09:28.0382400Z [1m[92m   Compiling[0m cargo_toml v0.22.3
+2025-12-22T02:09:28.4497130Z [1m[92m   Compiling[0m once_cell v1.21.3
+2025-12-22T02:09:28.5711510Z [1m[92m   Compiling[0m objc2 v0.6.3
+2025-12-22T02:09:28.8383280Z [1m[92m   Compiling[0m tauri-build v2.5.3
+2025-12-22T02:09:28.9147150Z [1m[92m   Compiling[0m tokio-macros v2.6.0
+2025-12-22T02:09:29.2737890Z [1m[92m   Compiling[0m socket2 v0.6.1
+2025-12-22T02:09:29.5156100Z [1m[92m   Compiling[0m mio v1.1.1
+2025-12-22T02:09:29.7205620Z [1m[92m   Compiling[0m objc2-encode v4.1.0
+2025-12-22T02:09:29.7859510Z [1m[92m   Compiling[0m slab v0.4.11
+2025-12-22T02:09:30.0839470Z [1m[92m   Compiling[0m tokio v1.48.0
+2025-12-22T02:09:32.4399260Z [1m[92m   Compiling[0m futures-channel v0.3.31
+2025-12-22T02:09:32.7517870Z [1m[92m   Compiling[0m pin-utils v0.1.0
+2025-12-22T02:09:33.4093130Z [1m[92m   Compiling[0m tauri v2.9.5
+2025-12-22T02:09:33.9631930Z [1m[92m   Compiling[0m crypto-common v0.1.7
+2025-12-22T02:09:34.0465870Z [1m[92m   Compiling[0m time-macros v0.2.24
+2025-12-22T02:09:34.2801210Z [1m[92m   Compiling[0m cookie v0.18.1
+2025-12-22T02:09:34.4433100Z [1m[92m   Compiling[0m futures-macro v0.3.31
+2025-12-22T02:09:35.0232200Z [1m[92m   Compiling[0m ring v0.17.14
+2025-12-22T02:09:35.4635140Z [1m[92m   Compiling[0m futures-io v0.3.31
+2025-12-22T02:09:35.4854520Z [1m[92m   Compiling[0m futures-task v0.3.31
+2025-12-22T02:09:35.5881120Z [1m[92m   Compiling[0m futures-util v0.3.31
+2025-12-22T02:09:40.3964460Z [1m[92m   Compiling[0m simd-adler32 v0.3.8
+2025-12-22T02:09:41.7323220Z [1m[92m   Compiling[0m objc2-core-foundation v0.3.2
+2025-12-22T02:09:42.3863610Z [1m[92m   Compiling[0m tracing-core v0.1.36
+2025-12-22T02:09:42.4824450Z [1m[92m   Compiling[0m http-body v1.0.1
+2025-12-22T02:09:42.5492600Z [1m[92m   Compiling[0m rustls-pki-types v1.13.2
+2025-12-22T02:09:43.1053880Z [1m[92m   Compiling[0m tracing-attributes v0.1.31
+2025-12-22T02:09:43.9113260Z [1m[92m   Compiling[0m httparse v1.10.1
+2025-12-22T02:09:44.0721870Z [1m[92m   Compiling[0m adler2 v2.0.1
+2025-12-22T02:09:46.8490500Z [1m[92m   Compiling[0m untrusted v0.9.0
+2025-12-22T02:09:52.8936800Z [1m[92m   Compiling[0m miniz_oxide v0.8.9
+2025-12-22T02:09:53.4972440Z [1m[92m   Compiling[0m tracing v0.1.44
+2025-12-22T02:09:53.9567580Z [1m[92m   Compiling[0m objc2-foundation v0.3.2
+2025-12-22T02:09:58.1761930Z [1m[92m   Compiling[0m tokio-util v0.7.17
+2025-12-22T02:09:58.9571060Z [1m[92m   Compiling[0m try-lock v0.2.5
+2025-12-22T02:09:59.0627450Z [1m[92m   Compiling[0m rustls v0.23.35
+2025-12-22T02:09:59.1312740Z [1m[92m   Compiling[0m crossbeam-utils v0.8.21
+2025-12-22T02:09:59.3221820Z [1m[92m   Compiling[0m atomic-waker v1.1.2
+2025-12-22T02:09:59.3924970Z [1m[92m   Compiling[0m tower-service v0.3.3
+2025-12-22T02:10:00.8279010Z [1m[92m   Compiling[0m h2 v0.4.12
+2025-12-22T02:10:01.6917960Z [1m[92m   Compiling[0m want v0.3.1
+2025-12-22T02:10:02.3099570Z [1m[92m   Compiling[0m flate2 v1.1.5
+2025-12-22T02:10:02.9591320Z [1m[92m   Compiling[0m rustls-webpki v0.103.8
+2025-12-22T02:10:03.0227740Z [1m[92m   Compiling[0m block-buffer v0.10.4
+2025-12-22T02:10:03.0676540Z [1m[92m   Compiling[0m fdeflate v0.3.7
+2025-12-22T02:10:06.1540970Z [1m[92m   Compiling[0m block2 v0.6.2
+2025-12-22T02:10:06.2597810Z [1m[92m   Compiling[0m dpi v0.1.2
+2025-12-22T02:10:06.8495360Z [1m[92m   Compiling[0m psl-types v2.0.11
+2025-12-22T02:10:06.9220880Z [1m[92m   Compiling[0m litrs v1.0.0
+2025-12-22T02:10:06.9338440Z [1m[92m   Compiling[0m raw-window-handle v0.6.2
+2025-12-22T02:10:07.1682470Z [1m[92m   Compiling[0m publicsuffix v2.3.0
+2025-12-22T02:10:07.3506000Z [1m[92m   Compiling[0m document-features v0.2.12
+2025-12-22T02:10:15.2352650Z [1m[92m   Compiling[0m png v0.17.16
+2025-12-22T02:10:16.2566370Z [1m[92m   Compiling[0m digest v0.10.7
+2025-12-22T02:10:18.0174600Z [1m[92m   Compiling[0m hyper v1.8.1
+2025-12-22T02:10:25.0383260Z [1m[92m   Compiling[0m objc2-ui-kit v0.3.2
+2025-12-22T02:10:26.4816860Z [1m[92m   Compiling[0m sync_wrapper v1.0.2
+2025-12-22T02:10:27.2832190Z [1m[92m   Compiling[0m cpufeatures v0.2.17
+2025-12-22T02:10:27.8812270Z [1m[92m   Compiling[0m wry v0.53.5
+2025-12-22T02:10:28.2794930Z [1m[92m   Compiling[0m tauri-runtime v2.9.2
+2025-12-22T02:10:28.4482620Z [1m[92m   Compiling[0m ipnet v2.11.0
+2025-12-22T02:10:28.6079950Z [1m[92m   Compiling[0m tower-layer v0.3.3
+2025-12-22T02:10:29.9326340Z [1m[92m   Compiling[0m hyper-util v0.1.19
+2025-12-22T02:10:32.4461890Z [1m[92m   Compiling[0m tower v0.5.2
+2025-12-22T02:10:32.8853850Z [1m[92m   Compiling[0m sha2 v0.10.9
+2025-12-22T02:10:33.1254700Z [1m[92m   Compiling[0m crossbeam-channel v0.5.15
+2025-12-22T02:10:33.6284840Z [1m[92m   Compiling[0m tokio-rustls v0.26.4
+2025-12-22T02:10:33.8543270Z [1m[92m   Compiling[0m ico v0.4.0
+2025-12-22T02:10:34.2245590Z [1m[92m   Compiling[0m objc2-web-kit v0.3.2
+2025-12-22T02:10:34.8340180Z [1m[92m   Compiling[0m webpki-roots v1.0.4
+2025-12-22T02:10:35.2660160Z [1m[92m   Compiling[0m tauri-runtime-wry v2.9.3
+2025-12-22T02:10:35.5236850Z [1m[92m   Compiling[0m lazy_static v1.5.0
+2025-12-22T02:10:35.5841090Z [1m[92m   Compiling[0m iri-string v0.7.9
+2025-12-22T02:10:37.8180440Z [1m[92m   Compiling[0m tower-http v0.6.8
+2025-12-22T02:10:37.9549440Z [1m[92m   Compiling[0m tao v0.34.5
+2025-12-22T02:10:39.3275490Z [1m[92m   Compiling[0m hyper-rustls v0.27.7
+2025-12-22T02:10:43.0515040Z [1m[92m   Compiling[0m tauri-codegen v2.5.2
+2025-12-22T02:10:46.4182630Z [1m[92m   Compiling[0m cookie_store v0.22.0
+2025-12-22T02:10:46.4184720Z [1m[92m   Compiling[0m http-body-util v0.1.3
+2025-12-22T02:10:46.6505370Z [1m[92m   Compiling[0m serde_urlencoded v0.7.1
+2025-12-22T02:10:46.8408500Z [1m[92m   Compiling[0m encoding_rs v0.8.35
+2025-12-22T02:10:48.3862510Z [1m[92m   Compiling[0m serialize-to-javascript-impl v0.1.2
+2025-12-22T02:10:49.0954900Z [1m[92m   Compiling[0m mime v0.3.17
+2025-12-22T02:10:50.0464950Z [1m[92m   Compiling[0m reqwest v0.12.26
+2025-12-22T02:10:51.6596610Z [1m[92m   Compiling[0m serialize-to-javascript v0.1.2
+2025-12-22T02:10:51.8029770Z [1m[92m   Compiling[0m tauri-macros v2.5.2
+2025-12-22T02:10:58.3809410Z [1m[92m   Compiling[0m tauri-plugin-fs v2.4.4
+2025-12-22T02:10:59.4119910Z [1m[92m   Compiling[0m serde_repr v0.1.20
+2025-12-22T02:11:11.2849520Z [1m[92m   Compiling[0m pqcrypto-internals v0.2.11
+2025-12-22T02:11:11.5128810Z [1m[92m   Compiling[0m pkg-config v0.3.32
+2025-12-22T02:11:11.9621570Z [1m[92m   Compiling[0m zstd-sys v2.0.16+zstd.1.5.7
+2025-12-22T02:11:12.5870720Z [1m[92m   Compiling[0m num-traits v0.2.19
+2025-12-22T02:11:12.7719850Z [1m[92m   Compiling[0m signal-hook v0.3.18
+2025-12-22T02:11:13.5959030Z [1m[92m   Compiling[0m curve25519-dalek v4.1.3
+2025-12-22T02:11:13.9476470Z [1m[92m   Compiling[0m signal-hook-registry v1.4.7
+2025-12-22T02:11:19.2303250Z [1m[92m   Compiling[0m tauri-plugin-shell v2.3.3
+2025-12-22T02:11:20.0298060Z [1m[92m   Compiling[0m tauri-plugin-store v2.4.1
+2025-12-22T02:11:20.2226640Z [1m[92m   Compiling[0m tauri-plugin-opener v2.5.2
+2025-12-22T02:11:20.5570380Z [1m[92m   Compiling[0m tauri-plugin-dialog v2.4.2
+2025-12-22T02:11:21.0606370Z [1m[92m   Compiling[0m tauri-plugin-http v2.5.4
+2025-12-22T02:11:21.2039250Z [1m[92m   Compiling[0m inout v0.1.4
+2025-12-22T02:11:21.3363200Z [1m[92m   Compiling[0m os_pipe v1.2.3
+2025-12-22T02:11:21.4659340Z [1m[92m   Compiling[0m zstd-safe v7.2.4
+2025-12-22T02:11:21.7228890Z [1m[92m   Compiling[0m pathdiff v0.2.3
+2025-12-22T02:11:21.7803700Z [1m[92m   Compiling[0m open v5.3.3
+2025-12-22T02:11:21.9025960Z [1m[92m   Compiling[0m sigchld v0.2.4
+2025-12-22T02:11:21.9090370Z [1m[92m   Compiling[0m cipher v0.4.4
+2025-12-22T02:11:46.9468860Z [1m[92m   Compiling[0m pxfm v0.1.27
+2025-12-22T02:11:57.2834600Z [1m[92m   Compiling[0m universal-hash v0.5.1
+2025-12-22T02:11:57.3927780Z [1m[92m   Compiling[0m pqcrypto-mlkem v0.1.1
+2025-12-22T02:11:57.8050270Z [1m[92m   Compiling[0m pqcrypto-dilithium v0.5.0
+2025-12-22T02:11:58.1065130Z [1m[92m   Compiling[0m blake3 v1.8.2
+2025-12-22T02:11:58.5062410Z [1m[92m   Compiling[0m base64ct v1.8.1
+2025-12-22T02:11:58.7274600Z [1m[92m   Compiling[0m quick-error v2.0.1
+2025-12-22T02:11:58.7840610Z [1m[92m   Compiling[0m byteorder-lite v0.1.0
+2025-12-22T02:11:58.9980980Z [1m[92m   Compiling[0m signature v2.2.0
+2025-12-22T02:11:59.0796270Z [1m[92m   Compiling[0m snap v1.1.1
+2025-12-22T02:11:59.3212160Z [1m[92m   Compiling[0m pqcrypto-traits v0.3.5
+2025-12-22T02:11:59.3276700Z [1m[92m   Compiling[0m zune-core v0.5.0
+2025-12-22T02:11:59.3987990Z [1m[92m   Compiling[0m opaque-debug v0.3.1
+2025-12-22T02:11:59.4308330Z [1m[92m   Compiling[0m poly1305 v0.8.0
+2025-12-22T02:11:59.5416120Z [1m[92m   Compiling[0m zune-jpeg v0.5.7
+2025-12-22T02:11:59.5809830Z [1m[92m   Compiling[0m ed25519 v2.2.3
+2025-12-22T02:11:59.7770730Z [1m[92m   Compiling[0m image-webp v0.2.4
+2025-12-22T02:12:00.9529820Z [1m[92m   Compiling[0m password-hash v0.5.0
+2025-12-22T02:12:03.2133510Z [1m[92m   Compiling[0m png v0.18.0
+2025-12-22T02:12:06.6559800Z [1m[92m   Compiling[0m moxcms v0.7.11
+2025-12-22T02:12:19.7814050Z [1m[92m   Compiling[0m chacha20 v0.9.1
+2025-12-22T02:12:19.8826250Z [1m[92m   Compiling[0m shared_child v1.1.1
+2025-12-22T02:12:20.0940840Z [1m[92m   Compiling[0m blake2 v0.10.6
+2025-12-22T02:12:20.3113510Z [1m[92m   Compiling[0m hmac v0.12.1
+2025-12-22T02:12:20.4092120Z [1m[92m   Compiling[0m cookie_store v0.21.1
+2025-12-22T02:12:20.5531430Z [1m[92m   Compiling[0m dirs-sys v0.4.1
+2025-12-22T02:12:20.6312430Z [1m[92m   Compiling[0m brotli-decompressor v4.0.3
+2025-12-22T02:12:22.6197660Z [1m[92m   Compiling[0m futures-executor v0.3.31
+2025-12-22T02:12:23.3018780Z [1m[92m   Compiling[0m aead v0.5.2
+2025-12-22T02:12:23.5111440Z [1m[92m   Compiling[0m vortex-image v0.1.0 (/Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src-tauri)
+2025-12-22T02:12:25.7504300Z [1m[92m   Compiling[0m constant_time_eq v0.3.1
+2025-12-22T02:12:25.9264800Z [1m[92m   Compiling[0m arrayvec v0.7.6
+2025-12-22T02:12:26.2906900Z [1m[92m   Compiling[0m bytemuck v1.24.0
+2025-12-22T02:12:26.4631870Z [1m[92m   Compiling[0m data-url v0.3.2
+2025-12-22T02:12:26.5536360Z [1m[92m   Compiling[0m arrayref v0.3.9
+2025-12-22T02:12:26.6195280Z [1m[92m   Compiling[0m twox-hash v2.1.2
+2025-12-22T02:12:26.8187830Z [1m[92m   Compiling[0m lz4_flex v0.11.5
+2025-12-22T02:12:28.8318560Z [1m[92m   Compiling[0m image v0.25.9
+2025-12-22T02:12:35.0356690Z [1m[92m   Compiling[0m chacha20poly1305 v0.10.1
+2025-12-22T02:12:35.1593430Z [1m[92m   Compiling[0m futures v0.3.31
+2025-12-22T02:12:35.2352540Z [1m[92m   Compiling[0m brotli v7.0.0
+2025-12-22T02:12:40.7500930Z [1m[92m   Compiling[0m dirs v5.0.1
+2025-12-22T02:12:40.9809360Z [1m[92m   Compiling[0m hkdf v0.12.4
+2025-12-22T02:12:41.1823980Z [1m[92m   Compiling[0m argon2 v0.5.3
+2025-12-22T02:12:47.3764880Z [1m[92m   Compiling[0m zstd v0.13.3
+2025-12-22T02:12:48.1810510Z [1m[92m   Compiling[0m ed25519-dalek v2.2.0
+2025-12-22T02:12:51.4093180Z [1m[92m   Compiling[0m x25519-dalek v2.0.1
+2025-12-22T02:12:54.3260970Z [1m[92m   Compiling[0m hex v0.4.3
+2025-12-22T02:13:03.3865080Z [1m[33mwarning[0m[1m: variant `UnsupportedAlgorithm` is never constructed[0m
+2025-12-22T02:13:03.3866600Z   [1m[94m--> [0msrc/compress.rs:18:5
+2025-12-22T02:13:03.3887210Z    [1m[94m|[0m
+2025-12-22T02:13:03.3887630Z [1m[94m10[0m [1m[94m|[0m pub enum CompressError {
+2025-12-22T02:13:03.3888070Z    [1m[94m|[0m          [1m[94m-------------[0m [1m[94mvariant in this enum[0m
+2025-12-22T02:13:03.3888430Z [1m[94m...[0m
+2025-12-22T02:13:03.3888900Z [1m[94m18[0m [1m[94m|[0m     UnsupportedAlgorithm(String),
+2025-12-22T02:13:03.3890240Z    [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^^^^^^^^[0m
+2025-12-22T02:13:03.3890530Z    [1m[94m|[0m
+2025-12-22T02:13:03.3891120Z    [1m[94m= [0m[1mnote[0m: `CompressError` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+2025-12-22T02:13:03.3892070Z    [1m[94m= [0m[1mnote[0m: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+2025-12-22T02:13:03.3892290Z 
+2025-12-22T02:13:03.3892680Z [1m[33mwarning[0m[1m: variant `KeyGeneration` is never constructed[0m
+2025-12-22T02:13:03.3893110Z   [1m[94m--> [0msrc/crypto.rs:31:5
+2025-12-22T02:13:03.3893350Z    [1m[94m|[0m
+2025-12-22T02:13:03.3893670Z [1m[94m19[0m [1m[94m|[0m pub enum CryptoError {
+2025-12-22T02:13:03.3894160Z    [1m[94m|[0m          [1m[94m-----------[0m [1m[94mvariant in this enum[0m
+2025-12-22T02:13:03.3894480Z [1m[94m...[0m
+2025-12-22T02:13:03.3894860Z [1m[94m31[0m [1m[94m|[0m     KeyGeneration(String),
+2025-12-22T02:13:03.3895310Z    [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^[0m
+2025-12-22T02:13:03.3895580Z    [1m[94m|[0m
+2025-12-22T02:13:03.3896220Z    [1m[94m= [0m[1mnote[0m: `CryptoError` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+2025-12-22T02:13:03.3896580Z 
+2025-12-22T02:13:03.3896900Z [1m[33mwarning[0m[1m: method `verify` is never used[0m
+2025-12-22T02:13:03.3897280Z    [1m[94m--> [0msrc/crypto.rs:128:12
+2025-12-22T02:13:03.3897530Z     [1m[94m|[0m
+2025-12-22T02:13:03.3897830Z  [1m[94m87[0m [1m[94m|[0m impl HybridKeypair {
+2025-12-22T02:13:03.3898360Z     [1m[94m|[0m [1m[94m------------------[0m [1m[94mmethod in this implementation[0m
+2025-12-22T02:13:03.3898700Z [1m[94m...[0m
+2025-12-22T02:13:03.3899260Z [1m[94m128[0m [1m[94m|[0m     pub fn verify(&self, data: &[u8], signature: &[u8]) -> Result<(), CryptoError> {
+2025-12-22T02:13:03.3899780Z     [1m[94m|[0m            [1m[33m^^^^^^[0m
+2025-12-22T02:13:03.3899970Z 
+2025-12-22T02:13:58.4154360Z [1m[33mwarning[0m: `vortex-image` (lib) generated 3 warnings
+2025-12-22T02:13:59.8013280Z [1m[92m    Finished[0m `release` profile [optimized] target(s) in 5m 20s
+2025-12-22T02:13:59.9061300Z Building for x86_64-apple-ios...
+2025-12-22T02:14:01.9514580Z [1m[92m   Compiling[0m libc v0.2.178
+2025-12-22T02:14:01.9773720Z [1m[92m   Compiling[0m serde_core v1.0.228
+2025-12-22T02:14:01.9817080Z [1m[92m   Compiling[0m cfg-if v1.0.4
+2025-12-22T02:14:02.1588680Z [1m[92m   Compiling[0m serde v1.0.228
+2025-12-22T02:14:02.2768110Z [1m[92m   Compiling[0m zerofrom v0.1.6
+2025-12-22T02:14:02.5361540Z [1m[92m   Compiling[0m stable_deref_trait v1.2.1
+2025-12-22T02:14:02.6432020Z [1m[92m   Compiling[0m yoke v0.8.1
+2025-12-22T02:14:02.9249310Z [1m[92m   Compiling[0m itoa v1.0.16
+2025-12-22T02:14:03.1827460Z [1m[92m   Compiling[0m getrandom v0.2.16
+2025-12-22T02:14:03.3569410Z [1m[92m   Compiling[0m memchr v2.7.6
+2025-12-22T02:14:03.5084600Z [1m[92m   Compiling[0m zerovec v0.11.5
+2025-12-22T02:14:04.2493620Z [1m[92m   Compiling[0m tinystr v0.8.2
+2025-12-22T02:14:04.5917900Z [1m[92m   Compiling[0m litemap v0.8.1
+2025-12-22T02:14:04.8251960Z [1m[92m   Compiling[0m smallvec v1.15.1
+2025-12-22T02:14:05.1131560Z [1m[92m   Compiling[0m writeable v0.6.2
+2025-12-22T02:14:05.3852020Z [1m[92m   Compiling[0m subtle v2.6.1
+2025-12-22T02:14:05.4275350Z [1m[92m   Compiling[0m icu_locale_core v2.1.1
+2025-12-22T02:14:05.6302890Z [1m[92m   Compiling[0m potential_utf v0.1.4
+2025-12-22T02:14:05.8122140Z [1m[92m   Compiling[0m zerotrie v0.2.3
+2025-12-22T02:14:06.8397590Z [1m[92m   Compiling[0m icu_collections v2.1.1
+2025-12-22T02:14:08.3038540Z [1m[92m   Compiling[0m icu_properties_data v2.1.2
+2025-12-22T02:14:08.3150140Z [1m[92m   Compiling[0m icu_normalizer_data v2.1.1
+2025-12-22T02:14:08.3253700Z [1m[92m   Compiling[0m percent-encoding v2.3.2
+2025-12-22T02:14:08.7680670Z [1m[92m   Compiling[0m bytes v1.11.0
+2025-12-22T02:14:08.8016600Z [1m[92m   Compiling[0m icu_provider v2.1.1
+2025-12-22T02:14:10.1705370Z [1m[92m   Compiling[0m pin-project-lite v0.2.16
+2025-12-22T02:14:10.7219980Z [1m[92m   Compiling[0m futures-core v0.3.31
+2025-12-22T02:14:10.9110390Z [1m[92m   Compiling[0m zeroize v1.8.2
+2025-12-22T02:14:11.0673450Z [1m[92m   Compiling[0m icu_properties v2.1.2
+2025-12-22T02:14:11.7603400Z [1m[92m   Compiling[0m icu_normalizer v2.1.1
+2025-12-22T02:14:12.7967060Z [1m[92m   Compiling[0m typenum v1.19.0
+2025-12-22T02:14:12.8070300Z [1m[92m   Compiling[0m objc2-exception-helper v0.1.1
+2025-12-22T02:14:13.7556740Z [1m[92m   Compiling[0m idna_adapter v1.2.1
+2025-12-22T02:14:13.8161430Z [1m[92m   Compiling[0m http v1.4.0
+2025-12-22T02:14:13.9078780Z [1m[92m   Compiling[0m rand_core v0.6.4
+2025-12-22T02:14:13.9794560Z [1m[92m   Compiling[0m generic-array v0.14.7
+2025-12-22T02:14:13.9896400Z [1m[92m   Compiling[0m futures-sink v0.3.31
+2025-12-22T02:14:14.0538840Z [1m[92m   Compiling[0m bitflags v2.10.0
+2025-12-22T02:14:14.0642340Z [1m[92m   Compiling[0m utf8_iter v1.0.4
+2025-12-22T02:14:14.1386050Z [1m[92m   Compiling[0m idna v1.1.0
+2025-12-22T02:14:14.7592940Z [1m[92m   Compiling[0m form_urlencoded v1.2.2
+2025-12-22T02:14:14.9307840Z [1m[92m   Compiling[0m once_cell v1.21.3
+2025-12-22T02:14:15.0647330Z [1m[92m   Compiling[0m ryu v1.0.21
+2025-12-22T02:14:15.2648540Z [1m[92m   Compiling[0m serde_json v1.0.145
+2025-12-22T02:14:15.2749920Z [1m[92m   Compiling[0m objc2 v0.6.3
+2025-12-22T02:14:15.2916920Z [1m[92m   Compiling[0m socket2 v0.6.1
+2025-12-22T02:14:15.3391170Z [1m[92m   Compiling[0m mio v1.1.1
+2025-12-22T02:14:15.8475290Z [1m[92m   Compiling[0m slab v0.4.11
+2025-12-22T02:14:15.9359820Z [1m[92m   Compiling[0m objc2-encode v4.1.0
+2025-12-22T02:14:15.9461350Z [1m[92m   Compiling[0m fnv v1.0.7
+2025-12-22T02:14:15.9562880Z [1m[92m   Compiling[0m tokio v1.48.0
+2025-12-22T02:14:17.9788180Z [1m[92m   Compiling[0m url v2.5.7
+2025-12-22T02:14:18.5261760Z [1m[92m   Compiling[0m futures-channel v0.3.31
+2025-12-22T02:14:18.6934280Z [1m[92m   Compiling[0m powerfmt v0.2.0
+2025-12-22T02:14:18.8722960Z [1m[92m   Compiling[0m pin-utils v0.1.0
+2025-12-22T02:14:18.9159370Z [1m[92m   Compiling[0m deranged v0.5.5
+2025-12-22T02:14:19.9586600Z [1m[92m   Compiling[0m crypto-common v0.1.7
+2025-12-22T02:14:20.0907930Z [1m[92m   Compiling[0m futures-task v0.3.31
+2025-12-22T02:14:20.2193600Z [1m[92m   Compiling[0m futures-io v0.3.31
+2025-12-22T02:14:20.3882180Z [1m[92m   Compiling[0m num-conv v0.1.0
+2025-12-22T02:14:20.4926110Z [1m[92m   Compiling[0m alloc-no-stdlib v2.0.4
+2025-12-22T02:14:20.6456160Z [1m[92m   Compiling[0m time-core v0.1.6
+2025-12-22T02:14:20.7341950Z [1m[92m   Compiling[0m alloc-stdlib v0.2.2
+2025-12-22T02:14:20.7862990Z [1m[92m   Compiling[0m time v0.3.44
+2025-12-22T02:14:20.8468790Z [1m[92m   Compiling[0m futures-util v0.3.31
+2025-12-22T02:14:23.6462360Z [1m[92m   Compiling[0m ring v0.17.14
+2025-12-22T02:14:24.3576540Z [1m[92m   Compiling[0m cookie v0.18.1
+2025-12-22T02:14:24.3981370Z [1m[92m   Compiling[0m tauri v2.9.5
+2025-12-22T02:14:27.7027560Z [1m[92m   Compiling[0m log v0.4.29
+2025-12-22T02:14:29.2413770Z [1m[92m   Compiling[0m objc2-core-foundation v0.3.2
+2025-12-22T02:14:30.3933630Z [1m[92m   Compiling[0m tracing-core v0.1.36
+2025-12-22T02:14:31.1525530Z [1m[92m   Compiling[0m http-body v1.0.1
+2025-12-22T02:14:31.2243010Z [1m[92m   Compiling[0m rustls-pki-types v1.13.2
+2025-12-22T02:14:31.7896600Z [1m[92m   Compiling[0m aho-corasick v1.1.4
+2025-12-22T02:14:32.8752030Z [1m[92m   Compiling[0m typeid v1.0.3
+2025-12-22T02:14:32.9442380Z [1m[92m   Compiling[0m untrusted v0.9.0
+2025-12-22T02:14:33.0661500Z [1m[92m   Compiling[0m regex-syntax v0.8.8
+2025-12-22T02:14:37.4094270Z [1m[92m   Compiling[0m equivalent v1.0.2
+2025-12-22T02:14:37.4709670Z [1m[92m   Compiling[0m option-ext v0.2.0
+2025-12-22T02:14:37.5423270Z [1m[92m   Compiling[0m hashbrown v0.16.1
+2025-12-22T02:14:37.7140900Z [1m[92m   Compiling[0m unic-char-range v0.9.0
+2025-12-22T02:14:37.7907780Z [1m[92m   Compiling[0m unic-common v0.9.0
+2025-12-22T02:14:37.8633780Z [1m[92m   Compiling[0m unic-ucd-version v0.9.0
+2025-12-22T02:14:37.9039720Z [1m[92m   Compiling[0m unic-char-property v0.9.0
+2025-12-22T02:14:37.9686680Z [1m[92m   Compiling[0m httparse v1.10.1
+2025-12-22T02:14:37.9912680Z [1m[92m   Compiling[0m regex-automata v0.4.13
+2025-12-22T02:14:38.0522280Z [1m[92m   Compiling[0m indexmap v2.12.1
+2025-12-22T02:14:40.5322390Z [1m[92m   Compiling[0m tracing v0.1.44
+2025-12-22T02:14:41.0146190Z [1m[92m   Compiling[0m objc2-foundation v0.3.2
+2025-12-22T02:14:43.8764710Z [1m[92m   Compiling[0m tokio-util v0.7.17
+2025-12-22T02:14:45.2420620Z [1m[92m   Compiling[0m uuid v1.19.0
+2025-12-22T02:14:45.9975120Z [1m[92m   Compiling[0m thiserror v2.0.17
+2025-12-22T02:14:46.0417480Z [1m[92m   Compiling[0m thiserror v1.0.69
+2025-12-22T02:14:46.0880570Z [1m[92m   Compiling[0m erased-serde v0.4.9
+2025-12-22T02:14:46.1121630Z [1m[92m   Compiling[0m byteorder v1.5.0
+2025-12-22T02:14:46.3203550Z [1m[92m   Compiling[0m atomic-waker v1.1.2
+2025-12-22T02:14:46.4012090Z [1m[92m   Compiling[0m winnow v0.7.14
+2025-12-22T02:14:48.4432710Z [1m[92m   Compiling[0m siphasher v1.0.1
+2025-12-22T02:14:48.5644750Z [1m[92m   Compiling[0m tower-service v0.3.3
+2025-12-22T02:14:48.6359380Z [1m[92m   Compiling[0m try-lock v0.2.5
+2025-12-22T02:14:48.7027260Z [1m[92m   Compiling[0m rustls v0.23.35
+2025-12-22T02:14:48.7137390Z [1m[92m   Compiling[0m want v0.3.1
+2025-12-22T02:14:48.7970650Z [1m[92m   Compiling[0m phf_shared v0.11.3
+2025-12-22T02:14:48.9191660Z [1m[92m   Compiling[0m crossbeam-utils v0.8.21
+2025-12-22T02:14:48.9392480Z [1m[92m   Compiling[0m toml_parser v1.0.6+spec-1.1.0
+2025-12-22T02:14:49.8325850Z [1m[92m   Compiling[0m h2 v0.4.12
+2025-12-22T02:14:50.0316370Z [1m[92m   Compiling[0m cfb v0.7.3
+2025-12-22T02:14:51.4561790Z [1m[92m   Compiling[0m regex v1.12.2
+2025-12-22T02:14:51.8025900Z [1m[92m   Compiling[0m rustls-webpki v0.103.8
+2025-12-22T02:14:52.9452340Z [1m[92m   Compiling[0m unic-ucd-ident v0.9.0
+2025-12-22T02:14:53.1173250Z [1m[92m   Compiling[0m brotli-decompressor v5.0.0
+2025-12-22T02:14:53.8619620Z [1m[92m   Compiling[0m block2 v0.6.2
+2025-12-22T02:14:54.1348980Z [1m[92m   Compiling[0m jsonptr v0.6.3
+2025-12-22T02:14:54.7822230Z [1m[92m   Compiling[0m dpi v0.1.2
+2025-12-22T02:14:55.0127190Z [1m[92m   Compiling[0m serde_spanned v1.0.4
+2025-12-22T02:14:55.0730090Z [1m[92m   Compiling[0m toml_datetime v0.7.5+spec-1.1.0
+2025-12-22T02:14:55.0932240Z [1m[92m   Compiling[0m anyhow v1.0.100
+2025-12-22T02:14:55.1361100Z [1m[92m   Compiling[0m getrandom v0.3.4
+2025-12-22T02:14:55.1462770Z [1m[92m   Compiling[0m same-file v1.0.6
+2025-12-22T02:14:55.2221220Z [1m[92m   Compiling[0m toml_writer v1.0.6+spec-1.1.0
+2025-12-22T02:14:55.3346140Z [1m[92m   Compiling[0m psl-types v2.0.11
+2025-12-22T02:14:55.3647230Z [1m[92m   Compiling[0m raw-window-handle v0.6.2
+2025-12-22T02:14:55.4048880Z [1m[92m   Compiling[0m publicsuffix v2.3.0
+2025-12-22T02:14:55.5154240Z [1m[92m   Compiling[0m toml v0.9.10+spec-1.1.0
+2025-12-22T02:14:55.5356340Z [1m[92m   Compiling[0m walkdir v2.5.0
+2025-12-22T02:14:56.7493720Z [1m[92m   Compiling[0m json-patch v3.0.1
+2025-12-22T02:14:56.8075310Z [1m[92m   Compiling[0m brotli v8.0.2
+2025-12-22T02:14:58.2329740Z [1m[92m   Compiling[0m urlpattern v0.3.0
+2025-12-22T02:14:59.4690860Z [1m[92m   Compiling[0m hyper v1.8.1
+2025-12-22T02:15:03.1662030Z [1m[92m   Compiling[0m serde-untagged v0.1.9
+2025-12-22T02:15:03.4489040Z [1m[92m   Compiling[0m infer v0.19.0
+2025-12-22T02:15:04.1839970Z [1m[92m   Compiling[0m phf v0.11.3
+2025-12-22T02:15:04.3051270Z [1m[92m   Compiling[0m objc2-ui-kit v0.3.2
+2025-12-22T02:15:04.5586810Z [1m[92m   Compiling[0m dirs-sys v0.5.0
+2025-12-22T02:15:04.6189290Z [1m[92m   Compiling[0m sync_wrapper v1.0.2
+2025-12-22T02:15:04.6791020Z [1m[92m   Compiling[0m serde_with v3.16.1
+2025-12-22T02:15:05.2881660Z [1m[92m   Compiling[0m base64 v0.22.1
+2025-12-22T02:15:05.6260070Z [1m[92m   Compiling[0m tower-layer v0.3.3
+2025-12-22T02:15:05.7645160Z [1m[92m   Compiling[0m dunce v1.0.5
+2025-12-22T02:15:05.7973900Z [1m[92m   Compiling[0m semver v1.0.27
+2025-12-22T02:15:05.9238000Z [1m[92m   Compiling[0m glob v0.3.3
+2025-12-22T02:15:06.2131180Z [1m[92m   Compiling[0m ipnet v2.11.0
+2025-12-22T02:15:06.5878250Z [1m[92m   Compiling[0m hyper-util v0.1.19
+2025-12-22T02:15:07.0939440Z [1m[92m   Compiling[0m tauri-utils v2.8.1
+2025-12-22T02:15:08.8794350Z [1m[92m   Compiling[0m wry v0.53.5
+2025-12-22T02:15:08.8875390Z [1m[92m   Compiling[0m tokio-rustls v0.26.4
+2025-12-22T02:15:09.1079910Z [1m[92m   Compiling[0m tauri-runtime v2.9.2
+2025-12-22T02:15:09.1132870Z [1m[92m   Compiling[0m tower v0.5.2
+2025-12-22T02:15:09.5807030Z [1m[92m   Compiling[0m dirs v6.0.0
+2025-12-22T02:15:09.6889550Z [1m[92m   Compiling[0m crossbeam-channel v0.5.15
+2025-12-22T02:15:10.2570400Z [1m[92m   Compiling[0m objc2-web-kit v0.3.2
+2025-12-22T02:15:11.0975300Z [1m[92m   Compiling[0m webpki-roots v1.0.4
+2025-12-22T02:15:11.1890250Z [1m[92m   Compiling[0m block-buffer v0.10.4
+2025-12-22T02:15:11.3099980Z [1m[92m   Compiling[0m iri-string v0.7.9
+2025-12-22T02:15:14.3701740Z [1m[92m   Compiling[0m lazy_static v1.5.0
+2025-12-22T02:15:14.5116200Z [1m[92m   Compiling[0m tao v0.34.5
+2025-12-22T02:15:23.7259550Z [1m[92m   Compiling[0m tower-http v0.6.8
+2025-12-22T02:15:25.9051760Z [1m[92m   Compiling[0m tauri-runtime-wry v2.9.3
+2025-12-22T02:15:25.9158980Z [1m[92m   Compiling[0m swift-rs v1.0.7
+2025-12-22T02:15:25.9267600Z [1m[92m   Compiling[0m digest v0.10.7
+2025-12-22T02:15:26.2643360Z [1m[92m   Compiling[0m hyper-rustls v0.27.7
+2025-12-22T02:15:31.0666870Z [1m[92m   Compiling[0m cookie_store v0.22.0
+2025-12-22T02:15:32.5238400Z [1m[92m   Compiling[0m http-body-util v0.1.3
+2025-12-22T02:15:32.8105400Z [1m[92m   Compiling[0m serde_urlencoded v0.7.1
+2025-12-22T02:15:32.9963130Z [1m[92m   Compiling[0m encoding_rs v0.8.35
+2025-12-22T02:15:33.2344840Z [1m[92m   Compiling[0m base64 v0.21.7
+2025-12-22T02:15:33.7762340Z [1m[92m   Compiling[0m cpufeatures v0.2.17
+2025-12-22T02:15:33.8508880Z [1m[92m   Compiling[0m mime v0.3.17
+2025-12-22T02:15:34.3093960Z [1m[92m   Compiling[0m reqwest v0.12.26
+2025-12-22T02:15:37.9916610Z [1m[92m   Compiling[0m serialize-to-javascript v0.1.2
+2025-12-22T02:15:39.7645950Z [1m[92m   Compiling[0m heck v0.5.0
+2025-12-22T02:15:48.5222130Z [1m[92m   Compiling[0m tauri-plugin-fs v2.4.4
+2025-12-22T02:15:48.5821620Z [1m[92m   Compiling[0m pqcrypto-internals v0.2.11
+2025-12-22T02:15:51.3314710Z [1m[92m   Compiling[0m simd-adler32 v0.3.8
+2025-12-22T02:15:51.6307310Z [1m[92m   Compiling[0m signal-hook v0.3.18
+2025-12-22T02:15:51.6509490Z [1m[92m   Compiling[0m num-traits v0.2.19
+2025-12-22T02:15:51.7733620Z [1m[92m   Compiling[0m zstd-sys v2.0.16+zstd.1.5.7
+2025-12-22T02:15:53.2299240Z [1m[92m   Compiling[0m crc32fast v1.5.0
+2025-12-22T02:15:53.2650970Z [1m[92m   Compiling[0m signal-hook-registry v1.4.7
+2025-12-22T02:15:54.3214310Z [1m[92m   Compiling[0m zerocopy v0.8.31
+2025-12-22T02:15:54.3650440Z [1m[92m   Compiling[0m adler2 v2.0.1
+2025-12-22T02:15:54.5157540Z [1m[92m   Compiling[0m miniz_oxide v0.8.9
+2025-12-22T02:15:56.4749250Z [1m[92m   Compiling[0m curve25519-dalek v4.1.3
+2025-12-22T02:15:57.2357100Z [1m[92m   Compiling[0m inout v0.1.4
+2025-12-22T02:15:57.3070350Z [1m[92m   Compiling[0m os_pipe v1.2.3
+2025-12-22T02:15:57.3072950Z [1m[92m   Compiling[0m curve25519-dalek-derive v0.1.1
+2025-12-22T02:15:57.3688400Z [1m[92m   Compiling[0m pathdiff v0.2.3
+2025-12-22T02:15:57.4075870Z [1m[92m   Compiling[0m open v5.3.3
+2025-12-22T02:15:57.4853850Z [1m[92m   Compiling[0m sigchld v0.2.4
+2025-12-22T02:15:57.5647880Z [1m[92m   Compiling[0m tauri-plugin-store v2.4.1
+2025-12-22T02:15:57.6089990Z [1m[92m   Compiling[0m tauri-plugin-http v2.5.4
+2025-12-22T02:15:57.6465890Z [1m[92m   Compiling[0m tauri-plugin-opener v2.5.2
+2025-12-22T02:16:00.6437830Z [1m[92m   Compiling[0m tauri-plugin-shell v2.3.3
+2025-12-22T02:16:07.8530320Z [1m[92m   Compiling[0m tauri-plugin-dialog v2.4.2
+2025-12-22T02:16:11.2578850Z [1m[92m   Compiling[0m cipher v0.4.4
+2025-12-22T02:16:11.5798000Z [1m[92m   Compiling[0m ppv-lite86 v0.2.21
+2025-12-22T02:16:11.9862850Z [1m[92m   Compiling[0m pxfm v0.1.27
+2025-12-22T02:16:15.9262030Z [1m[92m   Compiling[0m zstd-safe v7.2.4
+2025-12-22T02:16:15.9390390Z [1m[92m   Compiling[0m flate2 v1.1.5
+2025-12-22T02:16:16.5460520Z [1m[92m   Compiling[0m fdeflate v0.3.7
+2025-12-22T02:16:18.5143150Z [1m[92m   Compiling[0m universal-hash v0.5.1
+2025-12-22T02:16:18.6027820Z [1m[92m   Compiling[0m signature v2.2.0
+2025-12-22T02:16:18.6664590Z [1m[92m   Compiling[0m zune-core v0.5.0
+2025-12-22T02:16:18.9191640Z [1m[92m   Compiling[0m quick-error v2.0.1
+2025-12-22T02:16:18.9794260Z [1m[92m   Compiling[0m pqcrypto-traits v0.3.5
+2025-12-22T02:16:19.0498510Z [1m[92m   Compiling[0m opaque-debug v0.3.1
+2025-12-22T02:16:19.1000540Z [1m[92m   Compiling[0m byteorder-lite v0.1.0
+2025-12-22T02:16:19.3215370Z [1m[92m   Compiling[0m base64ct v1.8.1
+2025-12-22T02:16:19.6223290Z [1m[92m   Compiling[0m password-hash v0.5.0
+2025-12-22T02:16:20.5458570Z [1m[92m   Compiling[0m image-webp v0.2.4
+2025-12-22T02:16:24.0806680Z [1m[92m   Compiling[0m poly1305 v0.8.0
+2025-12-22T02:16:24.8384700Z [1m[92m   Compiling[0m snap v1.1.1
+2025-12-22T02:16:24.8486380Z [1m[92m   Compiling[0m zune-jpeg v0.5.7
+2025-12-22T02:16:25.0602290Z [1m[92m   Compiling[0m ed25519 v2.2.3
+2025-12-22T02:16:25.2013330Z [1m[92m   Compiling[0m blake3 v1.8.2
+2025-12-22T02:16:26.3034610Z [1m[92m   Compiling[0m pqcrypto-mlkem v0.1.1
+2025-12-22T02:16:26.7036490Z [1m[92m   Compiling[0m pqcrypto-dilithium v0.5.0
+2025-12-22T02:16:30.0350730Z [1m[92m   Compiling[0m png v0.18.0
+2025-12-22T02:16:33.0767770Z [1m[92m   Compiling[0m moxcms v0.7.11
+2025-12-22T02:16:46.2623530Z [1m[92m   Compiling[0m rand_chacha v0.3.1
+2025-12-22T02:16:46.6411940Z [1m[92m   Compiling[0m chacha20 v0.9.1
+2025-12-22T02:16:46.7220370Z [1m[92m   Compiling[0m shared_child v1.1.1
+2025-12-22T02:16:46.7626520Z [1m[92m   Compiling[0m sha2 v0.10.9
+2025-12-22T02:16:46.8846840Z [1m[92m   Compiling[0m blake2 v0.10.6
+2025-12-22T02:16:47.2454400Z [1m[92m   Compiling[0m hmac v0.12.1
+2025-12-22T02:16:47.3257490Z [1m[92m   Compiling[0m cookie_store v0.21.1
+2025-12-22T02:16:47.9226990Z [1m[92m   Compiling[0m dirs-sys v0.4.1
+2025-12-22T02:16:47.9722500Z [1m[92m   Compiling[0m futures-executor v0.3.31
+2025-12-22T02:16:48.2789580Z [1m[92m   Compiling[0m brotli-decompressor v4.0.3
+2025-12-22T02:16:48.8845250Z [1m[92m   Compiling[0m aead v0.5.2
+2025-12-22T02:16:48.9638720Z [1m[92m   Compiling[0m arrayvec v0.7.6
+2025-12-22T02:16:49.0709890Z [1m[92m   Compiling[0m arrayref v0.3.9
+2025-12-22T02:16:49.0935550Z [1m[92m   Compiling[0m bytemuck v1.24.0
+2025-12-22T02:16:49.2416250Z [1m[92m   Compiling[0m constant_time_eq v0.3.1
+2025-12-22T02:16:49.2980390Z [1m[92m   Compiling[0m twox-hash v2.1.2
+2025-12-22T02:16:49.3741750Z [1m[92m   Compiling[0m data-url v0.3.2
+2025-12-22T02:16:52.0175340Z [1m[92m   Compiling[0m lz4_flex v0.11.5
+2025-12-22T02:16:52.8809330Z [1m[92m   Compiling[0m image v0.25.9
+2025-12-22T02:16:54.0982440Z [1m[92m   Compiling[0m vortex-image v0.1.0 (/Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src-tauri)
+2025-12-22T02:16:54.2279820Z [1m[92m   Compiling[0m chacha20poly1305 v0.10.1
+2025-12-22T02:16:54.2773370Z [1m[92m   Compiling[0m brotli v7.0.0
+2025-12-22T02:16:58.6232710Z [1m[92m   Compiling[0m futures v0.3.31
+2025-12-22T02:16:58.6735760Z [1m[92m   Compiling[0m dirs v5.0.1
+2025-12-22T02:16:58.7544860Z [1m[92m   Compiling[0m hkdf v0.12.4
+2025-12-22T02:16:58.8573220Z [1m[92m   Compiling[0m argon2 v0.5.3
+2025-12-22T02:16:59.9833280Z [1m[92m   Compiling[0m ed25519-dalek v2.2.0
+2025-12-22T02:17:04.4871950Z [1m[92m   Compiling[0m rand v0.8.5
+2025-12-22T02:17:05.5720820Z [1m[92m   Compiling[0m zstd v0.13.3
+2025-12-22T02:17:06.7698360Z [1m[92m   Compiling[0m x25519-dalek v2.0.1
+2025-12-22T02:17:06.9536870Z [1m[92m   Compiling[0m hex v0.4.3
+2025-12-22T02:17:15.5077220Z [1m[33mwarning[0m[1m: variant `UnsupportedAlgorithm` is never constructed[0m
+2025-12-22T02:17:15.5079480Z   [1m[94m--> [0msrc/compress.rs:18:5
+2025-12-22T02:17:15.5137550Z    [1m[94m|[0m
+2025-12-22T02:17:15.5140000Z [1m[94m10[0m [1m[94m|[0m pub enum CompressError {
+2025-12-22T02:17:15.5142220Z    [1m[94m|[0m          [1m[94m-------------[0m [1m[94mvariant in this enum[0m
+2025-12-22T02:17:15.5143610Z [1m[94m...[0m
+2025-12-22T02:17:15.5158970Z [1m[94m18[0m [1m[94m|[0m     UnsupportedAlgorithm(String),
+2025-12-22T02:17:15.5159690Z    [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^^^^^^^^[0m
+2025-12-22T02:17:15.5160090Z    [1m[94m|[0m
+2025-12-22T02:17:15.5160850Z    [1m[94m= [0m[1mnote[0m: `CompressError` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+2025-12-22T02:17:15.5161790Z    [1m[94m= [0m[1mnote[0m: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+2025-12-22T02:17:15.5162200Z 
+2025-12-22T02:17:15.5162730Z [1m[33mwarning[0m[1m: variant `KeyGeneration` is never constructed[0m
+2025-12-22T02:17:15.5163360Z   [1m[94m--> [0msrc/crypto.rs:31:5
+2025-12-22T02:17:15.5163740Z    [1m[94m|[0m
+2025-12-22T02:17:15.5164340Z [1m[94m19[0m [1m[94m|[0m pub enum CryptoError {
+2025-12-22T02:17:15.5164920Z    [1m[94m|[0m          [1m[94m-----------[0m [1m[94mvariant in this enum[0m
+2025-12-22T02:17:15.5165390Z [1m[94m...[0m
+2025-12-22T02:17:15.5165840Z [1m[94m31[0m [1m[94m|[0m     KeyGeneration(String),
+2025-12-22T02:17:15.5166340Z    [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^[0m
+2025-12-22T02:17:15.5166690Z    [1m[94m|[0m
+2025-12-22T02:17:15.5167350Z    [1m[94m= [0m[1mnote[0m: `CryptoError` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+2025-12-22T02:17:15.5167850Z 
+2025-12-22T02:17:15.5168220Z [1m[33mwarning[0m[1m: method `verify` is never used[0m
+2025-12-22T02:17:15.5168670Z    [1m[94m--> [0msrc/crypto.rs:128:12
+2025-12-22T02:17:15.5217370Z     [1m[94m|[0m
+2025-12-22T02:17:15.5217740Z  [1m[94m87[0m [1m[94m|[0m impl HybridKeypair {
+2025-12-22T02:17:15.5218260Z     [1m[94m|[0m [1m[94m------------------[0m [1m[94mmethod in this implementation[0m
+2025-12-22T02:17:15.5218670Z [1m[94m...[0m
+2025-12-22T02:17:15.5219250Z [1m[94m128[0m [1m[94m|[0m     pub fn verify(&self, data: &[u8], signature: &[u8]) -> Result<(), CryptoError> {
+2025-12-22T02:17:15.5219780Z     [1m[94m|[0m            [1m[33m^^^^^^[0m
+2025-12-22T02:17:15.5219930Z 
+2025-12-22T02:18:16.3990890Z [1m[33mwarning[0m: `vortex-image` (lib) generated 3 warnings
+2025-12-22T02:18:17.1533980Z [1m[92m    Finished[0m `release` profile [optimized] target(s) in 4m 16s
+2025-12-22T02:18:17.6153970Z target/x86_64-apple-ios/release/libvortex_image_lib.a
+2025-12-22T02:18:17.6154750Z target/x86_64-apple-ios/release/deps/libvortex_image_lib.a
+2025-12-22T02:18:17.6155600Z target/x86_64-apple-ios/release/build/blake3-42d43f1292e6ff0a/out/libblake3_sse2_sse41_avx2_assembly.a
+2025-12-22T02:18:17.6156660Z target/x86_64-apple-ios/release/build/blake3-42d43f1292e6ff0a/out/libblake3_avx512_assembly.a
+2025-12-22T02:18:17.6158770Z target/x86_64-apple-ios/release/build/zstd-sys-5635d9be5eaab742/out/libzstd.a

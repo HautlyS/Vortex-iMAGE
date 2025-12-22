@@ -1,0 +1,33 @@
+﻿2025-12-22T02:08:38.1934460Z ##[group]Run XCODEPROJ=$(find src-tauri/gen/apple -name "*.xcodeproj" -type d | head -1)
+2025-12-22T02:08:38.1935160Z [36;1mXCODEPROJ=$(find src-tauri/gen/apple -name "*.xcodeproj" -type d | head -1)[0m
+2025-12-22T02:08:38.1935590Z [36;1mPBXPROJ="$XCODEPROJ/project.pbxproj"[0m
+2025-12-22T02:08:38.1935890Z [36;1m[0m
+2025-12-22T02:08:38.1936110Z [36;1mecho "Disabling code signing in: $PBXPROJ"[0m
+2025-12-22T02:08:38.1936370Z [36;1m[0m
+2025-12-22T02:08:38.1936520Z [36;1m# Disable code signing completely[0m
+2025-12-22T02:08:38.1949310Z [36;1msed -i '' 's/CODE_SIGN_IDENTITY = "[^"]*"/CODE_SIGN_IDENTITY = ""/g' "$PBXPROJ"[0m
+2025-12-22T02:08:38.1949700Z [36;1msed -i '' 's/CODE_SIGN_IDENTITY = -/CODE_SIGN_IDENTITY = ""/g' "$PBXPROJ"[0m
+2025-12-22T02:08:38.1950130Z [36;1msed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=iphoneos\*\]" = "[^"]*"/"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = ""/g' "$PBXPROJ"[0m
+2025-12-22T02:08:38.1950590Z [36;1msed -i '' 's/CODE_SIGNING_REQUIRED = YES/CODE_SIGNING_REQUIRED = NO/g' "$PBXPROJ"[0m
+2025-12-22T02:08:38.1951050Z [36;1msed -i '' 's/CODE_SIGNING_ALLOWED = YES/CODE_SIGNING_ALLOWED = NO/g' "$PBXPROJ"[0m
+2025-12-22T02:08:38.1951500Z [36;1msed -i '' 's/DEVELOPMENT_TEAM = "[^"]*"/DEVELOPMENT_TEAM = ""/g' "$PBXPROJ"[0m
+2025-12-22T02:08:38.1951780Z [36;1m[0m
+2025-12-22T02:08:38.1952030Z [36;1m# Remove or modify the "Build Rust Code" script phase to not use tauri xcode-script[0m
+2025-12-22T02:08:38.1952780Z [36;1m# This script requires a dev server which doesn't exist in CI[0m
+2025-12-22T02:08:38.1953080Z [36;1m# We'll build Rust separately and skip this phase[0m
+2025-12-22T02:08:38.1953290Z [36;1m[0m
+2025-12-22T02:08:38.1953480Z [36;1m# Comment out the script content by replacing it with a no-op[0m
+2025-12-22T02:08:38.1953980Z [36;1msed -i '' 's|pnpm tauri ios xcode-script|echo "Skipping tauri xcode-script in CI - Rust built separately"|g' "$PBXPROJ"[0m
+2025-12-22T02:08:38.2072080Z shell: /bin/bash -e {0}
+2025-12-22T02:08:38.2072340Z env:
+2025-12-22T02:08:38.2072990Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:38.2073220Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:38.2073450Z   APP_NAME: iMAGE
+2025-12-22T02:08:38.2073620Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:38.2073850Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:38.2074250Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:38.2074580Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:38.2074840Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:08:38.2075000Z   CACHE_ON_FAILURE: true
+2025-12-22T02:08:38.2075170Z ##[endgroup]
+2025-12-22T02:08:38.2486010Z Disabling code signing in: src-tauri/gen/apple/vortex-image.xcodeproj/project.pbxproj

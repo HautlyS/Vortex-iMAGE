@@ -1,0 +1,234 @@
+﻿2025-12-22T02:07:56.7983300Z ##[group]Run dtolnay/rust-toolchain@stable
+2025-12-22T02:07:56.7983730Z with:
+2025-12-22T02:07:56.7984100Z   targets: aarch64-apple-ios,x86_64-apple-ios,aarch64-apple-ios-sim
+2025-12-22T02:07:56.7984570Z   toolchain: stable
+2025-12-22T02:07:56.7984850Z env:
+2025-12-22T02:07:56.7985080Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:56.7985340Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:56.7985580Z   APP_NAME: iMAGE
+2025-12-22T02:07:56.7985820Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:56.7986210Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:07:56.7990170Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:07:56.7990740Z ##[endgroup]
+2025-12-22T02:07:56.8116310Z ##[group]Run : parse toolchain version
+2025-12-22T02:07:56.8116660Z [36;1m: parse toolchain version[0m
+2025-12-22T02:07:56.8116930Z [36;1mif [[ -z $toolchain ]]; then[0m
+2025-12-22T02:07:56.8117440Z [36;1m  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070[0m
+2025-12-22T02:07:56.8118100Z [36;1m  echo "'toolchain' is a required input" >&2[0m
+2025-12-22T02:07:56.8118360Z [36;1m  exit 1[0m
+2025-12-22T02:07:56.8118670Z [36;1melif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then[0m
+2025-12-22T02:07:56.8119050Z [36;1m  if [[ macOS == macOS ]]; then[0m
+2025-12-22T02:07:56.8119540Z [36;1m    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:56.8120070Z [36;1m  else[0m
+2025-12-22T02:07:56.8120450Z [36;1m    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:56.8120880Z [36;1m  fi[0m
+2025-12-22T02:07:56.8121180Z [36;1melif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then[0m
+2025-12-22T02:07:56.8121710Z [36;1m  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:56.8122400Z [36;1melif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then[0m
+2025-12-22T02:07:56.8122910Z [36;1m  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:56.8123360Z [36;1melse[0m
+2025-12-22T02:07:56.8123570Z [36;1m  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:56.8123840Z [36;1mfi[0m
+2025-12-22T02:07:56.8201130Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:07:56.8201400Z env:
+2025-12-22T02:07:56.8201600Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:56.8201790Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:56.8201950Z   APP_NAME: iMAGE
+2025-12-22T02:07:56.8202150Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:56.8202410Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:07:56.8202860Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:07:56.8203250Z   toolchain: stable
+2025-12-22T02:07:56.8203420Z ##[endgroup]
+2025-12-22T02:07:56.8513290Z ##[group]Run : construct rustup command line
+2025-12-22T02:07:56.8513550Z [36;1m: construct rustup command line[0m
+2025-12-22T02:07:56.8513870Z [36;1mecho "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:56.8514290Z [36;1mecho "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:56.8514620Z [36;1mecho "downgrade=" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:56.8569040Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:07:56.8569330Z env:
+2025-12-22T02:07:56.8569470Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:56.8569640Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:56.8569790Z   APP_NAME: iMAGE
+2025-12-22T02:07:56.8569970Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:56.8570210Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:07:56.8570510Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:07:56.8571220Z   targets: aarch64-apple-ios,x86_64-apple-ios,aarch64-apple-ios-sim
+2025-12-22T02:07:56.8571560Z   components: 
+2025-12-22T02:07:56.8571680Z ##[endgroup]
+2025-12-22T02:07:56.8866180Z ##[group]Run : set $CARGO_HOME
+2025-12-22T02:07:56.8866420Z [36;1m: set $CARGO_HOME[0m
+2025-12-22T02:07:56.8866650Z [36;1mecho CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV[0m
+2025-12-22T02:07:56.8921730Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:07:56.8921970Z env:
+2025-12-22T02:07:56.8922100Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:56.8922540Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:56.8922910Z   APP_NAME: iMAGE
+2025-12-22T02:07:56.8923120Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:56.8923310Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:07:56.8923600Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:07:56.8923910Z ##[endgroup]
+2025-12-22T02:07:56.9221720Z ##[group]Run : install rustup if needed
+2025-12-22T02:07:56.9222150Z [36;1m: install rustup if needed[0m
+2025-12-22T02:07:56.9222370Z [36;1mif ! command -v rustup &>/dev/null; then[0m
+2025-12-22T02:07:56.9222880Z [36;1m  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y[0m
+2025-12-22T02:07:56.9223390Z [36;1m  echo "$CARGO_HOME/bin" >> $GITHUB_PATH[0m
+2025-12-22T02:07:56.9223580Z [36;1mfi[0m
+2025-12-22T02:07:56.9277640Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:07:56.9277910Z env:
+2025-12-22T02:07:56.9278050Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:56.9278200Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:56.9278360Z   APP_NAME: iMAGE
+2025-12-22T02:07:56.9278510Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:56.9278700Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:07:56.9279220Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:07:56.9279550Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:07:56.9279740Z ##[endgroup]
+2025-12-22T02:07:56.9567470Z ##[group]Run rustup toolchain install stable --target aarch64-apple-ios --target x86_64-apple-ios --target aarch64-apple-ios-sim --profile minimal --no-self-update
+2025-12-22T02:07:56.9568300Z [36;1mrustup toolchain install stable --target aarch64-apple-ios --target x86_64-apple-ios --target aarch64-apple-ios-sim --profile minimal --no-self-update[0m
+2025-12-22T02:07:56.9615780Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:07:56.9616030Z env:
+2025-12-22T02:07:56.9616140Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:56.9616270Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:56.9616380Z   APP_NAME: iMAGE
+2025-12-22T02:07:56.9616500Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:56.9616690Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:07:56.9616950Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:07:56.9617180Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:07:56.9617350Z   RUSTUP_PERMIT_COPY_RENAME: 1
+2025-12-22T02:07:56.9617500Z ##[endgroup]
+2025-12-22T02:07:57.3101850Z info: syncing channel updates for 'stable-aarch64-apple-darwin'
+2025-12-22T02:07:57.4805240Z info: latest update on 2025-12-11, rust version 1.92.0 (ded5c06cf 2025-12-08)
+2025-12-22T02:07:57.5057090Z info: downloading component 'rust-std' for 'aarch64-apple-ios'
+2025-12-22T02:07:57.8088020Z info: downloading component 'rust-std' for 'aarch64-apple-ios-sim'
+2025-12-22T02:07:58.1553440Z info: downloading component 'rust-std' for 'x86_64-apple-ios'
+2025-12-22T02:07:58.3805040Z info: installing component 'rust-std' for 'aarch64-apple-ios'
+2025-12-22T02:08:00.0965330Z info: installing component 'rust-std' for 'aarch64-apple-ios-sim'
+2025-12-22T02:08:01.6719350Z info: installing component 'rust-std' for 'x86_64-apple-ios'
+2025-12-22T02:08:03.4421630Z 
+2025-12-22T02:08:03.4517190Z   stable-aarch64-apple-darwin updated - rustc 1.92.0 (ded5c06cf 2025-12-08) (from rustc 1.92.0 (ded5c06cf 2025-12-08))
+2025-12-22T02:08:03.4518870Z info: self-update is disabled for this build of rustup
+2025-12-22T02:08:03.4519130Z 
+2025-12-22T02:08:03.4519570Z info: any updates to rustup will need to be fetched with your system package manager
+2025-12-22T02:08:03.4632800Z ##[group]Run rustup default stable
+2025-12-22T02:08:03.4633160Z [36;1mrustup default stable[0m
+2025-12-22T02:08:03.4698220Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:08:03.4698580Z env:
+2025-12-22T02:08:03.4698780Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:03.4701520Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:03.4701740Z   APP_NAME: iMAGE
+2025-12-22T02:08:03.4701950Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:03.4702220Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:03.4702560Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:03.4702830Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:03.4703070Z ##[endgroup]
+2025-12-22T02:08:03.5229370Z info: using existing install for 'stable-aarch64-apple-darwin'
+2025-12-22T02:08:03.5490910Z info: default toolchain set to 'stable-aarch64-apple-darwin'
+2025-12-22T02:08:03.5491330Z 
+2025-12-22T02:08:03.5559830Z   stable-aarch64-apple-darwin unchanged - rustc 1.92.0 (ded5c06cf 2025-12-08)
+2025-12-22T02:08:03.5560270Z 
+2025-12-22T02:08:03.5594850Z ##[group]Run : create cachekey
+2025-12-22T02:08:03.5595190Z [36;1m: create cachekey[0m
+2025-12-22T02:08:03.5595540Z [36;1mDATE=$(rustc +stable --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')[0m
+2025-12-22T02:08:03.5596110Z [36;1mHASH=$(rustc +stable --version --verbose | sed -ne 's/^commit-hash: //p')[0m
+2025-12-22T02:08:03.5596560Z [36;1mecho "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:08:03.5650160Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:08:03.5650500Z env:
+2025-12-22T02:08:03.5650710Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:03.5650950Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:03.5651200Z   APP_NAME: iMAGE
+2025-12-22T02:08:03.5651440Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:03.5651680Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:03.5652060Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:03.5652510Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:03.5652680Z ##[endgroup]
+2025-12-22T02:08:03.6421940Z ##[group]Run : disable incremental compilation
+2025-12-22T02:08:03.6422260Z [36;1m: disable incremental compilation[0m
+2025-12-22T02:08:03.6422670Z [36;1mif [ -z "${CARGO_INCREMENTAL+set}" ]; then[0m
+2025-12-22T02:08:03.6423060Z [36;1m  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV[0m
+2025-12-22T02:08:03.6423350Z [36;1mfi[0m
+2025-12-22T02:08:03.6474080Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:08:03.6474380Z env:
+2025-12-22T02:08:03.6474530Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:03.6474680Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:03.6474880Z   APP_NAME: iMAGE
+2025-12-22T02:08:03.6475030Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:03.6475230Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:03.6475550Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:03.6475910Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:03.6476100Z ##[endgroup]
+2025-12-22T02:08:03.6770110Z ##[group]Run : enable colors in Cargo output
+2025-12-22T02:08:03.6770520Z [36;1m: enable colors in Cargo output[0m
+2025-12-22T02:08:03.6770800Z [36;1mif [ -z "${CARGO_TERM_COLOR+set}" ]; then[0m
+2025-12-22T02:08:03.6771130Z [36;1m  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV[0m
+2025-12-22T02:08:03.6771370Z [36;1mfi[0m
+2025-12-22T02:08:03.6824510Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:08:03.6824790Z env:
+2025-12-22T02:08:03.6824990Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:03.6825290Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:03.6825430Z   APP_NAME: iMAGE
+2025-12-22T02:08:03.6825600Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:03.6826170Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:03.6826520Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:03.6826780Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:03.6827010Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:08:03.6827200Z ##[endgroup]
+2025-12-22T02:08:03.7183840Z ##[group]Run : enable Cargo sparse registry
+2025-12-22T02:08:03.7184230Z [36;1m: enable Cargo sparse registry[0m
+2025-12-22T02:08:03.7184520Z [36;1m# implemented in 1.66, stabilized in 1.68, made default in 1.70[0m
+2025-12-22T02:08:03.7185310Z [36;1mif [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/Users/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol ]; then[0m
+2025-12-22T02:08:03.7185830Z [36;1m  if rustc +stable --version --verbose | grep -q '^release: 1\.6[89]\.'; then[0m
+2025-12-22T02:08:03.7186260Z [36;1m    touch "/Users/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+2025-12-22T02:08:03.7186710Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV[0m
+2025-12-22T02:08:03.7187080Z [36;1m  elif rustc +stable --version --verbose | grep -q '^release: 1\.6[67]\.'; then[0m
+2025-12-22T02:08:03.7187500Z [36;1m    touch "/Users/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+2025-12-22T02:08:03.7187890Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV[0m
+2025-12-22T02:08:03.7188140Z [36;1m  fi[0m
+2025-12-22T02:08:03.7188290Z [36;1mfi[0m
+2025-12-22T02:08:03.7242180Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:08:03.7242430Z env:
+2025-12-22T02:08:03.7242570Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:03.7242730Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:03.7242870Z   APP_NAME: iMAGE
+2025-12-22T02:08:03.7243010Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:03.7243220Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:03.7243520Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:03.7243800Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:03.7243980Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:08:03.7244130Z ##[endgroup]
+2025-12-22T02:08:03.7839080Z ##[group]Run : work around spurious network errors in curl 8.0
+2025-12-22T02:08:03.7839510Z [36;1m: work around spurious network errors in curl 8.0[0m
+2025-12-22T02:08:03.7839920Z [36;1m# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation[0m
+2025-12-22T02:08:03.7841210Z [36;1mif rustc +stable --version --verbose | grep -q '^release: 1\.7[01]\.'; then[0m
+2025-12-22T02:08:03.7841720Z [36;1m  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV[0m
+2025-12-22T02:08:03.7841960Z [36;1mfi[0m
+2025-12-22T02:08:03.7893600Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:08:03.7893840Z env:
+2025-12-22T02:08:03.7893980Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:03.7894150Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:03.7894290Z   APP_NAME: iMAGE
+2025-12-22T02:08:03.7894470Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:03.7894690Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:03.7895110Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:03.7895710Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:03.7895910Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:08:03.7896260Z ##[endgroup]
+2025-12-22T02:08:03.8347710Z ##[group]Run rustc +stable --version --verbose
+2025-12-22T02:08:03.8348170Z [36;1mrustc +stable --version --verbose[0m
+2025-12-22T02:08:03.8411310Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:08:03.8411560Z env:
+2025-12-22T02:08:03.8411740Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:03.8411900Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:03.8412030Z   APP_NAME: iMAGE
+2025-12-22T02:08:03.8412160Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:03.8412410Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:03.8412700Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:03.8413230Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:03.8413400Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:08:03.8413540Z ##[endgroup]
+2025-12-22T02:08:03.8829340Z rustc 1.92.0 (ded5c06cf 2025-12-08)
+2025-12-22T02:08:03.8839960Z binary: rustc
+2025-12-22T02:08:03.8847530Z commit-hash: ded5c06cf21d2b93bffd5d884aa6e96934ee4234
+2025-12-22T02:08:03.8848000Z commit-date: 2025-12-08
+2025-12-22T02:08:03.8848320Z host: aarch64-apple-darwin
+2025-12-22T02:08:03.8848640Z release: 1.92.0
+2025-12-22T02:08:03.8849300Z LLVM version: 21.1.3

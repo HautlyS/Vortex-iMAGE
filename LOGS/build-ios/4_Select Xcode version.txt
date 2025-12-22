@@ -1,0 +1,18 @@
+﻿2025-12-22T02:07:50.7836720Z ##[group]Run # Use latest stable Xcode available on runner
+2025-12-22T02:07:50.7837210Z [36;1m# Use latest stable Xcode available on runner[0m
+2025-12-22T02:07:50.7837580Z [36;1mXCODE_PATH=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)[0m
+2025-12-22T02:07:50.7837920Z [36;1mif [[ -n "$XCODE_PATH" ]]; then[0m
+2025-12-22T02:07:50.7838230Z [36;1m  sudo xcode-select -s "$XCODE_PATH/Contents/Developer"[0m
+2025-12-22T02:07:50.7838490Z [36;1mfi[0m
+2025-12-22T02:07:50.7838630Z [36;1mxcodebuild -version[0m
+2025-12-22T02:07:50.7838910Z [36;1mxcrun --sdk iphoneos --show-sdk-path || true[0m
+2025-12-22T02:07:50.7889690Z shell: /bin/bash -e {0}
+2025-12-22T02:07:50.7889900Z env:
+2025-12-22T02:07:50.7890050Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:50.7890250Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:50.7890390Z   APP_NAME: iMAGE
+2025-12-22T02:07:50.7890550Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:50.7890720Z ##[endgroup]
+2025-12-22T02:07:52.8895520Z Xcode 16.2
+2025-12-22T02:07:52.8896930Z Build version 16C5032a
+2025-12-22T02:07:53.3338120Z /Applications/Xcode_16.2.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk

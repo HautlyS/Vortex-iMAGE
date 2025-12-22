@@ -1,0 +1,4 @@
+﻿2025-12-22T02:18:32.7135250Z Evaluate and set job outputs
+2025-12-22T02:18:32.7139230Z Set output 'artifact_name'
+2025-12-22T02:18:32.7140600Z Set output 'has_ipa'
+2025-12-22T02:18:32.7141200Z Cleaning up orphan processes

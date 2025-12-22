@@ -1,0 +1,10 @@
+﻿2025-12-22T02:07:56.0900360Z ##[group]Run echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+2025-12-22T02:07:56.0900780Z [36;1mecho "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV[0m
+2025-12-22T02:07:56.0975270Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:07:56.0975610Z env:
+2025-12-22T02:07:56.0975800Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:56.0976030Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:56.0976200Z   APP_NAME: iMAGE
+2025-12-22T02:07:56.0976360Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:56.0976620Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:07:56.0976850Z ##[endgroup]

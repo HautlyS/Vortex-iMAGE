@@ -1,0 +1,77 @@
+﻿2025-12-22T02:07:48.6103740Z ##[group]Run actions/checkout@v4
+2025-12-22T02:07:48.6104210Z with:
+2025-12-22T02:07:48.6104360Z   repository: HautlyS/Vortex-iMAGE
+2025-12-22T02:07:48.6104750Z   token: ***
+2025-12-22T02:07:48.6104880Z   ssh-strict: true
+2025-12-22T02:07:48.6105010Z   ssh-user: git
+2025-12-22T02:07:48.6105140Z   persist-credentials: true
+2025-12-22T02:07:48.6105370Z   clean: true
+2025-12-22T02:07:48.6105530Z   sparse-checkout-cone-mode: true
+2025-12-22T02:07:48.6105700Z   fetch-depth: 1
+2025-12-22T02:07:48.6105850Z   fetch-tags: false
+2025-12-22T02:07:48.6105980Z   show-progress: true
+2025-12-22T02:07:48.6106110Z   lfs: false
+2025-12-22T02:07:48.6106230Z   submodules: false
+2025-12-22T02:07:48.6106360Z   set-safe-directory: true
+2025-12-22T02:07:48.6106660Z env:
+2025-12-22T02:07:48.6106780Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:48.6106920Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:48.6107050Z   APP_NAME: iMAGE
+2025-12-22T02:07:48.6107180Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:48.6107340Z ##[endgroup]
+2025-12-22T02:07:48.8848500Z Syncing repository: HautlyS/Vortex-iMAGE
+2025-12-22T02:07:48.8849510Z ##[group]Getting Git version info
+2025-12-22T02:07:48.8849830Z Working directory is '/Users/runner/work/Vortex-iMAGE/Vortex-iMAGE'
+2025-12-22T02:07:48.8850290Z [command]/opt/homebrew/bin/git version
+2025-12-22T02:07:48.9413770Z git version 2.50.1
+2025-12-22T02:07:48.9473640Z ##[endgroup]
+2025-12-22T02:07:48.9478050Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/2af33cf7-cc50-4a90-8e24-783f1c98329d/.gitconfig'
+2025-12-22T02:07:48.9479330Z Temporarily overriding HOME='/Users/runner/work/_temp/2af33cf7-cc50-4a90-8e24-783f1c98329d' before making global git config changes
+2025-12-22T02:07:48.9480250Z Adding repository directory to the temporary git global config as a safe directory
+2025-12-22T02:07:48.9480960Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE
+2025-12-22T02:07:48.9545570Z Deleting the contents of '/Users/runner/work/Vortex-iMAGE/Vortex-iMAGE'
+2025-12-22T02:07:48.9551340Z ##[group]Initializing the repository
+2025-12-22T02:07:48.9553140Z [command]/opt/homebrew/bin/git init /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE
+2025-12-22T02:07:48.9720810Z hint: Using 'master' as the name for the initial branch. This default branch name
+2025-12-22T02:07:48.9722620Z hint: is subject to change. To configure the initial branch name to use in all
+2025-12-22T02:07:48.9723260Z hint: of your new repositories, which will suppress this warning, call:
+2025-12-22T02:07:48.9723690Z hint:
+2025-12-22T02:07:48.9724030Z hint: 	git config --global init.defaultBranch <name>
+2025-12-22T02:07:48.9724370Z hint:
+2025-12-22T02:07:48.9724720Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2025-12-22T02:07:48.9725620Z hint: 'development'. The just-created branch can be renamed via this command:
+2025-12-22T02:07:48.9726120Z hint:
+2025-12-22T02:07:48.9726390Z hint: 	git branch -m <name>
+2025-12-22T02:07:48.9726670Z hint:
+2025-12-22T02:07:48.9727010Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2025-12-22T02:07:48.9727560Z Initialized empty Git repository in /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/.git/
+2025-12-22T02:07:48.9728650Z [command]/opt/homebrew/bin/git remote add origin https://github.com/HautlyS/Vortex-iMAGE
+2025-12-22T02:07:48.9781660Z ##[endgroup]
+2025-12-22T02:07:48.9782150Z ##[group]Disabling automatic garbage collection
+2025-12-22T02:07:48.9783980Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+2025-12-22T02:07:48.9827640Z ##[endgroup]
+2025-12-22T02:07:48.9828090Z ##[group]Setting up auth
+2025-12-22T02:07:48.9831980Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-12-22T02:07:48.9874870Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-12-22T02:07:49.1419650Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-12-22T02:07:49.1435580Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-12-22T02:07:49.2098200Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2025-12-22T02:07:49.2203310Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2025-12-22T02:07:49.2796210Z [command]/opt/homebrew/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2025-12-22T02:07:49.2830420Z ##[endgroup]
+2025-12-22T02:07:49.2831010Z ##[group]Fetching the repository
+2025-12-22T02:07:49.2836280Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +6352fa7547b84478cec552db13df60b93edb033a:refs/remotes/origin/main
+2025-12-22T02:07:50.5802690Z From https://github.com/HautlyS/Vortex-iMAGE
+2025-12-22T02:07:50.5803130Z  * [new ref]         6352fa7547b84478cec552db13df60b93edb033a -> origin/main
+2025-12-22T02:07:50.5850880Z ##[endgroup]
+2025-12-22T02:07:50.5851220Z ##[group]Determining the checkout info
+2025-12-22T02:07:50.5851960Z ##[endgroup]
+2025-12-22T02:07:50.5855750Z [command]/opt/homebrew/bin/git sparse-checkout disable
+2025-12-22T02:07:50.5912020Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+2025-12-22T02:07:50.5952080Z ##[group]Checking out the ref
+2025-12-22T02:07:50.5955420Z [command]/opt/homebrew/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2025-12-22T02:07:50.6569640Z Switched to a new branch 'main'
+2025-12-22T02:07:50.6676000Z branch 'main' set up to track 'origin/main'.
+2025-12-22T02:07:50.6978820Z ##[endgroup]
+2025-12-22T02:07:50.7145820Z [command]/opt/homebrew/bin/git log -1 --format=%H
+2025-12-22T02:07:50.7197520Z 6352fa7547b84478cec552db13df60b93edb033a

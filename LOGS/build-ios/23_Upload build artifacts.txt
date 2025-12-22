@@ -1,0 +1,31 @@
+﻿2025-12-22T02:18:23.4719740Z ##[group]Run actions/upload-artifact@v4
+2025-12-22T02:18:23.4720090Z with:
+2025-12-22T02:18:23.4720280Z   name: ios-debug-6352fa7547b84478cec552db13df60b93edb033a
+2025-12-22T02:18:23.4720610Z   path: ./build-output/
+2025-12-22T02:18:23.4720790Z   retention-days: 30
+2025-12-22T02:18:23.4720950Z   if-no-files-found: warn
+2025-12-22T02:18:23.4721130Z   compression-level: 6
+2025-12-22T02:18:23.4721290Z   overwrite: false
+2025-12-22T02:18:23.4721460Z   include-hidden-files: false
+2025-12-22T02:18:23.4721670Z env:
+2025-12-22T02:18:23.4721900Z   CARGO_TERM_COLOR: always
+2025-12-22T02:18:23.4722130Z   RUST_BACKTRACE: 1
+2025-12-22T02:18:23.4722350Z   APP_NAME: iMAGE
+2025-12-22T02:18:23.4722510Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:18:23.4722760Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:18:23.4723540Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:18:23.4723850Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:18:23.4724040Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:18:23.4724250Z   CACHE_ON_FAILURE: true
+2025-12-22T02:18:23.4724430Z ##[endgroup]
+2025-12-22T02:18:24.2793510Z With the provided path, there will be 1 file uploaded
+2025-12-22T02:18:24.2797010Z Artifact name is valid!
+2025-12-22T02:18:24.2802590Z Root directory input is valid!
+2025-12-22T02:18:24.5292590Z Beginning upload of artifact content to blob storage
+2025-12-22T02:18:24.7937500Z Uploaded bytes 99580
+2025-12-22T02:18:24.8389480Z Finished uploading artifact content to blob storage!
+2025-12-22T02:18:24.8390340Z SHA256 digest of uploaded artifact zip is 8c514d0de8a84ff6d2dac169eb0d8589a53abf3a04c6afbcc3c4ead432c9dcfe
+2025-12-22T02:18:24.8390860Z Finalizing artifact upload
+2025-12-22T02:18:24.9490320Z Artifact ios-debug-6352fa7547b84478cec552db13df60b93edb033a.zip successfully finalized. Artifact ID 4939250203
+2025-12-22T02:18:24.9495890Z Artifact ios-debug-6352fa7547b84478cec552db13df60b93edb033a has been successfully uploaded! Final size is 99580 bytes. Artifact ID is 4939250203
+2025-12-22T02:18:24.9502270Z Artifact download URL: https://github.com/HautlyS/Vortex-iMAGE/actions/runs/20419597612/artifacts/4939250203

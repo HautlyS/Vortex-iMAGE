@@ -1,0 +1,1677 @@
+﻿2025-12-22T02:07:44.0662960Z Current runner version: '2.330.0'
+2025-12-22T02:07:44.0676520Z ##[group]Runner Image Provisioner
+2025-12-22T02:07:44.0676970Z Hosted Compute Agent
+2025-12-22T02:07:44.0677280Z Version: 20251211.462
+2025-12-22T02:07:44.0677640Z Commit: 6cbad8c2bb55d58165063d031ccabf57e2d2db61
+2025-12-22T02:07:44.0678050Z Build Date: 2025-12-11T16:28:49Z
+2025-12-22T02:07:44.0678440Z Worker ID: {35e24a19-fe39-4521-aaba-236ee1deacd7}
+2025-12-22T02:07:44.0678850Z ##[endgroup]
+2025-12-22T02:07:44.0679170Z ##[group]Operating System
+2025-12-22T02:07:44.0679510Z macOS
+2025-12-22T02:07:44.0679780Z 14.8.3
+2025-12-22T02:07:44.0680030Z 23J220
+2025-12-22T02:07:44.0680290Z ##[endgroup]
+2025-12-22T02:07:44.0680580Z ##[group]Runner Image
+2025-12-22T02:07:44.0680880Z Image: macos-14-arm64
+2025-12-22T02:07:44.0681180Z Version: 20251216.0055.1
+2025-12-22T02:07:44.0681850Z Included Software: https://github.com/actions/runner-images/blob/macos-14-arm64/20251216.0055/images/macos/macos-14-arm64-Readme.md
+2025-12-22T02:07:44.0682830Z Image Release: https://github.com/actions/runner-images/releases/tag/macos-14-arm64%2F20251216.0055
+2025-12-22T02:07:44.0683400Z ##[endgroup]
+2025-12-22T02:07:44.0684030Z ##[group]GITHUB_TOKEN Permissions
+2025-12-22T02:07:44.0684920Z Contents: read
+2025-12-22T02:07:44.0685220Z Metadata: read
+2025-12-22T02:07:44.0685510Z Packages: read
+2025-12-22T02:07:44.0685790Z ##[endgroup]
+2025-12-22T02:07:44.0686990Z Secret source: Actions
+2025-12-22T02:07:44.0687380Z Prepare workflow directory
+2025-12-22T02:07:44.0929530Z Prepare all required actions
+2025-12-22T02:07:44.0958520Z Getting action download info
+2025-12-22T02:07:44.5596640Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+2025-12-22T02:07:45.1113390Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2025-12-22T02:07:45.2799720Z Download action repository 'pnpm/action-setup@v4' (SHA:41ff72655975bd51cab0327fa583b6e92b6d3061)
+2025-12-22T02:07:46.5056470Z Download action repository 'actions/cache@v4' (SHA:0057852bfaa89a56745cba8c7296529d2fc39830)
+2025-12-22T02:07:46.6049650Z Download action repository 'dtolnay/rust-toolchain@stable' (SHA:4be9e76fd7c4901c61fb841f559994984270fce7)
+2025-12-22T02:07:47.2871810Z Download action repository 'swatinem/rust-cache@v2' (SHA:779680da715d629ac1d338a641029a2f4372abb5)
+2025-12-22T02:07:48.3740220Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2025-12-22T02:07:48.5705360Z Complete job name: build-ios
+2025-12-22T02:07:48.6103790Z ##[group]Run actions/checkout@v4
+2025-12-22T02:07:48.6104220Z with:
+2025-12-22T02:07:48.6104360Z   repository: HautlyS/Vortex-iMAGE
+2025-12-22T02:07:48.6104760Z   token: ***
+2025-12-22T02:07:48.6104880Z   ssh-strict: true
+2025-12-22T02:07:48.6105010Z   ssh-user: git
+2025-12-22T02:07:48.6105140Z   persist-credentials: true
+2025-12-22T02:07:48.6105380Z   clean: true
+2025-12-22T02:07:48.6105530Z   sparse-checkout-cone-mode: true
+2025-12-22T02:07:48.6105700Z   fetch-depth: 1
+2025-12-22T02:07:48.6105850Z   fetch-tags: false
+2025-12-22T02:07:48.6105980Z   show-progress: true
+2025-12-22T02:07:48.6106120Z   lfs: false
+2025-12-22T02:07:48.6106230Z   submodules: false
+2025-12-22T02:07:48.6106370Z   set-safe-directory: true
+2025-12-22T02:07:48.6106660Z env:
+2025-12-22T02:07:48.6106780Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:48.6106930Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:48.6107050Z   APP_NAME: iMAGE
+2025-12-22T02:07:48.6107190Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:48.6107370Z ##[endgroup]
+2025-12-22T02:07:48.8848560Z Syncing repository: HautlyS/Vortex-iMAGE
+2025-12-22T02:07:48.8849520Z ##[group]Getting Git version info
+2025-12-22T02:07:48.8849830Z Working directory is '/Users/runner/work/Vortex-iMAGE/Vortex-iMAGE'
+2025-12-22T02:07:48.8850300Z [command]/opt/homebrew/bin/git version
+2025-12-22T02:07:48.9413820Z git version 2.50.1
+2025-12-22T02:07:48.9473690Z ##[endgroup]
+2025-12-22T02:07:48.9478070Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/2af33cf7-cc50-4a90-8e24-783f1c98329d/.gitconfig'
+2025-12-22T02:07:48.9479340Z Temporarily overriding HOME='/Users/runner/work/_temp/2af33cf7-cc50-4a90-8e24-783f1c98329d' before making global git config changes
+2025-12-22T02:07:48.9480250Z Adding repository directory to the temporary git global config as a safe directory
+2025-12-22T02:07:48.9480970Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE
+2025-12-22T02:07:48.9545720Z Deleting the contents of '/Users/runner/work/Vortex-iMAGE/Vortex-iMAGE'
+2025-12-22T02:07:48.9551360Z ##[group]Initializing the repository
+2025-12-22T02:07:48.9553150Z [command]/opt/homebrew/bin/git init /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE
+2025-12-22T02:07:48.9720850Z hint: Using 'master' as the name for the initial branch. This default branch name
+2025-12-22T02:07:48.9722640Z hint: is subject to change. To configure the initial branch name to use in all
+2025-12-22T02:07:48.9723260Z hint: of your new repositories, which will suppress this warning, call:
+2025-12-22T02:07:48.9723700Z hint:
+2025-12-22T02:07:48.9724040Z hint: 	git config --global init.defaultBranch <name>
+2025-12-22T02:07:48.9724370Z hint:
+2025-12-22T02:07:48.9724720Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2025-12-22T02:07:48.9725630Z hint: 'development'. The just-created branch can be renamed via this command:
+2025-12-22T02:07:48.9726130Z hint:
+2025-12-22T02:07:48.9726390Z hint: 	git branch -m <name>
+2025-12-22T02:07:48.9726670Z hint:
+2025-12-22T02:07:48.9727030Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2025-12-22T02:07:48.9727560Z Initialized empty Git repository in /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/.git/
+2025-12-22T02:07:48.9728650Z [command]/opt/homebrew/bin/git remote add origin https://github.com/HautlyS/Vortex-iMAGE
+2025-12-22T02:07:48.9781690Z ##[endgroup]
+2025-12-22T02:07:48.9782150Z ##[group]Disabling automatic garbage collection
+2025-12-22T02:07:48.9783980Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+2025-12-22T02:07:48.9827660Z ##[endgroup]
+2025-12-22T02:07:48.9828090Z ##[group]Setting up auth
+2025-12-22T02:07:48.9831990Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-12-22T02:07:48.9874890Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-12-22T02:07:49.1420400Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-12-22T02:07:49.1435590Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-12-22T02:07:49.2098270Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2025-12-22T02:07:49.2203370Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2025-12-22T02:07:49.2796260Z [command]/opt/homebrew/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2025-12-22T02:07:49.2830450Z ##[endgroup]
+2025-12-22T02:07:49.2831010Z ##[group]Fetching the repository
+2025-12-22T02:07:49.2836320Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +6352fa7547b84478cec552db13df60b93edb033a:refs/remotes/origin/main
+2025-12-22T02:07:50.5802740Z From https://github.com/HautlyS/Vortex-iMAGE
+2025-12-22T02:07:50.5803130Z  * [new ref]         6352fa7547b84478cec552db13df60b93edb033a -> origin/main
+2025-12-22T02:07:50.5850900Z ##[endgroup]
+2025-12-22T02:07:50.5851230Z ##[group]Determining the checkout info
+2025-12-22T02:07:50.5851960Z ##[endgroup]
+2025-12-22T02:07:50.5855760Z [command]/opt/homebrew/bin/git sparse-checkout disable
+2025-12-22T02:07:50.5912050Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+2025-12-22T02:07:50.5952100Z ##[group]Checking out the ref
+2025-12-22T02:07:50.5955440Z [command]/opt/homebrew/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2025-12-22T02:07:50.6569670Z Switched to a new branch 'main'
+2025-12-22T02:07:50.6676050Z branch 'main' set up to track 'origin/main'.
+2025-12-22T02:07:50.6978860Z ##[endgroup]
+2025-12-22T02:07:50.7145930Z [command]/opt/homebrew/bin/git log -1 --format=%H
+2025-12-22T02:07:50.7197570Z 6352fa7547b84478cec552db13df60b93edb033a
+2025-12-22T02:07:50.7393250Z ##[group]Run # Determine build configuration
+2025-12-22T02:07:50.7393760Z [36;1m# Determine build configuration[0m
+2025-12-22T02:07:50.7394030Z [36;1mif [[ "push" == "push" && "branch" == "tag" ]]; then[0m
+2025-12-22T02:07:50.7394310Z [36;1m  echo "build_type=release" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:50.7394590Z [36;1m  echo "export_method=app-store" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:50.7394840Z [36;1melif [[ "" == "release" ]]; then[0m
+2025-12-22T02:07:50.7395060Z [36;1m  echo "build_type=release" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:50.7395330Z [36;1m  echo "export_method=development" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:50.7395550Z [36;1melse[0m
+2025-12-22T02:07:50.7395730Z [36;1m  echo "build_type=debug" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:50.7395980Z [36;1m  echo "export_method=development" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:50.7396190Z [36;1mfi[0m
+2025-12-22T02:07:50.7396310Z [36;1m[0m
+2025-12-22T02:07:50.7396510Z [36;1m# Check if signing is available[0m
+2025-12-22T02:07:50.7396700Z [36;1mif [[ -n "" ]]; then[0m
+2025-12-22T02:07:50.7396920Z [36;1m  echo "has_signing=true" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:50.7397150Z [36;1melse[0m
+2025-12-22T02:07:50.7397310Z [36;1m  echo "has_signing=false" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:50.7397500Z [36;1mfi[0m
+2025-12-22T02:07:50.7460900Z shell: /bin/bash -e {0}
+2025-12-22T02:07:50.7461190Z env:
+2025-12-22T02:07:50.7461330Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:50.7461490Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:50.7461620Z   APP_NAME: iMAGE
+2025-12-22T02:07:50.7461790Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:50.7461960Z ##[endgroup]
+2025-12-22T02:07:50.7836740Z ##[group]Run # Use latest stable Xcode available on runner
+2025-12-22T02:07:50.7837210Z [36;1m# Use latest stable Xcode available on runner[0m
+2025-12-22T02:07:50.7837590Z [36;1mXCODE_PATH=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)[0m
+2025-12-22T02:07:50.7837920Z [36;1mif [[ -n "$XCODE_PATH" ]]; then[0m
+2025-12-22T02:07:50.7838230Z [36;1m  sudo xcode-select -s "$XCODE_PATH/Contents/Developer"[0m
+2025-12-22T02:07:50.7838500Z [36;1mfi[0m
+2025-12-22T02:07:50.7838640Z [36;1mxcodebuild -version[0m
+2025-12-22T02:07:50.7838910Z [36;1mxcrun --sdk iphoneos --show-sdk-path || true[0m
+2025-12-22T02:07:50.7889700Z shell: /bin/bash -e {0}
+2025-12-22T02:07:50.7889900Z env:
+2025-12-22T02:07:50.7890050Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:50.7890250Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:50.7890390Z   APP_NAME: iMAGE
+2025-12-22T02:07:50.7890550Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:50.7890730Z ##[endgroup]
+2025-12-22T02:07:52.8895890Z Xcode 16.2
+2025-12-22T02:07:52.8896940Z Build version 16C5032a
+2025-12-22T02:07:53.3338160Z /Applications/Xcode_16.2.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk
+2025-12-22T02:07:53.3422650Z ##[group]Run actions/setup-node@v4
+2025-12-22T02:07:53.3422880Z with:
+2025-12-22T02:07:53.3422990Z   node-version: lts/*
+2025-12-22T02:07:53.3423130Z   always-auth: false
+2025-12-22T02:07:53.3423260Z   check-latest: false
+2025-12-22T02:07:53.3423470Z   token: ***
+2025-12-22T02:07:53.3423580Z env:
+2025-12-22T02:07:53.3423690Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:53.3423850Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:53.3423970Z   APP_NAME: iMAGE
+2025-12-22T02:07:53.3424120Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:53.3424430Z ##[endgroup]
+2025-12-22T02:07:53.4705690Z Attempt to resolve LTS alias from manifest...
+2025-12-22T02:07:54.4494080Z Found in cache @ /Users/runner/hostedtoolcache/node/24.12.0/arm64
+2025-12-22T02:07:54.4509390Z ##[group]Environment details
+2025-12-22T02:07:54.9791450Z node: v24.12.0
+2025-12-22T02:07:54.9791710Z npm: 11.6.2
+2025-12-22T02:07:54.9791970Z yarn: 1.22.22
+2025-12-22T02:07:54.9793370Z ##[endgroup]
+2025-12-22T02:07:54.9907210Z ##[group]Run pnpm/action-setup@v4
+2025-12-22T02:07:54.9907520Z with:
+2025-12-22T02:07:54.9907720Z   version: 9
+2025-12-22T02:07:54.9907930Z   dest: ~/setup-pnpm
+2025-12-22T02:07:54.9908150Z   run_install: null
+2025-12-22T02:07:54.9908320Z   package_json_file: package.json
+2025-12-22T02:07:54.9908560Z   standalone: false
+2025-12-22T02:07:54.9908830Z env:
+2025-12-22T02:07:54.9908980Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:54.9909150Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:54.9909300Z   APP_NAME: iMAGE
+2025-12-22T02:07:54.9909560Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:54.9909800Z ##[endgroup]
+2025-12-22T02:07:55.0596040Z ##[group]Running self-installer...
+2025-12-22T02:07:55.4956470Z Progress: resolved 1, reused 0, downloaded 0, added 0
+2025-12-22T02:07:55.5054090Z Packages: +1
+2025-12-22T02:07:55.5054470Z +
+2025-12-22T02:07:56.0267800Z Progress: resolved 1, reused 0, downloaded 1, added 1, done
+2025-12-22T02:07:56.0737730Z 
+2025-12-22T02:07:56.0738450Z dependencies:
+2025-12-22T02:07:56.0739150Z + pnpm 9.15.9 (10.26.1 is available)
+2025-12-22T02:07:56.0739450Z 
+2025-12-22T02:07:56.0773810Z Done in 912ms
+2025-12-22T02:07:56.0845440Z ##[endgroup]
+2025-12-22T02:07:56.0847260Z Installation Completed!
+2025-12-22T02:07:56.0900370Z ##[group]Run echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+2025-12-22T02:07:56.0900780Z [36;1mecho "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV[0m
+2025-12-22T02:07:56.0975290Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:07:56.0975620Z env:
+2025-12-22T02:07:56.0975810Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:56.0976030Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:56.0976200Z   APP_NAME: iMAGE
+2025-12-22T02:07:56.0976360Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:56.0976630Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:07:56.0976850Z ##[endgroup]
+2025-12-22T02:07:56.4857120Z ##[group]Run actions/cache@v4
+2025-12-22T02:07:56.4857360Z with:
+2025-12-22T02:07:56.4857550Z   path: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:07:56.4857940Z   key: macOS-pnpm-store-a444fbc8a552b3d2bf8e0cfe7677fdc6deb354cbda884dd7eea6f931203e6775
+2025-12-22T02:07:56.4858300Z   restore-keys: macOS-pnpm-store-
+
+2025-12-22T02:07:56.4858490Z   enableCrossOsArchive: false
+2025-12-22T02:07:56.4858700Z   fail-on-cache-miss: false
+2025-12-22T02:07:56.4858880Z   lookup-only: false
+2025-12-22T02:07:56.4859110Z   save-always: false
+2025-12-22T02:07:56.4859300Z env:
+2025-12-22T02:07:56.4859430Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:56.4859620Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:56.4859770Z   APP_NAME: iMAGE
+2025-12-22T02:07:56.4859950Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:56.4860190Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:07:56.4860500Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:07:56.4860800Z ##[endgroup]
+2025-12-22T02:07:56.7786570Z Cache not found for input keys: macOS-pnpm-store-a444fbc8a552b3d2bf8e0cfe7677fdc6deb354cbda884dd7eea6f931203e6775, macOS-pnpm-store-
+2025-12-22T02:07:56.7983320Z ##[group]Run dtolnay/rust-toolchain@stable
+2025-12-22T02:07:56.7983730Z with:
+2025-12-22T02:07:56.7984110Z   targets: aarch64-apple-ios,x86_64-apple-ios,aarch64-apple-ios-sim
+2025-12-22T02:07:56.7984570Z   toolchain: stable
+2025-12-22T02:07:56.7984860Z env:
+2025-12-22T02:07:56.7985080Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:56.7985350Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:56.7985580Z   APP_NAME: iMAGE
+2025-12-22T02:07:56.7985820Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:56.7986210Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:07:56.7990180Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:07:56.7990740Z ##[endgroup]
+2025-12-22T02:07:56.8116320Z ##[group]Run : parse toolchain version
+2025-12-22T02:07:56.8116660Z [36;1m: parse toolchain version[0m
+2025-12-22T02:07:56.8116940Z [36;1mif [[ -z $toolchain ]]; then[0m
+2025-12-22T02:07:56.8117510Z [36;1m  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070[0m
+2025-12-22T02:07:56.8118100Z [36;1m  echo "'toolchain' is a required input" >&2[0m
+2025-12-22T02:07:56.8118370Z [36;1m  exit 1[0m
+2025-12-22T02:07:56.8118670Z [36;1melif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then[0m
+2025-12-22T02:07:56.8119050Z [36;1m  if [[ macOS == macOS ]]; then[0m
+2025-12-22T02:07:56.8119540Z [36;1m    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:56.8120070Z [36;1m  else[0m
+2025-12-22T02:07:56.8120450Z [36;1m    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:56.8120880Z [36;1m  fi[0m
+2025-12-22T02:07:56.8121180Z [36;1melif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then[0m
+2025-12-22T02:07:56.8121720Z [36;1m  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:56.8122400Z [36;1melif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then[0m
+2025-12-22T02:07:56.8122920Z [36;1m  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:56.8123360Z [36;1melse[0m
+2025-12-22T02:07:56.8123570Z [36;1m  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:56.8123840Z [36;1mfi[0m
+2025-12-22T02:07:56.8201130Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:07:56.8201400Z env:
+2025-12-22T02:07:56.8201600Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:56.8201790Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:56.8201950Z   APP_NAME: iMAGE
+2025-12-22T02:07:56.8202150Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:56.8202420Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:07:56.8202860Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:07:56.8203260Z   toolchain: stable
+2025-12-22T02:07:56.8203430Z ##[endgroup]
+2025-12-22T02:07:56.8513310Z ##[group]Run : construct rustup command line
+2025-12-22T02:07:56.8513550Z [36;1m: construct rustup command line[0m
+2025-12-22T02:07:56.8513870Z [36;1mecho "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:56.8514290Z [36;1mecho "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:56.8514620Z [36;1mecho "downgrade=" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:07:56.8569040Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:07:56.8569330Z env:
+2025-12-22T02:07:56.8569480Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:56.8569650Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:56.8569790Z   APP_NAME: iMAGE
+2025-12-22T02:07:56.8569970Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:56.8570210Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:07:56.8570870Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:07:56.8571220Z   targets: aarch64-apple-ios,x86_64-apple-ios,aarch64-apple-ios-sim
+2025-12-22T02:07:56.8571560Z   components: 
+2025-12-22T02:07:56.8571680Z ##[endgroup]
+2025-12-22T02:07:56.8866220Z ##[group]Run : set $CARGO_HOME
+2025-12-22T02:07:56.8866420Z [36;1m: set $CARGO_HOME[0m
+2025-12-22T02:07:56.8866650Z [36;1mecho CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV[0m
+2025-12-22T02:07:56.8921730Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:07:56.8921970Z env:
+2025-12-22T02:07:56.8922100Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:56.8922540Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:56.8922910Z   APP_NAME: iMAGE
+2025-12-22T02:07:56.8923120Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:56.8923310Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:07:56.8923610Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:07:56.8923920Z ##[endgroup]
+2025-12-22T02:07:56.9221870Z ##[group]Run : install rustup if needed
+2025-12-22T02:07:56.9222160Z [36;1m: install rustup if needed[0m
+2025-12-22T02:07:56.9222370Z [36;1mif ! command -v rustup &>/dev/null; then[0m
+2025-12-22T02:07:56.9222880Z [36;1m  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y[0m
+2025-12-22T02:07:56.9223390Z [36;1m  echo "$CARGO_HOME/bin" >> $GITHUB_PATH[0m
+2025-12-22T02:07:56.9223580Z [36;1mfi[0m
+2025-12-22T02:07:56.9277650Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:07:56.9277910Z env:
+2025-12-22T02:07:56.9278050Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:56.9278210Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:56.9278360Z   APP_NAME: iMAGE
+2025-12-22T02:07:56.9278510Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:56.9278700Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:07:56.9279220Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:07:56.9279560Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:07:56.9279740Z ##[endgroup]
+2025-12-22T02:07:56.9567490Z ##[group]Run rustup toolchain install stable --target aarch64-apple-ios --target x86_64-apple-ios --target aarch64-apple-ios-sim --profile minimal --no-self-update
+2025-12-22T02:07:56.9568300Z [36;1mrustup toolchain install stable --target aarch64-apple-ios --target x86_64-apple-ios --target aarch64-apple-ios-sim --profile minimal --no-self-update[0m
+2025-12-22T02:07:56.9615780Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:07:56.9616030Z env:
+2025-12-22T02:07:56.9616140Z   CARGO_TERM_COLOR: always
+2025-12-22T02:07:56.9616270Z   RUST_BACKTRACE: 1
+2025-12-22T02:07:56.9616380Z   APP_NAME: iMAGE
+2025-12-22T02:07:56.9616500Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:07:56.9616690Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:07:56.9616950Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:07:56.9617190Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:07:56.9617350Z   RUSTUP_PERMIT_COPY_RENAME: 1
+2025-12-22T02:07:56.9617500Z ##[endgroup]
+2025-12-22T02:07:57.3101970Z info: syncing channel updates for 'stable-aarch64-apple-darwin'
+2025-12-22T02:07:57.4805290Z info: latest update on 2025-12-11, rust version 1.92.0 (ded5c06cf 2025-12-08)
+2025-12-22T02:07:57.5057130Z info: downloading component 'rust-std' for 'aarch64-apple-ios'
+2025-12-22T02:07:57.8088060Z info: downloading component 'rust-std' for 'aarch64-apple-ios-sim'
+2025-12-22T02:07:58.1553490Z info: downloading component 'rust-std' for 'x86_64-apple-ios'
+2025-12-22T02:07:58.3805080Z info: installing component 'rust-std' for 'aarch64-apple-ios'
+2025-12-22T02:08:00.0965490Z info: installing component 'rust-std' for 'aarch64-apple-ios-sim'
+2025-12-22T02:08:01.6719400Z info: installing component 'rust-std' for 'x86_64-apple-ios'
+2025-12-22T02:08:03.4421690Z 
+2025-12-22T02:08:03.4518080Z   stable-aarch64-apple-darwin updated - rustc 1.92.0 (ded5c06cf 2025-12-08) (from rustc 1.92.0 (ded5c06cf 2025-12-08))
+2025-12-22T02:08:03.4518880Z info: self-update is disabled for this build of rustup
+2025-12-22T02:08:03.4519140Z 
+2025-12-22T02:08:03.4519580Z info: any updates to rustup will need to be fetched with your system package manager
+2025-12-22T02:08:03.4632820Z ##[group]Run rustup default stable
+2025-12-22T02:08:03.4633160Z [36;1mrustup default stable[0m
+2025-12-22T02:08:03.4698240Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:08:03.4698590Z env:
+2025-12-22T02:08:03.4698790Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:03.4701530Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:03.4701740Z   APP_NAME: iMAGE
+2025-12-22T02:08:03.4701950Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:03.4702220Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:03.4702570Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:03.4702830Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:03.4703080Z ##[endgroup]
+2025-12-22T02:08:03.5229840Z info: using existing install for 'stable-aarch64-apple-darwin'
+2025-12-22T02:08:03.5490990Z info: default toolchain set to 'stable-aarch64-apple-darwin'
+2025-12-22T02:08:03.5491330Z 
+2025-12-22T02:08:03.5559870Z   stable-aarch64-apple-darwin unchanged - rustc 1.92.0 (ded5c06cf 2025-12-08)
+2025-12-22T02:08:03.5560280Z 
+2025-12-22T02:08:03.5594860Z ##[group]Run : create cachekey
+2025-12-22T02:08:03.5595190Z [36;1m: create cachekey[0m
+2025-12-22T02:08:03.5595540Z [36;1mDATE=$(rustc +stable --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')[0m
+2025-12-22T02:08:03.5596110Z [36;1mHASH=$(rustc +stable --version --verbose | sed -ne 's/^commit-hash: //p')[0m
+2025-12-22T02:08:03.5596560Z [36;1mecho "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:08:03.5650160Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:08:03.5650500Z env:
+2025-12-22T02:08:03.5650710Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:03.5650970Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:03.5651200Z   APP_NAME: iMAGE
+2025-12-22T02:08:03.5651440Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:03.5651680Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:03.5652060Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:03.5652510Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:03.5652680Z ##[endgroup]
+2025-12-22T02:08:03.6421980Z ##[group]Run : disable incremental compilation
+2025-12-22T02:08:03.6422260Z [36;1m: disable incremental compilation[0m
+2025-12-22T02:08:03.6422670Z [36;1mif [ -z "${CARGO_INCREMENTAL+set}" ]; then[0m
+2025-12-22T02:08:03.6423060Z [36;1m  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV[0m
+2025-12-22T02:08:03.6423360Z [36;1mfi[0m
+2025-12-22T02:08:03.6474090Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:08:03.6474380Z env:
+2025-12-22T02:08:03.6474530Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:03.6474680Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:03.6474900Z   APP_NAME: iMAGE
+2025-12-22T02:08:03.6475040Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:03.6475230Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:03.6475610Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:03.6475920Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:03.6476100Z ##[endgroup]
+2025-12-22T02:08:03.6770180Z ##[group]Run : enable colors in Cargo output
+2025-12-22T02:08:03.6770520Z [36;1m: enable colors in Cargo output[0m
+2025-12-22T02:08:03.6770800Z [36;1mif [ -z "${CARGO_TERM_COLOR+set}" ]; then[0m
+2025-12-22T02:08:03.6771130Z [36;1m  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV[0m
+2025-12-22T02:08:03.6771370Z [36;1mfi[0m
+2025-12-22T02:08:03.6824530Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:08:03.6824800Z env:
+2025-12-22T02:08:03.6824990Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:03.6825300Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:03.6825430Z   APP_NAME: iMAGE
+2025-12-22T02:08:03.6825950Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:03.6826170Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:03.6826520Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:03.6826780Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:03.6827010Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:08:03.6827200Z ##[endgroup]
+2025-12-22T02:08:03.7183900Z ##[group]Run : enable Cargo sparse registry
+2025-12-22T02:08:03.7184230Z [36;1m: enable Cargo sparse registry[0m
+2025-12-22T02:08:03.7184530Z [36;1m# implemented in 1.66, stabilized in 1.68, made default in 1.70[0m
+2025-12-22T02:08:03.7185310Z [36;1mif [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/Users/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol ]; then[0m
+2025-12-22T02:08:03.7185830Z [36;1m  if rustc +stable --version --verbose | grep -q '^release: 1\.6[89]\.'; then[0m
+2025-12-22T02:08:03.7186290Z [36;1m    touch "/Users/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+2025-12-22T02:08:03.7186710Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV[0m
+2025-12-22T02:08:03.7187080Z [36;1m  elif rustc +stable --version --verbose | grep -q '^release: 1\.6[67]\.'; then[0m
+2025-12-22T02:08:03.7187500Z [36;1m    touch "/Users/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+2025-12-22T02:08:03.7187900Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV[0m
+2025-12-22T02:08:03.7188140Z [36;1m  fi[0m
+2025-12-22T02:08:03.7188300Z [36;1mfi[0m
+2025-12-22T02:08:03.7242180Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:08:03.7242430Z env:
+2025-12-22T02:08:03.7242580Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:03.7242730Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:03.7242870Z   APP_NAME: iMAGE
+2025-12-22T02:08:03.7243010Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:03.7243230Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:03.7243530Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:03.7243800Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:03.7243980Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:08:03.7244140Z ##[endgroup]
+2025-12-22T02:08:03.7839140Z ##[group]Run : work around spurious network errors in curl 8.0
+2025-12-22T02:08:03.7839510Z [36;1m: work around spurious network errors in curl 8.0[0m
+2025-12-22T02:08:03.7839920Z [36;1m# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation[0m
+2025-12-22T02:08:03.7841220Z [36;1mif rustc +stable --version --verbose | grep -q '^release: 1\.7[01]\.'; then[0m
+2025-12-22T02:08:03.7841730Z [36;1m  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV[0m
+2025-12-22T02:08:03.7841960Z [36;1mfi[0m
+2025-12-22T02:08:03.7893610Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:08:03.7893840Z env:
+2025-12-22T02:08:03.7893980Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:03.7894150Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:03.7894330Z   APP_NAME: iMAGE
+2025-12-22T02:08:03.7894470Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:03.7894690Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:03.7895120Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:03.7895720Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:03.7895910Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:08:03.7896300Z ##[endgroup]
+2025-12-22T02:08:03.8347750Z ##[group]Run rustc +stable --version --verbose
+2025-12-22T02:08:03.8348180Z [36;1mrustc +stable --version --verbose[0m
+2025-12-22T02:08:03.8411320Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2025-12-22T02:08:03.8411560Z env:
+2025-12-22T02:08:03.8411740Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:03.8411900Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:03.8412030Z   APP_NAME: iMAGE
+2025-12-22T02:08:03.8412160Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:03.8412410Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:03.8412980Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:03.8413240Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:03.8413410Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:08:03.8413540Z ##[endgroup]
+2025-12-22T02:08:03.8829420Z rustc 1.92.0 (ded5c06cf 2025-12-08)
+2025-12-22T02:08:03.8839970Z binary: rustc
+2025-12-22T02:08:03.8847530Z commit-hash: ded5c06cf21d2b93bffd5d884aa6e96934ee4234
+2025-12-22T02:08:03.8848000Z commit-date: 2025-12-08
+2025-12-22T02:08:03.8848320Z host: aarch64-apple-darwin
+2025-12-22T02:08:03.8848650Z release: 1.92.0
+2025-12-22T02:08:03.8849300Z LLVM version: 21.1.3
+2025-12-22T02:08:03.8923720Z ##[group]Run swatinem/rust-cache@v2
+2025-12-22T02:08:03.8923920Z with:
+2025-12-22T02:08:03.8924050Z   workspaces: ./src-tauri -> target
+2025-12-22T02:08:03.8924230Z   cache-on-failure: true
+2025-12-22T02:08:03.8924390Z   prefix-key: v0-rust
+2025-12-22T02:08:03.8924530Z   add-job-id-key: true
+2025-12-22T02:08:03.8924700Z   add-rust-environment-hash-key: true
+2025-12-22T02:08:03.8924910Z   cache-targets: true
+2025-12-22T02:08:03.8925050Z   cache-all-crates: false
+2025-12-22T02:08:03.8925230Z   cache-workspace-crates: false
+2025-12-22T02:08:03.8925390Z   save-if: true
+2025-12-22T02:08:03.8925520Z   cache-provider: github
+2025-12-22T02:08:03.8925670Z   cache-bin: true
+2025-12-22T02:08:03.8925800Z   lookup-only: false
+2025-12-22T02:08:03.8925940Z env:
+2025-12-22T02:08:03.8926050Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:03.8926220Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:03.8926340Z   APP_NAME: iMAGE
+2025-12-22T02:08:03.8926470Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:03.8926740Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:03.8927020Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:03.8927290Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:03.8927460Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:08:03.8927600Z ##[endgroup]
+2025-12-22T02:08:04.2718550Z ##[group]Cache Configuration
+2025-12-22T02:08:04.2719420Z Cache Provider:
+2025-12-22T02:08:04.2719700Z     github
+2025-12-22T02:08:04.2719930Z Workspaces:
+2025-12-22T02:08:04.2720320Z     /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src-tauri
+2025-12-22T02:08:04.2720700Z Cache Paths:
+2025-12-22T02:08:04.2720960Z     /Users/runner/.cargo/bin
+2025-12-22T02:08:04.2721270Z     /Users/runner/.cargo/.crates.toml
+2025-12-22T02:08:04.2721620Z     /Users/runner/.cargo/.crates2.json
+2025-12-22T02:08:04.2722350Z     /Users/runner/.cargo/registry
+2025-12-22T02:08:04.2722680Z     /Users/runner/.cargo/git
+2025-12-22T02:08:04.2723120Z     /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src-tauri/target
+2025-12-22T02:08:04.2723880Z Restore Key:
+2025-12-22T02:08:04.2724540Z     v0-rust-build-ios-Darwin-arm64-1ac25844
+2025-12-22T02:08:04.2725050Z Cache Key:
+2025-12-22T02:08:04.2725420Z     v0-rust-build-ios-Darwin-arm64-1ac25844-f45de929
+2025-12-22T02:08:04.2725860Z .. Prefix:
+2025-12-22T02:08:04.2733710Z   - v0-rust-build-ios-Darwin-arm64
+2025-12-22T02:08:04.2736910Z .. Environment considered:
+2025-12-22T02:08:04.2739360Z   - Rust Version: 1.92.0 aarch64-apple-darwin (ded5c06cf21d2b93bffd5d884aa6e96934ee4234)
+2025-12-22T02:08:04.2739790Z   - CARGO_HOME
+2025-12-22T02:08:04.2740050Z   - CARGO_INCREMENTAL
+2025-12-22T02:08:04.2740310Z   - CARGO_TERM_COLOR
+2025-12-22T02:08:04.2740580Z   - RUST_BACKTRACE
+2025-12-22T02:08:04.2740850Z .. Lockfiles considered:
+2025-12-22T02:08:04.2741260Z   - /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src-tauri/Cargo.lock
+2025-12-22T02:08:04.2741780Z   - /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src-tauri/Cargo.toml
+2025-12-22T02:08:04.2742380Z ##[endgroup]
+2025-12-22T02:08:04.2742570Z 
+2025-12-22T02:08:04.2742760Z ... Restoring cache ...
+2025-12-22T02:08:04.4595920Z Cache hit for: v0-rust-build-ios-Darwin-arm64-1ac25844-f45de929
+2025-12-22T02:08:05.6525930Z Received 37748736 of 134950608 (28.0%), 35.8 MBs/sec
+2025-12-22T02:08:06.6574800Z Received 117440512 of 134950608 (87.0%), 55.7 MBs/sec
+2025-12-22T02:08:07.1752150Z Received 134950608 of 134950608 (100.0%), 50.9 MBs/sec
+2025-12-22T02:08:07.1791480Z Cache Size: ~129 MB (134950608 B)
+2025-12-22T02:08:07.1887410Z [command]/opt/homebrew/bin/gtar -xf /Users/runner/work/_temp/640bf387-c3ba-4013-9b09-1546ec06ce4a/cache.tzst -P -C /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE --delay-directory-restore --use-compress-program unzstd
+2025-12-22T02:08:08.2656760Z Cache restored successfully
+2025-12-22T02:08:08.2671870Z Restored from cache key "v0-rust-build-ios-Darwin-arm64-1ac25844-f45de929" full match: true.
+2025-12-22T02:08:08.2743750Z ##[group]Run pnpm install --frozen-lockfile
+2025-12-22T02:08:08.2744520Z [36;1mpnpm install --frozen-lockfile[0m
+2025-12-22T02:08:08.2797340Z shell: /bin/bash -e {0}
+2025-12-22T02:08:08.2797520Z env:
+2025-12-22T02:08:08.2797660Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:08.2797800Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:08.2797910Z   APP_NAME: iMAGE
+2025-12-22T02:08:08.2798040Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:08.2798240Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:08.2798550Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:08.2798790Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:08.2798950Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:08:08.2799110Z   CACHE_ON_FAILURE: true
+2025-12-22T02:08:08.2799260Z ##[endgroup]
+2025-12-22T02:08:08.5658910Z Lockfile is up to date, resolution step is skipped
+2025-12-22T02:08:08.5804100Z Progress: resolved 1, reused 0, downloaded 0, added 0
+2025-12-22T02:08:08.5930910Z Packages: +171
+2025-12-22T02:08:08.5931990Z ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+2025-12-22T02:08:09.5848610Z Progress: resolved 171, reused 0, downloaded 119, added 115
+2025-12-22T02:08:10.5863240Z Progress: resolved 171, reused 0, downloaded 171, added 170
+2025-12-22T02:08:10.6203960Z Progress: resolved 171, reused 0, downloaded 171, added 171, done
+2025-12-22T02:08:10.6687290Z .../esbuild@0.25.12/node_modules/esbuild postinstall$ node install.js
+2025-12-22T02:08:10.7186960Z .../esbuild@0.25.12/node_modules/esbuild postinstall: Done
+2025-12-22T02:08:10.7674570Z 
+2025-12-22T02:08:10.7675080Z dependencies:
+2025-12-22T02:08:10.7678210Z + @tauri-apps/api 2.9.1
+2025-12-22T02:08:10.7681850Z + @tauri-apps/plugin-dialog 2.4.2
+2025-12-22T02:08:10.7682590Z + @tauri-apps/plugin-fs 2.4.4
+2025-12-22T02:08:10.7682870Z + @tauri-apps/plugin-http 2.5.4
+2025-12-22T02:08:10.7683130Z + @tauri-apps/plugin-opener 2.5.2
+2025-12-22T02:08:10.7683430Z + @tauri-apps/plugin-shell 2.3.3
+2025-12-22T02:08:10.7683720Z + @tauri-apps/plugin-store 2.4.1
+2025-12-22T02:08:10.7683910Z + vue 3.5.26
+2025-12-22T02:08:10.7684000Z 
+2025-12-22T02:08:10.7684070Z devDependencies:
+2025-12-22T02:08:10.7684360Z + @playwright/experimental-ct-vue 1.57.0
+2025-12-22T02:08:10.7684610Z + @playwright/test 1.57.0
+2025-12-22T02:08:10.7684810Z + @tailwindcss/vite 4.1.18
+2025-12-22T02:08:10.7685080Z + @tauri-apps/cli 2.9.6
+2025-12-22T02:08:10.7685250Z + @types/node 25.0.3
+2025-12-22T02:08:10.7685450Z + @vitejs/plugin-vue 5.2.4
+2025-12-22T02:08:10.7685640Z + @vue/compiler-dom 3.5.26
+2025-12-22T02:08:10.7685830Z + @vue/test-utils 2.4.6
+2025-12-22T02:08:10.7686030Z + autoprefixer 10.4.23
+2025-12-22T02:08:10.7686250Z + fast-check 4.5.2
+2025-12-22T02:08:10.7686420Z + happy-dom 20.0.11
+2025-12-22T02:08:10.7686580Z + postcss 8.5.6
+2025-12-22T02:08:10.7686740Z + tailwindcss 4.1.18
+2025-12-22T02:08:10.7686920Z + typescript 5.6.3
+2025-12-22T02:08:10.7687060Z + vite 6.4.1
+2025-12-22T02:08:10.7687190Z + vitest 4.0.16
+2025-12-22T02:08:10.7687360Z + vue-tsc 2.2.12
+2025-12-22T02:08:10.7687440Z 
+2025-12-22T02:08:10.7742140Z Done in 2.4s using pnpm v9.15.9
+2025-12-22T02:08:10.7838450Z ##[group]Run pnpm run build
+2025-12-22T02:08:10.7838670Z [36;1mpnpm run build[0m
+2025-12-22T02:08:10.7890540Z shell: /bin/bash -e {0}
+2025-12-22T02:08:10.7890740Z env:
+2025-12-22T02:08:10.7890870Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:10.7891040Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:10.7891190Z   APP_NAME: iMAGE
+2025-12-22T02:08:10.7891330Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:10.7891570Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:10.7891880Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:10.7892130Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:10.7892310Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:08:10.7892470Z   CACHE_ON_FAILURE: true
+2025-12-22T02:08:10.7892620Z ##[endgroup]
+2025-12-22T02:08:11.0488240Z 
+2025-12-22T02:08:11.0488940Z > vortex-image@0.1.0 build /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE
+2025-12-22T02:08:11.0489350Z > vue-tsc --noEmit && vite build
+2025-12-22T02:08:11.0490270Z 
+2025-12-22T02:08:13.7444330Z [36mvite v6.4.1 [32mbuilding for production...[36m[39m
+2025-12-22T02:08:13.8205740Z transforming...
+2025-12-22T02:08:14.8725110Z [32m✓[39m 91 modules transformed.
+2025-12-22T02:08:14.9665810Z [33m[plugin vite:reporter] 
+2025-12-22T02:08:14.9672410Z (!) /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/node_modules/.pnpm/@tauri-apps+plugin-store@2.4.1/node_modules/@tauri-apps/plugin-store/dist-js/index.js is dynamically imported by /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src/App.vue?vue&type=script&setup=true&lang.ts, /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src/App.vue?vue&type=script&setup=true&lang.ts but also statically imported by /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src/components/PrivacySettings.vue?vue&type=script&setup=true&lang.ts, /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src/composables/useAccentColor.ts, /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src/composables/useBackupSettings.ts, /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src/composables/useColorTags.ts, /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src/composables/useCrypto.ts, /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src/composables/useDataDriver.ts, /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src/composables/useFavorites.ts, /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src/composables/useGitHubAuth.ts, /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src/composables/usePhotoPreviewSize.ts, /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src/composables/usePhotoUpload.ts, /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src/composables/usePipeline.ts, /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src/composables/useRepoManager.ts, /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src/composables/useTheme.ts, dynamic import will not move module into another chunk.
+2025-12-22T02:08:14.9677040Z rendering chunks...
+2025-12-22T02:08:14.9677380Z [39m
+2025-12-22T02:08:14.9729260Z computing gzip size...
+2025-12-22T02:08:14.9840250Z [2mdist/[22m[32mindex.html                 [39m[1m[2m 12.63 kB[22m[1m[22m[2m │ gzip:  3.50 kB[22m
+2025-12-22T02:08:14.9843070Z [2mdist/[22m[2massets/[22m[35mindex-8AMpYVXV.css  [39m[1m[2m121.21 kB[22m[1m[22m[2m │ gzip: 18.71 kB[22m
+2025-12-22T02:08:14.9846950Z [2mdist/[22m[2massets/[22m[36mindex-COnt8nEX.js   [39m[1m[2m232.38 kB[22m[1m[22m[2m │ gzip: 74.98 kB[22m
+2025-12-22T02:08:14.9847550Z [32m✓ built in 1.22s[39m
+2025-12-22T02:08:15.0250360Z ##[group]Run pnpm tauri ios init || true
+2025-12-22T02:08:15.0250670Z [36;1mpnpm tauri ios init || true[0m
+2025-12-22T02:08:15.0250860Z [36;1m[0m
+2025-12-22T02:08:15.0251070Z [36;1m# Verify iOS project was created[0m
+2025-12-22T02:08:15.0251360Z [36;1mif [[ ! -d "src-tauri/gen/apple" ]]; then[0m
+2025-12-22T02:08:15.0251700Z [36;1m  echo "::error::Failed to initialize iOS project"[0m
+2025-12-22T02:08:15.0251960Z [36;1m  exit 1[0m
+2025-12-22T02:08:15.0252110Z [36;1mfi[0m
+2025-12-22T02:08:15.0308650Z shell: /bin/bash -e {0}
+2025-12-22T02:08:15.0308870Z env:
+2025-12-22T02:08:15.0309090Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:15.0309310Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:15.0309490Z   APP_NAME: iMAGE
+2025-12-22T02:08:15.0309660Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:15.0309920Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:15.0310250Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:15.0310650Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:15.0310880Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:08:15.0311150Z   CACHE_ON_FAILURE: true
+2025-12-22T02:08:15.0311330Z ##[endgroup]
+2025-12-22T02:08:15.3140090Z 
+2025-12-22T02:08:15.3140860Z > vortex-image@0.1.0 tauri /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE
+2025-12-22T02:08:15.3141420Z > tauri ios init
+2025-12-22T02:08:15.3141850Z 
+2025-12-22T02:08:15.4918730Z         Warn No code signing certificates found. You must add one and set the certificate development team ID on the `bundle > iOS > developmentTeam` config value or the `APPLE_DEVELOPMENT_TEAM` environment variable. To list the available certificates, run `tauri info`.
+2025-12-22T02:08:15.6194850Z         Info package `xcodegen` not found
+2025-12-22T02:08:15.6196020Z         Info Installing `xcodegen` with brew...
+2025-12-22T02:08:17.6879100Z ✔︎ JSON API formula_tap_migrations.jws.json
+2025-12-22T02:08:17.6879540Z ✔︎ JSON API cask_tap_migrations.jws.json
+2025-12-22T02:08:19.1146110Z [32m==>[0m [1mFetching downloads for: [32mxcodegen[39m[0m
+2025-12-22T02:08:19.5526510Z ✔︎ Bottle Manifest xcodegen (2.44.1)
+2025-12-22T02:08:20.5672440Z ✔︎ Bottle xcodegen (2.44.1)
+2025-12-22T02:08:20.7652970Z [32m==>[0m [1mReinstalling [32mxcodegen[39m [0m
+2025-12-22T02:08:20.7777800Z [34m==>[0m [1mPouring xcodegen--2.44.1.arm64_sonoma.bottle.tar.gz[0m
+2025-12-22T02:08:20.9029530Z 🍺  /opt/homebrew/Cellar/xcodegen/2.44.1: 38 files, 7.4MB
+2025-12-22T02:08:20.9260310Z         Info package `libimobiledevice` not found
+2025-12-22T02:08:20.9260810Z         Info Installing `libimobiledevice` with brew...
+2025-12-22T02:08:22.1460170Z [32m==>[0m [1mFetching downloads for: [32mlibimobiledevice[39m[0m
+2025-12-22T02:08:22.5382530Z ✔︎ Bottle Manifest libimobiledevice (1.4.0)
+2025-12-22T02:08:23.1176380Z ✔︎ Bottle Manifest libplist (2.7.0)
+2025-12-22T02:08:23.1747940Z ✔︎ Bottle Manifest libimobiledevice-glue (1.3.2)
+2025-12-22T02:08:23.1767080Z ✔︎ Bottle Manifest libtatsu (1.0.5)
+2025-12-22T02:08:23.3299520Z ✔︎ Bottle libplist (2.7.0)
+2025-12-22T02:08:23.3300450Z ✔︎ Bottle libimobiledevice-glue (1.3.2)
+2025-12-22T02:08:23.3301120Z ✔︎ Bottle libtatsu (1.0.5)
+2025-12-22T02:08:23.5033030Z ✔︎ Bottle Manifest libusbmuxd (2.1.1)
+2025-12-22T02:08:23.5595490Z ✔︎ Bottle libusbmuxd (2.1.1)
+2025-12-22T02:08:23.6113770Z ✔︎ Bottle libimobiledevice (1.4.0)
+2025-12-22T02:08:23.6754650Z [32m==>[0m [1mReinstalling [32mlibimobiledevice[39m [0m
+2025-12-22T02:08:23.6983730Z [32m==>[0m [1mInstalling dependencies for libimobiledevice: [32mlibplist[39m, [32mlibimobiledevice-glue[39m, [32mlibtatsu[39m and [32mlibusbmuxd[39m[0m
+2025-12-22T02:08:23.6985190Z [32m==>[0m [1mInstalling libimobiledevice dependency: [32mlibplist[39m[0m
+2025-12-22T02:08:23.7040080Z [34m==>[0m [1mPouring libplist--2.7.0.arm64_sonoma.bottle.tar.gz[0m
+2025-12-22T02:08:23.9324900Z 🍺  /opt/homebrew/Cellar/libplist/2.7.0: 32 files, 662KB
+2025-12-22T02:08:23.9329550Z [32m==>[0m [1mInstalling libimobiledevice dependency: [32mlibimobiledevice-glue[39m[0m
+2025-12-22T02:08:23.9461680Z [34m==>[0m [1mPouring libimobiledevice-glue--1.3.2.arm64_sonoma.bottle.tar.gz[0m
+2025-12-22T02:08:24.0511750Z 🍺  /opt/homebrew/Cellar/libimobiledevice-glue/1.3.2: 21 files, 254.2KB
+2025-12-22T02:08:24.0514350Z [32m==>[0m [1mInstalling libimobiledevice dependency: [32mlibtatsu[39m[0m
+2025-12-22T02:08:24.0654710Z [34m==>[0m [1mPouring libtatsu--1.0.5.arm64_sonoma.bottle.tar.gz[0m
+2025-12-22T02:08:24.1649420Z 🍺  /opt/homebrew/Cellar/libtatsu/1.0.5: 12 files, 180.5KB
+2025-12-22T02:08:24.1653240Z [32m==>[0m [1mInstalling libimobiledevice dependency: [32mlibusbmuxd[39m[0m
+2025-12-22T02:08:24.1871780Z [34m==>[0m [1mPouring libusbmuxd--2.1.1.arm64_sonoma.bottle.tar.gz[0m
+2025-12-22T02:08:24.3814600Z 🍺  /opt/homebrew/Cellar/libusbmuxd/2.1.1: 17 files, 302.4KB
+2025-12-22T02:08:24.3817700Z [32m==>[0m [1mInstalling [32mlibimobiledevice[39m[0m
+2025-12-22T02:08:24.3821960Z [34m==>[0m [1mPouring libimobiledevice--1.4.0.arm64_sonoma.bottle.tar.gz[0m
+2025-12-22T02:08:25.3710180Z 🍺  /opt/homebrew/Cellar/libimobiledevice/1.4.0: 82 files, 2.6MB
+2025-12-22T02:08:25.3985870Z /opt/homebrew/lib/ruby/gems/3.3.0/bin/pod
+2025-12-22T02:08:35.2430310Z Apple dependencies are up to date
+2025-12-22T02:08:35.2434370Z         Info "/Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src-tauri" relative to "/Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src-tauri/gen/apple" is "../../"
+2025-12-22T02:08:35.2549670Z Generating Xcode project...
+2025-12-22T02:08:35.3334530Z ⚙️  Generating plists...
+2025-12-22T02:08:35.3352510Z ⚙️  Generating project...
+2025-12-22T02:08:35.3478150Z ⚙️  Writing project...
+2025-12-22T02:08:35.3570630Z Created project at /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src-tauri/gen/apple/vortex-image.xcodeproj
+2025-12-22T02:08:35.3595090Z victory: Project generated successfully!
+2025-12-22T02:08:35.3595540Z     Make cool apps! 🌻 🐕 🎉
+2025-12-22T02:08:35.3761680Z ##[group]Run XCODEPROJ=$(find src-tauri/gen/apple -name "*.xcodeproj" -type d | head -1)
+2025-12-22T02:08:35.3762260Z [36;1mXCODEPROJ=$(find src-tauri/gen/apple -name "*.xcodeproj" -type d | head -1)[0m
+2025-12-22T02:08:35.3762580Z [36;1m[0m
+2025-12-22T02:08:35.3762760Z [36;1mif [[ -z "$XCODEPROJ" ]]; then[0m
+2025-12-22T02:08:35.3763030Z [36;1m  echo "::error::No Xcode project found"[0m
+2025-12-22T02:08:35.3763250Z [36;1m  exit 1[0m
+2025-12-22T02:08:35.3763420Z [36;1mfi[0m
+2025-12-22T02:08:35.3763690Z [36;1m[0m
+2025-12-22T02:08:35.3763930Z [36;1mecho "xcodeproj=$XCODEPROJ" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:08:35.3764190Z [36;1m[0m
+2025-12-22T02:08:35.3764370Z [36;1m# Get scheme name[0m
+2025-12-22T02:08:35.3764700Z [36;1mSCHEME=$(xcodebuild -project "$XCODEPROJ" -list 2>/dev/null | \[0m
+2025-12-22T02:08:35.3765120Z [36;1m  awk '/Schemes:/{found=1; next} found && /^[[:space:]]+[^[:space:]]/{print $1; exit}')[0m
+2025-12-22T02:08:35.3765460Z [36;1m[0m
+2025-12-22T02:08:35.3765700Z [36;1mif [[ -z "$SCHEME" ]]; then[0m
+2025-12-22T02:08:35.3766000Z [36;1m  # Fallback: derive from project name[0m
+2025-12-22T02:08:35.3766290Z [36;1m  SCHEME=$(basename "$XCODEPROJ" .xcodeproj)_iOS[0m
+2025-12-22T02:08:35.3766560Z [36;1mfi[0m
+2025-12-22T02:08:35.3766700Z [36;1m[0m
+2025-12-22T02:08:35.3766850Z [36;1mecho "scheme=$SCHEME" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:08:35.3767100Z [36;1mecho "Found project: $XCODEPROJ"[0m
+2025-12-22T02:08:35.3767370Z [36;1mecho "Found scheme: $SCHEME"[0m
+2025-12-22T02:08:35.3919040Z shell: /bin/bash -e {0}
+2025-12-22T02:08:35.3919240Z env:
+2025-12-22T02:08:35.3919470Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:35.3919650Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:35.3919890Z   APP_NAME: iMAGE
+2025-12-22T02:08:35.3920210Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:35.3920520Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:35.3920850Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:35.3921200Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:35.3921470Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:08:35.3921680Z   CACHE_ON_FAILURE: true
+2025-12-22T02:08:35.3921990Z ##[endgroup]
+2025-12-22T02:08:38.1727430Z Found project: src-tauri/gen/apple/vortex-image.xcodeproj
+2025-12-22T02:08:38.1728220Z Found scheme: vortex-image_iOS
+2025-12-22T02:08:38.1934470Z ##[group]Run XCODEPROJ=$(find src-tauri/gen/apple -name "*.xcodeproj" -type d | head -1)
+2025-12-22T02:08:38.1935160Z [36;1mXCODEPROJ=$(find src-tauri/gen/apple -name "*.xcodeproj" -type d | head -1)[0m
+2025-12-22T02:08:38.1935600Z [36;1mPBXPROJ="$XCODEPROJ/project.pbxproj"[0m
+2025-12-22T02:08:38.1935900Z [36;1m[0m
+2025-12-22T02:08:38.1936110Z [36;1mecho "Disabling code signing in: $PBXPROJ"[0m
+2025-12-22T02:08:38.1936370Z [36;1m[0m
+2025-12-22T02:08:38.1936520Z [36;1m# Disable code signing completely[0m
+2025-12-22T02:08:38.1949320Z [36;1msed -i '' 's/CODE_SIGN_IDENTITY = "[^"]*"/CODE_SIGN_IDENTITY = ""/g' "$PBXPROJ"[0m
+2025-12-22T02:08:38.1949700Z [36;1msed -i '' 's/CODE_SIGN_IDENTITY = -/CODE_SIGN_IDENTITY = ""/g' "$PBXPROJ"[0m
+2025-12-22T02:08:38.1950130Z [36;1msed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=iphoneos\*\]" = "[^"]*"/"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = ""/g' "$PBXPROJ"[0m
+2025-12-22T02:08:38.1950650Z [36;1msed -i '' 's/CODE_SIGNING_REQUIRED = YES/CODE_SIGNING_REQUIRED = NO/g' "$PBXPROJ"[0m
+2025-12-22T02:08:38.1951050Z [36;1msed -i '' 's/CODE_SIGNING_ALLOWED = YES/CODE_SIGNING_ALLOWED = NO/g' "$PBXPROJ"[0m
+2025-12-22T02:08:38.1951500Z [36;1msed -i '' 's/DEVELOPMENT_TEAM = "[^"]*"/DEVELOPMENT_TEAM = ""/g' "$PBXPROJ"[0m
+2025-12-22T02:08:38.1951780Z [36;1m[0m
+2025-12-22T02:08:38.1952030Z [36;1m# Remove or modify the "Build Rust Code" script phase to not use tauri xcode-script[0m
+2025-12-22T02:08:38.1952790Z [36;1m# This script requires a dev server which doesn't exist in CI[0m
+2025-12-22T02:08:38.1953080Z [36;1m# We'll build Rust separately and skip this phase[0m
+2025-12-22T02:08:38.1953290Z [36;1m[0m
+2025-12-22T02:08:38.1953520Z [36;1m# Comment out the script content by replacing it with a no-op[0m
+2025-12-22T02:08:38.1953990Z [36;1msed -i '' 's|pnpm tauri ios xcode-script|echo "Skipping tauri xcode-script in CI - Rust built separately"|g' "$PBXPROJ"[0m
+2025-12-22T02:08:38.2072090Z shell: /bin/bash -e {0}
+2025-12-22T02:08:38.2072340Z env:
+2025-12-22T02:08:38.2073020Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:38.2073220Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:38.2073450Z   APP_NAME: iMAGE
+2025-12-22T02:08:38.2073620Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:38.2073850Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:38.2074260Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:38.2074580Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:38.2074840Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:08:38.2075010Z   CACHE_ON_FAILURE: true
+2025-12-22T02:08:38.2075170Z ##[endgroup]
+2025-12-22T02:08:38.2486130Z Disabling code signing in: src-tauri/gen/apple/vortex-image.xcodeproj/project.pbxproj
+2025-12-22T02:08:38.3392140Z ##[group]Run cd src-tauri
+2025-12-22T02:08:38.3392570Z [36;1mcd src-tauri[0m
+2025-12-22T02:08:38.3392740Z [36;1m[0m
+2025-12-22T02:08:38.3392890Z [36;1m# Build for iOS Simulator (arm64)[0m
+2025-12-22T02:08:38.3393150Z [36;1mecho "Building for aarch64-apple-ios-sim..."[0m
+2025-12-22T02:08:38.3393550Z [36;1mcargo build --target aarch64-apple-ios-sim --release[0m
+2025-12-22T02:08:38.3393820Z [36;1m[0m
+2025-12-22T02:08:38.3393990Z [36;1m# Also build for x86_64 simulator if needed[0m
+2025-12-22T02:08:38.3394240Z [36;1mecho "Building for x86_64-apple-ios..."[0m
+2025-12-22T02:08:38.3394550Z [36;1mcargo build --target x86_64-apple-ios --release || true[0m
+2025-12-22T02:08:38.3394840Z [36;1m[0m
+2025-12-22T02:08:38.3395000Z [36;1m# Create universal library for simulator[0m
+2025-12-22T02:08:38.3395240Z [36;1mmkdir -p ../build/libs[0m
+2025-12-22T02:08:38.3395410Z [36;1m[0m
+2025-12-22T02:08:38.3395560Z [36;1m# Copy the built library[0m
+2025-12-22T02:08:38.3396110Z [36;1mif [[ -f "target/aarch64-apple-ios-sim/release/libvortex_image_lib.a" ]]; then[0m
+2025-12-22T02:08:38.3396540Z [36;1m  cp target/aarch64-apple-ios-sim/release/libvortex_image_lib.a ../build/libs/[0m
+2025-12-22T02:08:38.3397000Z [36;1melif [[ -f "target/aarch64-apple-ios-sim/release/libapp_lib.a" ]]; then[0m
+2025-12-22T02:08:38.3397410Z [36;1m  cp target/aarch64-apple-ios-sim/release/libapp_lib.a ../build/libs/[0m
+2025-12-22T02:08:38.3397680Z [36;1mfi[0m
+2025-12-22T02:08:38.3397810Z [36;1m[0m
+2025-12-22T02:08:38.3397950Z [36;1m# Find the actual library name[0m
+2025-12-22T02:08:38.3398210Z [36;1mfind target -name "*.a" -type f 2>/dev/null | head -5[0m
+2025-12-22T02:08:38.3398450Z [36;1m[0m
+2025-12-22T02:08:38.3398570Z [36;1mcd ..[0m
+2025-12-22T02:08:38.3461150Z shell: /bin/bash -e {0}
+2025-12-22T02:08:38.3461350Z env:
+2025-12-22T02:08:38.3461510Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:38.3461690Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:38.3461910Z   APP_NAME: iMAGE
+2025-12-22T02:08:38.3462110Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:38.3462350Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:38.3462770Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:38.3463060Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:38.3463260Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:08:38.3463430Z   CACHE_ON_FAILURE: true
+2025-12-22T02:08:38.3463590Z ##[endgroup]
+2025-12-22T02:08:38.4107080Z Building for aarch64-apple-ios-sim...
+2025-12-22T02:08:40.4385270Z [1m[92m    Updating[0m crates.io index
+2025-12-22T02:08:45.8862330Z [1m[92m   Compiling[0m proc-macro2 v1.0.103
+2025-12-22T02:08:45.8890980Z [1m[92m   Compiling[0m unicode-ident v1.0.22
+2025-12-22T02:08:45.8900600Z [1m[92m   Compiling[0m quote v1.0.42
+2025-12-22T02:08:46.4400410Z [1m[92m   Compiling[0m libc v0.2.178
+2025-12-22T02:08:48.4024760Z [1m[92m   Compiling[0m cfg-if v1.0.4
+2025-12-22T02:08:48.4365490Z [1m[92m   Compiling[0m serde_core v1.0.228
+2025-12-22T02:08:48.8345320Z [1m[92m   Compiling[0m zerocopy v0.8.31
+2025-12-22T02:08:49.1780160Z [1m[92m   Compiling[0m syn v2.0.111
+2025-12-22T02:08:49.1992680Z [1m[92m   Compiling[0m jobserver v0.1.34
+2025-12-22T02:08:49.4259900Z [1m[92m   Compiling[0m find-msvc-tools v0.1.5
+2025-12-22T02:08:49.5824290Z [1m[92m   Compiling[0m shlex v1.3.0
+2025-12-22T02:08:49.6806360Z [1m[92m   Compiling[0m cc v1.2.50
+2025-12-22T02:08:50.9080680Z [1m[92m   Compiling[0m icu_properties_data v2.1.2
+2025-12-22T02:08:50.9932190Z [1m[92m   Compiling[0m icu_normalizer_data v2.1.1
+2025-12-22T02:08:51.0793590Z [1m[92m   Compiling[0m getrandom v0.2.16
+2025-12-22T02:08:51.1517440Z [1m[92m   Compiling[0m serde v1.0.228
+2025-12-22T02:08:51.3561210Z [1m[92m   Compiling[0m rand_core v0.6.4
+2025-12-22T02:08:51.7408080Z [1m[92m   Compiling[0m synstructure v0.13.2
+2025-12-22T02:08:52.0656320Z [1m[92m   Compiling[0m ppv-lite86 v0.2.21
+2025-12-22T02:08:52.1437740Z [1m[92m   Compiling[0m memchr v2.7.6
+2025-12-22T02:08:52.2128990Z [1m[92m   Compiling[0m rand_chacha v0.3.1
+2025-12-22T02:08:52.3867790Z [1m[92m   Compiling[0m rand v0.8.5
+2025-12-22T02:08:52.8338790Z [1m[92m   Compiling[0m serde_derive v1.0.228
+2025-12-22T02:08:52.9360420Z [1m[92m   Compiling[0m zerofrom-derive v0.1.6
+2025-12-22T02:08:53.6457990Z [1m[92m   Compiling[0m yoke-derive v0.8.1
+2025-12-22T02:08:54.2242920Z [1m[92m   Compiling[0m zerovec-derive v0.11.2
+2025-12-22T02:08:54.2379470Z [1m[92m   Compiling[0m displaydoc v0.2.5
+2025-12-22T02:08:54.6398860Z [1m[92m   Compiling[0m stable_deref_trait v1.2.1
+2025-12-22T02:08:54.6566050Z [1m[92m   Compiling[0m itoa v1.0.16
+2025-12-22T02:08:54.7318150Z [1m[92m   Compiling[0m version_check v0.9.5
+2025-12-22T02:08:54.8659220Z [1m[92m   Compiling[0m siphasher v1.0.1
+2025-12-22T02:08:54.8816720Z [1m[92m   Compiling[0m zerofrom v0.1.6
+2025-12-22T02:08:54.9300800Z [1m[92m   Compiling[0m yoke v0.8.1
+2025-12-22T02:08:54.9586860Z [1m[92m   Compiling[0m phf_shared v0.11.3
+2025-12-22T02:08:55.0060390Z [1m[92m   Compiling[0m smallvec v1.15.1
+2025-12-22T02:08:55.0125420Z [1m[92m   Compiling[0m siphasher v0.3.11
+2025-12-22T02:08:55.0257230Z [1m[92m   Compiling[0m phf_generator v0.11.3
+2025-12-22T02:08:55.0946310Z [1m[92m   Compiling[0m zerovec v0.11.5
+2025-12-22T02:08:55.0958060Z [1m[92m   Compiling[0m getrandom v0.1.16
+2025-12-22T02:08:55.1082840Z [1m[92m   Compiling[0m serde_json v1.0.145
+2025-12-22T02:08:55.2188640Z [1m[92m   Compiling[0m fnv v1.0.7
+2025-12-22T02:08:55.2289130Z [1m[92m   Compiling[0m typeid v1.0.3
+2025-12-22T02:08:55.2592160Z [1m[92m   Compiling[0m ryu v1.0.21
+2025-12-22T02:08:55.3412000Z [1m[92m   Compiling[0m getrandom v0.3.4
+2025-12-22T02:08:55.4940880Z [1m[92m   Compiling[0m autocfg v1.5.0
+2025-12-22T02:08:55.5671710Z [1m[92m   Compiling[0m rand_core v0.5.1
+2025-12-22T02:08:55.6561880Z [1m[92m   Compiling[0m tinystr v0.8.2
+2025-12-22T02:08:55.6742600Z [1m[92m   Compiling[0m semver v1.0.27
+2025-12-22T02:08:55.8226630Z [1m[92m   Compiling[0m strsim v0.11.1
+2025-12-22T02:08:55.9141690Z [1m[92m   Compiling[0m writeable v0.6.2
+2025-12-22T02:08:56.0470660Z [1m[92m   Compiling[0m erased-serde v0.4.9
+2025-12-22T02:08:56.0914620Z [1m[92m   Compiling[0m thiserror v1.0.69
+2025-12-22T02:08:56.1024550Z [1m[92m   Compiling[0m thiserror v2.0.17
+2025-12-22T02:08:56.2501310Z [1m[92m   Compiling[0m syn v1.0.109
+2025-12-22T02:08:56.3183100Z [1m[92m   Compiling[0m typenum v1.19.0
+2025-12-22T02:08:56.4987230Z [1m[92m   Compiling[0m ident_case v1.0.1
+2025-12-22T02:08:56.5335120Z [1m[92m   Compiling[0m litemap v0.8.1
+2025-12-22T02:08:56.6488020Z [1m[92m   Compiling[0m darling_core v0.21.3
+2025-12-22T02:08:56.6810790Z [1m[92m   Compiling[0m icu_locale_core v2.1.1
+2025-12-22T02:08:56.7118080Z [1m[92m   Compiling[0m potential_utf v0.1.4
+2025-12-22T02:08:56.8158510Z [1m[92m   Compiling[0m phf_macros v0.11.3
+2025-12-22T02:08:57.4029660Z [1m[92m   Compiling[0m zerotrie v0.2.3
+2025-12-22T02:08:57.5413130Z [1m[92m   Compiling[0m dunce v1.0.5
+2025-12-22T02:08:57.6110360Z [1m[92m   Compiling[0m icu_provider v2.1.1
+2025-12-22T02:08:57.6249020Z [1m[92m   Compiling[0m icu_collections v2.1.1
+2025-12-22T02:08:58.6878460Z [1m[92m   Compiling[0m rand_chacha v0.2.2
+2025-12-22T02:08:58.8854600Z [1m[92m   Compiling[0m rand_pcg v0.2.1
+2025-12-22T02:08:58.9544350Z [1m[92m   Compiling[0m phf_shared v0.8.0
+2025-12-22T02:08:59.1670080Z [1m[92m   Compiling[0m generic-array v0.14.7
+2025-12-22T02:08:59.2506680Z [1m[92m   Compiling[0m darling_macro v0.21.3
+2025-12-22T02:08:59.3322890Z [1m[92m   Compiling[0m thiserror-impl v2.0.17
+2025-12-22T02:08:59.6170780Z [1m[92m   Compiling[0m thiserror-impl v1.0.69
+2025-12-22T02:09:01.6853540Z [1m[92m   Compiling[0m parking_lot_core v0.9.12
+2025-12-22T02:09:01.6972300Z [1m[92m   Compiling[0m proc-macro-hack v0.5.20+deprecated
+2025-12-22T02:09:01.8885390Z [1m[92m   Compiling[0m anyhow v1.0.100
+2025-12-22T02:09:02.1795190Z [1m[92m   Compiling[0m darling v0.21.3
+2025-12-22T02:09:02.2107190Z [1m[92m   Compiling[0m rand v0.7.3
+2025-12-22T02:09:02.3071460Z [1m[92m   Compiling[0m phf_shared v0.10.0
+2025-12-22T02:09:02.4818540Z [1m[92m   Compiling[0m time-core v0.1.6
+2025-12-22T02:09:02.5963780Z [1m[92m   Compiling[0m new_debug_unreachable v1.0.6
+2025-12-22T02:09:02.6272300Z [1m[92m   Compiling[0m byteorder v1.5.0
+2025-12-22T02:09:02.8834920Z [1m[92m   Compiling[0m glob v0.3.3
+2025-12-22T02:09:03.1455470Z [1m[92m   Compiling[0m num-conv v0.1.0
+2025-12-22T02:09:03.2401060Z [1m[92m   Compiling[0m scopeguard v1.2.0
+2025-12-22T02:09:03.2835310Z [1m[92m   Compiling[0m lock_api v0.4.14
+2025-12-22T02:09:03.5769940Z [1m[92m   Compiling[0m phf_generator v0.10.0
+2025-12-22T02:09:03.6298990Z [1m[92m   Compiling[0m serde_with_macros v3.16.1
+2025-12-22T02:09:03.9312700Z [1m[92m   Compiling[0m phf_generator v0.8.0
+2025-12-22T02:09:03.9731260Z [1m[92m   Compiling[0m icu_normalizer v2.1.1
+2025-12-22T02:09:05.0501700Z [1m[92m   Compiling[0m icu_properties v2.1.2
+2025-12-22T02:09:06.1178600Z [1m[92m   Compiling[0m phf_codegen v0.11.3
+2025-12-22T02:09:06.1807920Z [1m[92m   Compiling[0m string_cache_codegen v0.5.4
+2025-12-22T02:09:06.5116490Z [1m[92m   Compiling[0m mac v0.1.1
+2025-12-22T02:09:06.5557550Z [1m[92m   Compiling[0m precomputed-hash v0.1.1
+2025-12-22T02:09:06.5858780Z [1m[92m   Compiling[0m winnow v0.7.14
+2025-12-22T02:09:06.7444540Z [1m[92m   Compiling[0m futf v0.1.5
+2025-12-22T02:09:06.8186790Z [1m[92m   Compiling[0m markup5ever v0.14.1
+2025-12-22T02:09:06.9041850Z [1m[92m   Compiling[0m cssparser v0.29.6
+2025-12-22T02:09:07.3251250Z [1m[92m   Compiling[0m phf_macros v0.10.0
+2025-12-22T02:09:07.8665850Z [1m[92m   Compiling[0m toml_parser v1.0.6+spec-1.1.0
+2025-12-22T02:09:07.8982490Z [1m[92m   Compiling[0m idna_adapter v1.2.1
+2025-12-22T02:09:07.9489990Z [1m[92m   Compiling[0m parking_lot v0.12.5
+2025-12-22T02:09:07.9691660Z [1m[92m   Compiling[0m phf_codegen v0.8.0
+2025-12-22T02:09:08.0119950Z [1m[92m   Compiling[0m serde_spanned v1.0.4
+2025-12-22T02:09:08.0941900Z [1m[92m   Compiling[0m toml_datetime v0.7.5+spec-1.1.0
+2025-12-22T02:09:08.1246470Z [1m[92m   Compiling[0m bitflags v1.3.2
+2025-12-22T02:09:08.1563440Z [1m[92m   Compiling[0m log v0.4.29
+2025-12-22T02:09:08.2210300Z [1m[92m   Compiling[0m percent-encoding v2.3.2
+2025-12-22T02:09:08.2263130Z [1m[92m   Compiling[0m dtoa v1.0.10
+2025-12-22T02:09:08.2264500Z [1m[92m   Compiling[0m utf-8 v0.7.6
+2025-12-22T02:09:08.2781290Z [1m[92m   Compiling[0m toml_writer v1.0.6+spec-1.1.0
+2025-12-22T02:09:08.2792300Z [1m[92m   Compiling[0m utf8_iter v1.0.4
+2025-12-22T02:09:08.2856650Z [1m[92m   Compiling[0m dtoa-short v0.3.5
+2025-12-22T02:09:08.3203700Z [1m[92m   Compiling[0m idna v1.1.0
+2025-12-22T02:09:08.3253440Z [1m[92m   Compiling[0m tendril v0.4.3
+2025-12-22T02:09:08.3663860Z [1m[92m   Compiling[0m toml v0.9.10+spec-1.1.0
+2025-12-22T02:09:08.4507530Z [1m[92m   Compiling[0m form_urlencoded v1.2.2
+2025-12-22T02:09:08.5039300Z [1m[92m   Compiling[0m string_cache v0.8.9
+2025-12-22T02:09:08.5937650Z [1m[92m   Compiling[0m selectors v0.24.0
+2025-12-22T02:09:08.6700310Z [1m[92m   Compiling[0m uuid v1.19.0
+2025-12-22T02:09:08.8718790Z [1m[92m   Compiling[0m phf v0.10.1
+2025-12-22T02:09:08.9433590Z [1m[92m   Compiling[0m phf v0.11.3
+2025-12-22T02:09:09.0139380Z [1m[92m   Compiling[0m indexmap v1.9.3
+2025-12-22T02:09:09.1582240Z [1m[92m   Compiling[0m ctor v0.2.9
+2025-12-22T02:09:09.1688470Z [1m[92m   Compiling[0m cssparser-macros v0.6.1
+2025-12-22T02:09:09.1793280Z [1m[92m   Compiling[0m aho-corasick v1.1.4
+2025-12-22T02:09:09.4214300Z [1m[92m   Compiling[0m unic-char-range v0.9.0
+2025-12-22T02:09:09.4717900Z [1m[92m   Compiling[0m hashbrown v0.16.1
+2025-12-22T02:09:09.4818240Z [1m[92m   Compiling[0m regex-syntax v0.8.8
+2025-12-22T02:09:09.7709880Z [1m[92m   Compiling[0m convert_case v0.4.0
+2025-12-22T02:09:09.9355110Z [1m[92m   Compiling[0m equivalent v1.0.2
+2025-12-22T02:09:09.9660010Z [1m[92m   Compiling[0m alloc-no-stdlib v2.0.4
+2025-12-22T02:09:10.0105150Z [1m[92m   Compiling[0m camino v1.2.2
+2025-12-22T02:09:10.0809780Z [1m[92m   Compiling[0m matches v0.1.10
+2025-12-22T02:09:10.1111890Z [1m[92m   Compiling[0m unic-common v0.9.0
+2025-12-22T02:09:10.1679120Z [1m[92m   Compiling[0m nodrop v0.1.14
+2025-12-22T02:09:10.1983510Z [1m[92m   Compiling[0m servo_arc v0.2.0
+2025-12-22T02:09:10.2051260Z [1m[92m   Compiling[0m unic-ucd-version v0.9.0
+2025-12-22T02:09:10.2876560Z [1m[92m   Compiling[0m alloc-stdlib v0.2.2
+2025-12-22T02:09:10.3261560Z [1m[92m   Compiling[0m indexmap v2.12.1
+2025-12-22T02:09:10.6248610Z [1m[92m   Compiling[0m regex-automata v0.4.13
+2025-12-22T02:09:10.6774150Z [1m[92m   Compiling[0m derive_more v0.99.20
+2025-12-22T02:09:10.8927660Z [1m[92m   Compiling[0m unic-char-property v0.9.0
+2025-12-22T02:09:11.4609010Z [1m[92m   Compiling[0m url v2.5.7
+2025-12-22T02:09:11.9348260Z [1m[92m   Compiling[0m fxhash v0.2.1
+2025-12-22T02:09:11.9784970Z [1m[92m   Compiling[0m phf v0.8.0
+2025-12-22T02:09:12.1186360Z [1m[92m   Compiling[0m swift-rs v1.0.7
+2025-12-22T02:09:12.2431590Z [1m[92m   Compiling[0m match_token v0.1.0
+2025-12-22T02:09:12.4623890Z [1m[92m   Compiling[0m serde_derive_internals v0.29.1
+2025-12-22T02:09:12.4951650Z [1m[92m   Compiling[0m hashbrown v0.12.3
+2025-12-22T02:09:12.5474220Z [1m[92m   Compiling[0m schemars v0.8.22
+2025-12-22T02:09:12.7592310Z [1m[92m   Compiling[0m html5ever v0.29.1
+2025-12-22T02:09:12.9659340Z [1m[92m   Compiling[0m schemars_derive v0.8.22
+2025-12-22T02:09:13.4144690Z [1m[92m   Compiling[0m regex v1.12.2
+2025-12-22T02:09:13.4649450Z [1m[92m   Compiling[0m unic-ucd-ident v0.9.0
+2025-12-22T02:09:13.5853550Z [1m[92m   Compiling[0m brotli-decompressor v5.0.0
+2025-12-22T02:09:13.6742080Z [1m[92m   Compiling[0m cfb v0.7.3
+2025-12-22T02:09:13.8250710Z [1m[92m   Compiling[0m jsonptr v0.6.3
+2025-12-22T02:09:14.0510280Z [1m[92m   Compiling[0m cargo-platform v0.1.9
+2025-12-22T02:09:14.0623410Z [1m[92m   Compiling[0m same-file v1.0.6
+2025-12-22T02:09:14.1152340Z [1m[92m   Compiling[0m bytes v1.11.0
+2025-12-22T02:09:14.1613800Z [1m[92m   Compiling[0m dyn-clone v1.0.20
+2025-12-22T02:09:14.2004930Z [1m[92m   Compiling[0m base64 v0.21.7
+2025-12-22T02:09:14.4555370Z [1m[92m   Compiling[0m http v1.4.0
+2025-12-22T02:09:14.5499190Z [1m[92m   Compiling[0m cargo_metadata v0.19.2
+2025-12-22T02:09:14.9817250Z [1m[92m   Compiling[0m walkdir v2.5.0
+2025-12-22T02:09:15.0793050Z [1m[92m   Compiling[0m brotli v8.0.2
+2025-12-22T02:09:15.1253490Z [1m[92m   Compiling[0m json-patch v3.0.1
+2025-12-22T02:09:15.3773100Z [1m[92m   Compiling[0m infer v0.19.0
+2025-12-22T02:09:15.5674060Z [1m[92m   Compiling[0m urlpattern v0.3.0
+2025-12-22T02:09:15.6342280Z [1m[92m   Compiling[0m serde-untagged v0.1.9
+2025-12-22T02:09:15.7747540Z [1m[92m   Compiling[0m kuchikiki v0.8.8-speedreader
+2025-12-22T02:09:16.1475300Z [1m[92m   Compiling[0m serde_with v3.16.1
+2025-12-22T02:09:17.8230900Z [1m[92m   Compiling[0m powerfmt v0.2.0
+2025-12-22T02:09:17.8336920Z [1m[92m   Compiling[0m rustc_version v0.4.1
+2025-12-22T02:09:17.9528300Z [1m[92m   Compiling[0m deranged v0.5.5
+2025-12-22T02:09:18.0337810Z [1m[92m   Compiling[0m tauri-utils v2.8.1
+2025-12-22T02:09:19.1571880Z [1m[92m   Compiling[0m quick-xml v0.38.4
+2025-12-22T02:09:19.2782360Z [1m[92m   Compiling[0m time v0.3.44
+2025-12-22T02:09:20.2234660Z [1m[92m   Compiling[0m base64 v0.22.1
+2025-12-22T02:09:20.5536510Z [1m[92m   Compiling[0m subtle v2.6.1
+2025-12-22T02:09:20.6448750Z [1m[92m   Compiling[0m plist v1.8.0
+2025-12-22T02:09:22.5779290Z [1m[92m   Compiling[0m pin-project-lite v0.2.16
+2025-12-22T02:09:22.7929180Z [1m[92m   Compiling[0m zeroize_derive v1.4.2
+2025-12-22T02:09:22.8054170Z [1m[92m   Compiling[0m futures-core v0.3.31
+2025-12-22T02:09:23.1946280Z [1m[92m   Compiling[0m zeroize v1.8.2
+2025-12-22T02:09:23.8497230Z [1m[92m   Compiling[0m objc2-exception-helper v0.1.1
+2025-12-22T02:09:24.0140700Z [1m[92m   Compiling[0m option-ext v0.2.0
+2025-12-22T02:09:24.0448790Z [1m[92m   Compiling[0m dirs-sys v0.5.0
+2025-12-22T02:09:24.0857600Z [1m[92m   Compiling[0m tauri-plugin v2.5.2
+2025-12-22T02:09:26.2628810Z [1m[92m   Compiling[0m embed-resource v3.0.6
+2025-12-22T02:09:26.6028930Z [1m[92m   Compiling[0m futures-sink v0.3.31
+2025-12-22T02:09:26.6340460Z [1m[92m   Compiling[0m bitflags v2.10.0
+2025-12-22T02:09:26.8608410Z [1m[92m   Compiling[0m crc32fast v1.5.0
+2025-12-22T02:09:26.9750420Z [1m[92m   Compiling[0m heck v0.5.0
+2025-12-22T02:09:27.7422260Z [1m[92m   Compiling[0m tauri-winres v0.3.5
+2025-12-22T02:09:27.8901040Z [1m[92m   Compiling[0m dirs v6.0.0
+2025-12-22T02:09:28.0382430Z [1m[92m   Compiling[0m cargo_toml v0.22.3
+2025-12-22T02:09:28.4497170Z [1m[92m   Compiling[0m once_cell v1.21.3
+2025-12-22T02:09:28.5711550Z [1m[92m   Compiling[0m objc2 v0.6.3
+2025-12-22T02:09:28.8383310Z [1m[92m   Compiling[0m tauri-build v2.5.3
+2025-12-22T02:09:28.9147250Z [1m[92m   Compiling[0m tokio-macros v2.6.0
+2025-12-22T02:09:29.2737930Z [1m[92m   Compiling[0m socket2 v0.6.1
+2025-12-22T02:09:29.5156290Z [1m[92m   Compiling[0m mio v1.1.1
+2025-12-22T02:09:29.7205650Z [1m[92m   Compiling[0m objc2-encode v4.1.0
+2025-12-22T02:09:29.7859550Z [1m[92m   Compiling[0m slab v0.4.11
+2025-12-22T02:09:30.0839510Z [1m[92m   Compiling[0m tokio v1.48.0
+2025-12-22T02:09:32.4399390Z [1m[92m   Compiling[0m futures-channel v0.3.31
+2025-12-22T02:09:32.7517910Z [1m[92m   Compiling[0m pin-utils v0.1.0
+2025-12-22T02:09:33.4093180Z [1m[92m   Compiling[0m tauri v2.9.5
+2025-12-22T02:09:33.9632050Z [1m[92m   Compiling[0m crypto-common v0.1.7
+2025-12-22T02:09:34.0465910Z [1m[92m   Compiling[0m time-macros v0.2.24
+2025-12-22T02:09:34.2801250Z [1m[92m   Compiling[0m cookie v0.18.1
+2025-12-22T02:09:34.4433150Z [1m[92m   Compiling[0m futures-macro v0.3.31
+2025-12-22T02:09:35.0232250Z [1m[92m   Compiling[0m ring v0.17.14
+2025-12-22T02:09:35.4635200Z [1m[92m   Compiling[0m futures-io v0.3.31
+2025-12-22T02:09:35.4854560Z [1m[92m   Compiling[0m futures-task v0.3.31
+2025-12-22T02:09:35.5881170Z [1m[92m   Compiling[0m futures-util v0.3.31
+2025-12-22T02:09:40.3964500Z [1m[92m   Compiling[0m simd-adler32 v0.3.8
+2025-12-22T02:09:41.7323350Z [1m[92m   Compiling[0m objc2-core-foundation v0.3.2
+2025-12-22T02:09:42.3863640Z [1m[92m   Compiling[0m tracing-core v0.1.36
+2025-12-22T02:09:42.4824500Z [1m[92m   Compiling[0m http-body v1.0.1
+2025-12-22T02:09:42.5492640Z [1m[92m   Compiling[0m rustls-pki-types v1.13.2
+2025-12-22T02:09:43.1053920Z [1m[92m   Compiling[0m tracing-attributes v0.1.31
+2025-12-22T02:09:43.9113310Z [1m[92m   Compiling[0m httparse v1.10.1
+2025-12-22T02:09:44.0721900Z [1m[92m   Compiling[0m adler2 v2.0.1
+2025-12-22T02:09:46.8490540Z [1m[92m   Compiling[0m untrusted v0.9.0
+2025-12-22T02:09:52.8936830Z [1m[92m   Compiling[0m miniz_oxide v0.8.9
+2025-12-22T02:09:53.4972620Z [1m[92m   Compiling[0m tracing v0.1.44
+2025-12-22T02:09:53.9568290Z [1m[92m   Compiling[0m objc2-foundation v0.3.2
+2025-12-22T02:09:58.1761980Z [1m[92m   Compiling[0m tokio-util v0.7.17
+2025-12-22T02:09:58.9571110Z [1m[92m   Compiling[0m try-lock v0.2.5
+2025-12-22T02:09:59.0627490Z [1m[92m   Compiling[0m rustls v0.23.35
+2025-12-22T02:09:59.1312780Z [1m[92m   Compiling[0m crossbeam-utils v0.8.21
+2025-12-22T02:09:59.3221870Z [1m[92m   Compiling[0m atomic-waker v1.1.2
+2025-12-22T02:09:59.3925010Z [1m[92m   Compiling[0m tower-service v0.3.3
+2025-12-22T02:10:00.8279050Z [1m[92m   Compiling[0m h2 v0.4.12
+2025-12-22T02:10:01.6918020Z [1m[92m   Compiling[0m want v0.3.1
+2025-12-22T02:10:02.3099610Z [1m[92m   Compiling[0m flate2 v1.1.5
+2025-12-22T02:10:02.9591360Z [1m[92m   Compiling[0m rustls-webpki v0.103.8
+2025-12-22T02:10:03.0227770Z [1m[92m   Compiling[0m block-buffer v0.10.4
+2025-12-22T02:10:03.0676570Z [1m[92m   Compiling[0m fdeflate v0.3.7
+2025-12-22T02:10:06.1541010Z [1m[92m   Compiling[0m block2 v0.6.2
+2025-12-22T02:10:06.2604210Z [1m[92m   Compiling[0m dpi v0.1.2
+2025-12-22T02:10:06.8495390Z [1m[92m   Compiling[0m psl-types v2.0.11
+2025-12-22T02:10:06.9220920Z [1m[92m   Compiling[0m litrs v1.0.0
+2025-12-22T02:10:06.9338940Z [1m[92m   Compiling[0m raw-window-handle v0.6.2
+2025-12-22T02:10:07.1682500Z [1m[92m   Compiling[0m publicsuffix v2.3.0
+2025-12-22T02:10:07.3506090Z [1m[92m   Compiling[0m document-features v0.2.12
+2025-12-22T02:10:15.2352760Z [1m[92m   Compiling[0m png v0.17.16
+2025-12-22T02:10:16.2566400Z [1m[92m   Compiling[0m digest v0.10.7
+2025-12-22T02:10:18.0174670Z [1m[92m   Compiling[0m hyper v1.8.1
+2025-12-22T02:10:25.0383370Z [1m[92m   Compiling[0m objc2-ui-kit v0.3.2
+2025-12-22T02:10:26.4816940Z [1m[92m   Compiling[0m sync_wrapper v1.0.2
+2025-12-22T02:10:27.2832260Z [1m[92m   Compiling[0m cpufeatures v0.2.17
+2025-12-22T02:10:27.8812340Z [1m[92m   Compiling[0m wry v0.53.5
+2025-12-22T02:10:28.2794970Z [1m[92m   Compiling[0m tauri-runtime v2.9.2
+2025-12-22T02:10:28.4482690Z [1m[92m   Compiling[0m ipnet v2.11.0
+2025-12-22T02:10:28.6079990Z [1m[92m   Compiling[0m tower-layer v0.3.3
+2025-12-22T02:10:29.9326500Z [1m[92m   Compiling[0m hyper-util v0.1.19
+2025-12-22T02:10:32.4461930Z [1m[92m   Compiling[0m tower v0.5.2
+2025-12-22T02:10:32.8853900Z [1m[92m   Compiling[0m sha2 v0.10.9
+2025-12-22T02:10:33.1254750Z [1m[92m   Compiling[0m crossbeam-channel v0.5.15
+2025-12-22T02:10:33.6284870Z [1m[92m   Compiling[0m tokio-rustls v0.26.4
+2025-12-22T02:10:33.8543310Z [1m[92m   Compiling[0m ico v0.4.0
+2025-12-22T02:10:34.2245630Z [1m[92m   Compiling[0m objc2-web-kit v0.3.2
+2025-12-22T02:10:34.8340220Z [1m[92m   Compiling[0m webpki-roots v1.0.4
+2025-12-22T02:10:35.2660200Z [1m[92m   Compiling[0m tauri-runtime-wry v2.9.3
+2025-12-22T02:10:35.5236920Z [1m[92m   Compiling[0m lazy_static v1.5.0
+2025-12-22T02:10:35.5841120Z [1m[92m   Compiling[0m iri-string v0.7.9
+2025-12-22T02:10:37.8180480Z [1m[92m   Compiling[0m tower-http v0.6.8
+2025-12-22T02:10:37.9549550Z [1m[92m   Compiling[0m tao v0.34.5
+2025-12-22T02:10:39.3275530Z [1m[92m   Compiling[0m hyper-rustls v0.27.7
+2025-12-22T02:10:43.0515120Z [1m[92m   Compiling[0m tauri-codegen v2.5.2
+2025-12-22T02:10:46.4182840Z [1m[92m   Compiling[0m cookie_store v0.22.0
+2025-12-22T02:10:46.4184730Z [1m[92m   Compiling[0m http-body-util v0.1.3
+2025-12-22T02:10:46.6505420Z [1m[92m   Compiling[0m serde_urlencoded v0.7.1
+2025-12-22T02:10:46.8408550Z [1m[92m   Compiling[0m encoding_rs v0.8.35
+2025-12-22T02:10:48.3862550Z [1m[92m   Compiling[0m serialize-to-javascript-impl v0.1.2
+2025-12-22T02:10:49.0954940Z [1m[92m   Compiling[0m mime v0.3.17
+2025-12-22T02:10:50.0465030Z [1m[92m   Compiling[0m reqwest v0.12.26
+2025-12-22T02:10:51.6596640Z [1m[92m   Compiling[0m serialize-to-javascript v0.1.2
+2025-12-22T02:10:51.8029810Z [1m[92m   Compiling[0m tauri-macros v2.5.2
+2025-12-22T02:10:58.3809970Z [1m[92m   Compiling[0m tauri-plugin-fs v2.4.4
+2025-12-22T02:10:59.4123870Z [1m[92m   Compiling[0m serde_repr v0.1.20
+2025-12-22T02:11:11.2849640Z [1m[92m   Compiling[0m pqcrypto-internals v0.2.11
+2025-12-22T02:11:11.5128850Z [1m[92m   Compiling[0m pkg-config v0.3.32
+2025-12-22T02:11:11.9621650Z [1m[92m   Compiling[0m zstd-sys v2.0.16+zstd.1.5.7
+2025-12-22T02:11:12.5870760Z [1m[92m   Compiling[0m num-traits v0.2.19
+2025-12-22T02:11:12.7719890Z [1m[92m   Compiling[0m signal-hook v0.3.18
+2025-12-22T02:11:13.5959100Z [1m[92m   Compiling[0m curve25519-dalek v4.1.3
+2025-12-22T02:11:13.9476510Z [1m[92m   Compiling[0m signal-hook-registry v1.4.7
+2025-12-22T02:11:19.2303640Z [1m[92m   Compiling[0m tauri-plugin-shell v2.3.3
+2025-12-22T02:11:20.0298110Z [1m[92m   Compiling[0m tauri-plugin-store v2.4.1
+2025-12-22T02:11:20.2226690Z [1m[92m   Compiling[0m tauri-plugin-opener v2.5.2
+2025-12-22T02:11:20.5570440Z [1m[92m   Compiling[0m tauri-plugin-dialog v2.4.2
+2025-12-22T02:11:21.0606440Z [1m[92m   Compiling[0m tauri-plugin-http v2.5.4
+2025-12-22T02:11:21.2055200Z [1m[92m   Compiling[0m inout v0.1.4
+2025-12-22T02:11:21.3363240Z [1m[92m   Compiling[0m os_pipe v1.2.3
+2025-12-22T02:11:21.4659560Z [1m[92m   Compiling[0m zstd-safe v7.2.4
+2025-12-22T02:11:21.7228930Z [1m[92m   Compiling[0m pathdiff v0.2.3
+2025-12-22T02:11:21.7803740Z [1m[92m   Compiling[0m open v5.3.3
+2025-12-22T02:11:21.9025990Z [1m[92m   Compiling[0m sigchld v0.2.4
+2025-12-22T02:11:21.9090430Z [1m[92m   Compiling[0m cipher v0.4.4
+2025-12-22T02:11:46.9469110Z [1m[92m   Compiling[0m pxfm v0.1.27
+2025-12-22T02:11:57.2834650Z [1m[92m   Compiling[0m universal-hash v0.5.1
+2025-12-22T02:11:57.3927820Z [1m[92m   Compiling[0m pqcrypto-mlkem v0.1.1
+2025-12-22T02:11:57.8050310Z [1m[92m   Compiling[0m pqcrypto-dilithium v0.5.0
+2025-12-22T02:11:58.1065170Z [1m[92m   Compiling[0m blake3 v1.8.2
+2025-12-22T02:11:58.5062470Z [1m[92m   Compiling[0m base64ct v1.8.1
+2025-12-22T02:11:58.7274640Z [1m[92m   Compiling[0m quick-error v2.0.1
+2025-12-22T02:11:58.7840820Z [1m[92m   Compiling[0m byteorder-lite v0.1.0
+2025-12-22T02:11:58.9981010Z [1m[92m   Compiling[0m signature v2.2.0
+2025-12-22T02:11:59.0796320Z [1m[92m   Compiling[0m snap v1.1.1
+2025-12-22T02:11:59.3212200Z [1m[92m   Compiling[0m pqcrypto-traits v0.3.5
+2025-12-22T02:11:59.3276760Z [1m[92m   Compiling[0m zune-core v0.5.0
+2025-12-22T02:11:59.3988060Z [1m[92m   Compiling[0m opaque-debug v0.3.1
+2025-12-22T02:11:59.4308390Z [1m[92m   Compiling[0m poly1305 v0.8.0
+2025-12-22T02:11:59.5416160Z [1m[92m   Compiling[0m zune-jpeg v0.5.7
+2025-12-22T02:11:59.5809900Z [1m[92m   Compiling[0m ed25519 v2.2.3
+2025-12-22T02:11:59.7770770Z [1m[92m   Compiling[0m image-webp v0.2.4
+2025-12-22T02:12:00.9529890Z [1m[92m   Compiling[0m password-hash v0.5.0
+2025-12-22T02:12:03.2133550Z [1m[92m   Compiling[0m png v0.18.0
+2025-12-22T02:12:06.6559960Z [1m[92m   Compiling[0m moxcms v0.7.11
+2025-12-22T02:12:19.7814740Z [1m[92m   Compiling[0m chacha20 v0.9.1
+2025-12-22T02:12:19.8826290Z [1m[92m   Compiling[0m shared_child v1.1.1
+2025-12-22T02:12:20.0941000Z [1m[92m   Compiling[0m blake2 v0.10.6
+2025-12-22T02:12:20.3113560Z [1m[92m   Compiling[0m hmac v0.12.1
+2025-12-22T02:12:20.4092160Z [1m[92m   Compiling[0m cookie_store v0.21.1
+2025-12-22T02:12:20.5531460Z [1m[92m   Compiling[0m dirs-sys v0.4.1
+2025-12-22T02:12:20.6312470Z [1m[92m   Compiling[0m brotli-decompressor v4.0.3
+2025-12-22T02:12:22.6197710Z [1m[92m   Compiling[0m futures-executor v0.3.31
+2025-12-22T02:12:23.3018830Z [1m[92m   Compiling[0m aead v0.5.2
+2025-12-22T02:12:23.5111610Z [1m[92m   Compiling[0m vortex-image v0.1.0 (/Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src-tauri)
+2025-12-22T02:12:25.7504350Z [1m[92m   Compiling[0m constant_time_eq v0.3.1
+2025-12-22T02:12:25.9264850Z [1m[92m   Compiling[0m arrayvec v0.7.6
+2025-12-22T02:12:26.2906960Z [1m[92m   Compiling[0m bytemuck v1.24.0
+2025-12-22T02:12:26.4631930Z [1m[92m   Compiling[0m data-url v0.3.2
+2025-12-22T02:12:26.5536400Z [1m[92m   Compiling[0m arrayref v0.3.9
+2025-12-22T02:12:26.6195890Z [1m[92m   Compiling[0m twox-hash v2.1.2
+2025-12-22T02:12:26.8187950Z [1m[92m   Compiling[0m lz4_flex v0.11.5
+2025-12-22T02:12:28.8318640Z [1m[92m   Compiling[0m image v0.25.9
+2025-12-22T02:12:35.0357070Z [1m[92m   Compiling[0m chacha20poly1305 v0.10.1
+2025-12-22T02:12:35.1593470Z [1m[92m   Compiling[0m futures v0.3.31
+2025-12-22T02:12:35.2352590Z [1m[92m   Compiling[0m brotli v7.0.0
+2025-12-22T02:12:40.7500980Z [1m[92m   Compiling[0m dirs v5.0.1
+2025-12-22T02:12:40.9809450Z [1m[92m   Compiling[0m hkdf v0.12.4
+2025-12-22T02:12:41.1824020Z [1m[92m   Compiling[0m argon2 v0.5.3
+2025-12-22T02:12:47.3765130Z [1m[92m   Compiling[0m zstd v0.13.3
+2025-12-22T02:12:48.1810540Z [1m[92m   Compiling[0m ed25519-dalek v2.2.0
+2025-12-22T02:12:51.4093220Z [1m[92m   Compiling[0m x25519-dalek v2.0.1
+2025-12-22T02:12:54.3261030Z [1m[92m   Compiling[0m hex v0.4.3
+2025-12-22T02:13:03.3865150Z [1m[33mwarning[0m[1m: variant `UnsupportedAlgorithm` is never constructed[0m
+2025-12-22T02:13:03.3886600Z   [1m[94m--> [0msrc/compress.rs:18:5
+2025-12-22T02:13:03.3887210Z    [1m[94m|[0m
+2025-12-22T02:13:03.3887640Z [1m[94m10[0m [1m[94m|[0m pub enum CompressError {
+2025-12-22T02:13:03.3888070Z    [1m[94m|[0m          [1m[94m-------------[0m [1m[94mvariant in this enum[0m
+2025-12-22T02:13:03.3888430Z [1m[94m...[0m
+2025-12-22T02:13:03.3888900Z [1m[94m18[0m [1m[94m|[0m     UnsupportedAlgorithm(String),
+2025-12-22T02:13:03.3890250Z    [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^^^^^^^^[0m
+2025-12-22T02:13:03.3890530Z    [1m[94m|[0m
+2025-12-22T02:13:03.3891120Z    [1m[94m= [0m[1mnote[0m: `CompressError` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+2025-12-22T02:13:03.3892070Z    [1m[94m= [0m[1mnote[0m: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+2025-12-22T02:13:03.3892290Z 
+2025-12-22T02:13:03.3892680Z [1m[33mwarning[0m[1m: variant `KeyGeneration` is never constructed[0m
+2025-12-22T02:13:03.3893110Z   [1m[94m--> [0msrc/crypto.rs:31:5
+2025-12-22T02:13:03.3893350Z    [1m[94m|[0m
+2025-12-22T02:13:03.3893670Z [1m[94m19[0m [1m[94m|[0m pub enum CryptoError {
+2025-12-22T02:13:03.3894170Z    [1m[94m|[0m          [1m[94m-----------[0m [1m[94mvariant in this enum[0m
+2025-12-22T02:13:03.3894490Z [1m[94m...[0m
+2025-12-22T02:13:03.3894940Z [1m[94m31[0m [1m[94m|[0m     KeyGeneration(String),
+2025-12-22T02:13:03.3895310Z    [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^[0m
+2025-12-22T02:13:03.3895580Z    [1m[94m|[0m
+2025-12-22T02:13:03.3896220Z    [1m[94m= [0m[1mnote[0m: `CryptoError` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+2025-12-22T02:13:03.3896580Z 
+2025-12-22T02:13:03.3896900Z [1m[33mwarning[0m[1m: method `verify` is never used[0m
+2025-12-22T02:13:03.3897290Z    [1m[94m--> [0msrc/crypto.rs:128:12
+2025-12-22T02:13:03.3897530Z     [1m[94m|[0m
+2025-12-22T02:13:03.3897830Z  [1m[94m87[0m [1m[94m|[0m impl HybridKeypair {
+2025-12-22T02:13:03.3898370Z     [1m[94m|[0m [1m[94m------------------[0m [1m[94mmethod in this implementation[0m
+2025-12-22T02:13:03.3898700Z [1m[94m...[0m
+2025-12-22T02:13:03.3899260Z [1m[94m128[0m [1m[94m|[0m     pub fn verify(&self, data: &[u8], signature: &[u8]) -> Result<(), CryptoError> {
+2025-12-22T02:13:03.3899780Z     [1m[94m|[0m            [1m[33m^^^^^^[0m
+2025-12-22T02:13:03.3899970Z 
+2025-12-22T02:13:58.4154430Z [1m[33mwarning[0m: `vortex-image` (lib) generated 3 warnings
+2025-12-22T02:13:59.8013340Z [1m[92m    Finished[0m `release` profile [optimized] target(s) in 5m 20s
+2025-12-22T02:13:59.9061340Z Building for x86_64-apple-ios...
+2025-12-22T02:14:01.9514650Z [1m[92m   Compiling[0m libc v0.2.178
+2025-12-22T02:14:01.9773780Z [1m[92m   Compiling[0m serde_core v1.0.228
+2025-12-22T02:14:01.9817120Z [1m[92m   Compiling[0m cfg-if v1.0.4
+2025-12-22T02:14:02.1588720Z [1m[92m   Compiling[0m serde v1.0.228
+2025-12-22T02:14:02.2768240Z [1m[92m   Compiling[0m zerofrom v0.1.6
+2025-12-22T02:14:02.5361600Z [1m[92m   Compiling[0m stable_deref_trait v1.2.1
+2025-12-22T02:14:02.6432090Z [1m[92m   Compiling[0m yoke v0.8.1
+2025-12-22T02:14:02.9249370Z [1m[92m   Compiling[0m itoa v1.0.16
+2025-12-22T02:14:03.1827500Z [1m[92m   Compiling[0m getrandom v0.2.16
+2025-12-22T02:14:03.3569540Z [1m[92m   Compiling[0m memchr v2.7.6
+2025-12-22T02:14:03.5084660Z [1m[92m   Compiling[0m zerovec v0.11.5
+2025-12-22T02:14:04.2493660Z [1m[92m   Compiling[0m tinystr v0.8.2
+2025-12-22T02:14:04.5917940Z [1m[92m   Compiling[0m litemap v0.8.1
+2025-12-22T02:14:04.8252030Z [1m[92m   Compiling[0m smallvec v1.15.1
+2025-12-22T02:14:05.1131600Z [1m[92m   Compiling[0m writeable v0.6.2
+2025-12-22T02:14:05.3852060Z [1m[92m   Compiling[0m subtle v2.6.1
+2025-12-22T02:14:05.4275390Z [1m[92m   Compiling[0m icu_locale_core v2.1.1
+2025-12-22T02:14:05.6302940Z [1m[92m   Compiling[0m potential_utf v0.1.4
+2025-12-22T02:14:05.8135150Z [1m[92m   Compiling[0m zerotrie v0.2.3
+2025-12-22T02:14:06.8435390Z [1m[92m   Compiling[0m icu_collections v2.1.1
+2025-12-22T02:14:08.3038570Z [1m[92m   Compiling[0m icu_properties_data v2.1.2
+2025-12-22T02:14:08.3150170Z [1m[92m   Compiling[0m icu_normalizer_data v2.1.1
+2025-12-22T02:14:08.3253750Z [1m[92m   Compiling[0m percent-encoding v2.3.2
+2025-12-22T02:14:08.7680710Z [1m[92m   Compiling[0m bytes v1.11.0
+2025-12-22T02:14:08.8016690Z [1m[92m   Compiling[0m icu_provider v2.1.1
+2025-12-22T02:14:10.1705410Z [1m[92m   Compiling[0m pin-project-lite v0.2.16
+2025-12-22T02:14:10.7220050Z [1m[92m   Compiling[0m futures-core v0.3.31
+2025-12-22T02:14:10.9110440Z [1m[92m   Compiling[0m zeroize v1.8.2
+2025-12-22T02:14:11.0673490Z [1m[92m   Compiling[0m icu_properties v2.1.2
+2025-12-22T02:14:11.7603440Z [1m[92m   Compiling[0m icu_normalizer v2.1.1
+2025-12-22T02:14:12.7967100Z [1m[92m   Compiling[0m typenum v1.19.0
+2025-12-22T02:14:12.8070370Z [1m[92m   Compiling[0m objc2-exception-helper v0.1.1
+2025-12-22T02:14:13.7556900Z [1m[92m   Compiling[0m idna_adapter v1.2.1
+2025-12-22T02:14:13.8161490Z [1m[92m   Compiling[0m http v1.4.0
+2025-12-22T02:14:13.9078830Z [1m[92m   Compiling[0m rand_core v0.6.4
+2025-12-22T02:14:13.9794620Z [1m[92m   Compiling[0m generic-array v0.14.7
+2025-12-22T02:14:13.9896440Z [1m[92m   Compiling[0m futures-sink v0.3.31
+2025-12-22T02:14:14.0538870Z [1m[92m   Compiling[0m bitflags v2.10.0
+2025-12-22T02:14:14.0642370Z [1m[92m   Compiling[0m utf8_iter v1.0.4
+2025-12-22T02:14:14.1386090Z [1m[92m   Compiling[0m idna v1.1.0
+2025-12-22T02:14:14.7592980Z [1m[92m   Compiling[0m form_urlencoded v1.2.2
+2025-12-22T02:14:14.9307880Z [1m[92m   Compiling[0m once_cell v1.21.3
+2025-12-22T02:14:15.0647370Z [1m[92m   Compiling[0m ryu v1.0.21
+2025-12-22T02:14:15.2648580Z [1m[92m   Compiling[0m serde_json v1.0.145
+2025-12-22T02:14:15.2749960Z [1m[92m   Compiling[0m objc2 v0.6.3
+2025-12-22T02:14:15.2916970Z [1m[92m   Compiling[0m socket2 v0.6.1
+2025-12-22T02:14:15.3391260Z [1m[92m   Compiling[0m mio v1.1.1
+2025-12-22T02:14:15.8475320Z [1m[92m   Compiling[0m slab v0.4.11
+2025-12-22T02:14:15.9359870Z [1m[92m   Compiling[0m objc2-encode v4.1.0
+2025-12-22T02:14:15.9461390Z [1m[92m   Compiling[0m fnv v1.0.7
+2025-12-22T02:14:15.9562920Z [1m[92m   Compiling[0m tokio v1.48.0
+2025-12-22T02:14:17.9788510Z [1m[92m   Compiling[0m url v2.5.7
+2025-12-22T02:14:18.5261810Z [1m[92m   Compiling[0m futures-channel v0.3.31
+2025-12-22T02:14:18.6934320Z [1m[92m   Compiling[0m powerfmt v0.2.0
+2025-12-22T02:14:18.8723000Z [1m[92m   Compiling[0m pin-utils v0.1.0
+2025-12-22T02:14:18.9159410Z [1m[92m   Compiling[0m deranged v0.5.5
+2025-12-22T02:14:19.9586670Z [1m[92m   Compiling[0m crypto-common v0.1.7
+2025-12-22T02:14:20.0907980Z [1m[92m   Compiling[0m futures-task v0.3.31
+2025-12-22T02:14:20.2193670Z [1m[92m   Compiling[0m futures-io v0.3.31
+2025-12-22T02:14:20.3882280Z [1m[92m   Compiling[0m num-conv v0.1.0
+2025-12-22T02:14:20.4926200Z [1m[92m   Compiling[0m alloc-no-stdlib v2.0.4
+2025-12-22T02:14:20.6456200Z [1m[92m   Compiling[0m time-core v0.1.6
+2025-12-22T02:14:20.7341990Z [1m[92m   Compiling[0m alloc-stdlib v0.2.2
+2025-12-22T02:14:20.7863040Z [1m[92m   Compiling[0m time v0.3.44
+2025-12-22T02:14:20.8468820Z [1m[92m   Compiling[0m futures-util v0.3.31
+2025-12-22T02:14:23.6462390Z [1m[92m   Compiling[0m ring v0.17.14
+2025-12-22T02:14:24.3576590Z [1m[92m   Compiling[0m cookie v0.18.1
+2025-12-22T02:14:24.3981420Z [1m[92m   Compiling[0m tauri v2.9.5
+2025-12-22T02:14:27.7027600Z [1m[92m   Compiling[0m log v0.4.29
+2025-12-22T02:14:29.2413920Z [1m[92m   Compiling[0m objc2-core-foundation v0.3.2
+2025-12-22T02:14:30.3933670Z [1m[92m   Compiling[0m tracing-core v0.1.36
+2025-12-22T02:14:31.1525570Z [1m[92m   Compiling[0m http-body v1.0.1
+2025-12-22T02:14:31.2243050Z [1m[92m   Compiling[0m rustls-pki-types v1.13.2
+2025-12-22T02:14:31.7896630Z [1m[92m   Compiling[0m aho-corasick v1.1.4
+2025-12-22T02:14:32.8796620Z [1m[92m   Compiling[0m typeid v1.0.3
+2025-12-22T02:14:32.9442430Z [1m[92m   Compiling[0m untrusted v0.9.0
+2025-12-22T02:14:33.0661540Z [1m[92m   Compiling[0m regex-syntax v0.8.8
+2025-12-22T02:14:37.4094320Z [1m[92m   Compiling[0m equivalent v1.0.2
+2025-12-22T02:14:37.4709710Z [1m[92m   Compiling[0m option-ext v0.2.0
+2025-12-22T02:14:37.5423320Z [1m[92m   Compiling[0m hashbrown v0.16.1
+2025-12-22T02:14:37.7140940Z [1m[92m   Compiling[0m unic-char-range v0.9.0
+2025-12-22T02:14:37.7907830Z [1m[92m   Compiling[0m unic-common v0.9.0
+2025-12-22T02:14:37.8633820Z [1m[92m   Compiling[0m unic-ucd-version v0.9.0
+2025-12-22T02:14:37.9039760Z [1m[92m   Compiling[0m unic-char-property v0.9.0
+2025-12-22T02:14:37.9686720Z [1m[92m   Compiling[0m httparse v1.10.1
+2025-12-22T02:14:37.9912730Z [1m[92m   Compiling[0m regex-automata v0.4.13
+2025-12-22T02:14:38.0522330Z [1m[92m   Compiling[0m indexmap v2.12.1
+2025-12-22T02:14:40.5322460Z [1m[92m   Compiling[0m tracing v0.1.44
+2025-12-22T02:14:41.0146250Z [1m[92m   Compiling[0m objc2-foundation v0.3.2
+2025-12-22T02:14:43.8764890Z [1m[92m   Compiling[0m tokio-util v0.7.17
+2025-12-22T02:14:45.2420670Z [1m[92m   Compiling[0m uuid v1.19.0
+2025-12-22T02:14:45.9975200Z [1m[92m   Compiling[0m thiserror v2.0.17
+2025-12-22T02:14:46.0417510Z [1m[92m   Compiling[0m thiserror v1.0.69
+2025-12-22T02:14:46.0880610Z [1m[92m   Compiling[0m erased-serde v0.4.9
+2025-12-22T02:14:46.1121690Z [1m[92m   Compiling[0m byteorder v1.5.0
+2025-12-22T02:14:46.3203600Z [1m[92m   Compiling[0m atomic-waker v1.1.2
+2025-12-22T02:14:46.4012130Z [1m[92m   Compiling[0m winnow v0.7.14
+2025-12-22T02:14:48.4432750Z [1m[92m   Compiling[0m siphasher v1.0.1
+2025-12-22T02:14:48.5644780Z [1m[92m   Compiling[0m tower-service v0.3.3
+2025-12-22T02:14:48.6359420Z [1m[92m   Compiling[0m try-lock v0.2.5
+2025-12-22T02:14:48.7027290Z [1m[92m   Compiling[0m rustls v0.23.35
+2025-12-22T02:14:48.7137430Z [1m[92m   Compiling[0m want v0.3.1
+2025-12-22T02:14:48.7970770Z [1m[92m   Compiling[0m phf_shared v0.11.3
+2025-12-22T02:14:48.9191710Z [1m[92m   Compiling[0m crossbeam-utils v0.8.21
+2025-12-22T02:14:48.9392520Z [1m[92m   Compiling[0m toml_parser v1.0.6+spec-1.1.0
+2025-12-22T02:14:49.8325920Z [1m[92m   Compiling[0m h2 v0.4.12
+2025-12-22T02:14:50.0316420Z [1m[92m   Compiling[0m cfb v0.7.3
+2025-12-22T02:14:51.4561880Z [1m[92m   Compiling[0m regex v1.12.2
+2025-12-22T02:14:51.8025960Z [1m[92m   Compiling[0m rustls-webpki v0.103.8
+2025-12-22T02:14:52.9452380Z [1m[92m   Compiling[0m unic-ucd-ident v0.9.0
+2025-12-22T02:14:53.1173290Z [1m[92m   Compiling[0m brotli-decompressor v5.0.0
+2025-12-22T02:14:53.8619660Z [1m[92m   Compiling[0m block2 v0.6.2
+2025-12-22T02:14:54.1349020Z [1m[92m   Compiling[0m jsonptr v0.6.3
+2025-12-22T02:14:54.7822270Z [1m[92m   Compiling[0m dpi v0.1.2
+2025-12-22T02:14:55.0127220Z [1m[92m   Compiling[0m serde_spanned v1.0.4
+2025-12-22T02:14:55.0730170Z [1m[92m   Compiling[0m toml_datetime v0.7.5+spec-1.1.0
+2025-12-22T02:14:55.0932450Z [1m[92m   Compiling[0m anyhow v1.0.100
+2025-12-22T02:14:55.1361140Z [1m[92m   Compiling[0m getrandom v0.3.4
+2025-12-22T02:14:55.1462810Z [1m[92m   Compiling[0m same-file v1.0.6
+2025-12-22T02:14:55.2221250Z [1m[92m   Compiling[0m toml_writer v1.0.6+spec-1.1.0
+2025-12-22T02:14:55.3346190Z [1m[92m   Compiling[0m psl-types v2.0.11
+2025-12-22T02:14:55.3647270Z [1m[92m   Compiling[0m raw-window-handle v0.6.2
+2025-12-22T02:14:55.4048930Z [1m[92m   Compiling[0m publicsuffix v2.3.0
+2025-12-22T02:14:55.5154280Z [1m[92m   Compiling[0m toml v0.9.10+spec-1.1.0
+2025-12-22T02:14:55.5356380Z [1m[92m   Compiling[0m walkdir v2.5.0
+2025-12-22T02:14:56.7493760Z [1m[92m   Compiling[0m json-patch v3.0.1
+2025-12-22T02:14:56.8075350Z [1m[92m   Compiling[0m brotli v8.0.2
+2025-12-22T02:14:58.2329780Z [1m[92m   Compiling[0m urlpattern v0.3.0
+2025-12-22T02:14:59.4690900Z [1m[92m   Compiling[0m hyper v1.8.1
+2025-12-22T02:15:03.1666960Z [1m[92m   Compiling[0m serde-untagged v0.1.9
+2025-12-22T02:15:03.4489080Z [1m[92m   Compiling[0m infer v0.19.0
+2025-12-22T02:15:04.1840000Z [1m[92m   Compiling[0m phf v0.11.3
+2025-12-22T02:15:04.3051310Z [1m[92m   Compiling[0m objc2-ui-kit v0.3.2
+2025-12-22T02:15:04.5586860Z [1m[92m   Compiling[0m dirs-sys v0.5.0
+2025-12-22T02:15:04.6189330Z [1m[92m   Compiling[0m sync_wrapper v1.0.2
+2025-12-22T02:15:04.6791060Z [1m[92m   Compiling[0m serde_with v3.16.1
+2025-12-22T02:15:05.2881690Z [1m[92m   Compiling[0m base64 v0.22.1
+2025-12-22T02:15:05.6260120Z [1m[92m   Compiling[0m tower-layer v0.3.3
+2025-12-22T02:15:05.7645200Z [1m[92m   Compiling[0m dunce v1.0.5
+2025-12-22T02:15:05.7973940Z [1m[92m   Compiling[0m semver v1.0.27
+2025-12-22T02:15:05.9238040Z [1m[92m   Compiling[0m glob v0.3.3
+2025-12-22T02:15:06.2131200Z [1m[92m   Compiling[0m ipnet v2.11.0
+2025-12-22T02:15:06.5878290Z [1m[92m   Compiling[0m hyper-util v0.1.19
+2025-12-22T02:15:07.0939500Z [1m[92m   Compiling[0m tauri-utils v2.8.1
+2025-12-22T02:15:08.8794780Z [1m[92m   Compiling[0m wry v0.53.5
+2025-12-22T02:15:08.8875430Z [1m[92m   Compiling[0m tokio-rustls v0.26.4
+2025-12-22T02:15:09.1079980Z [1m[92m   Compiling[0m tauri-runtime v2.9.2
+2025-12-22T02:15:09.1132910Z [1m[92m   Compiling[0m tower v0.5.2
+2025-12-22T02:15:09.5807070Z [1m[92m   Compiling[0m dirs v6.0.0
+2025-12-22T02:15:09.6889600Z [1m[92m   Compiling[0m crossbeam-channel v0.5.15
+2025-12-22T02:15:10.2570440Z [1m[92m   Compiling[0m objc2-web-kit v0.3.2
+2025-12-22T02:15:11.0975340Z [1m[92m   Compiling[0m webpki-roots v1.0.4
+2025-12-22T02:15:11.1890290Z [1m[92m   Compiling[0m block-buffer v0.10.4
+2025-12-22T02:15:11.3100020Z [1m[92m   Compiling[0m iri-string v0.7.9
+2025-12-22T02:15:14.3701790Z [1m[92m   Compiling[0m lazy_static v1.5.0
+2025-12-22T02:15:14.5116250Z [1m[92m   Compiling[0m tao v0.34.5
+2025-12-22T02:15:23.7259600Z [1m[92m   Compiling[0m tower-http v0.6.8
+2025-12-22T02:15:25.9051840Z [1m[92m   Compiling[0m tauri-runtime-wry v2.9.3
+2025-12-22T02:15:25.9159060Z [1m[92m   Compiling[0m swift-rs v1.0.7
+2025-12-22T02:15:25.9267650Z [1m[92m   Compiling[0m digest v0.10.7
+2025-12-22T02:15:26.2643410Z [1m[92m   Compiling[0m hyper-rustls v0.27.7
+2025-12-22T02:15:31.0666940Z [1m[92m   Compiling[0m cookie_store v0.22.0
+2025-12-22T02:15:32.5238470Z [1m[92m   Compiling[0m http-body-util v0.1.3
+2025-12-22T02:15:32.8105460Z [1m[92m   Compiling[0m serde_urlencoded v0.7.1
+2025-12-22T02:15:32.9963160Z [1m[92m   Compiling[0m encoding_rs v0.8.35
+2025-12-22T02:15:33.2344880Z [1m[92m   Compiling[0m base64 v0.21.7
+2025-12-22T02:15:33.7762380Z [1m[92m   Compiling[0m cpufeatures v0.2.17
+2025-12-22T02:15:33.8508940Z [1m[92m   Compiling[0m mime v0.3.17
+2025-12-22T02:15:34.3094000Z [1m[92m   Compiling[0m reqwest v0.12.26
+2025-12-22T02:15:37.9916730Z [1m[92m   Compiling[0m serialize-to-javascript v0.1.2
+2025-12-22T02:15:39.7646000Z [1m[92m   Compiling[0m heck v0.5.0
+2025-12-22T02:15:48.5222200Z [1m[92m   Compiling[0m tauri-plugin-fs v2.4.4
+2025-12-22T02:15:48.5821660Z [1m[92m   Compiling[0m pqcrypto-internals v0.2.11
+2025-12-22T02:15:51.3314780Z [1m[92m   Compiling[0m simd-adler32 v0.3.8
+2025-12-22T02:15:51.6307370Z [1m[92m   Compiling[0m signal-hook v0.3.18
+2025-12-22T02:15:51.6509540Z [1m[92m   Compiling[0m num-traits v0.2.19
+2025-12-22T02:15:51.7733670Z [1m[92m   Compiling[0m zstd-sys v2.0.16+zstd.1.5.7
+2025-12-22T02:15:53.2299280Z [1m[92m   Compiling[0m crc32fast v1.5.0
+2025-12-22T02:15:53.2651050Z [1m[92m   Compiling[0m signal-hook-registry v1.4.7
+2025-12-22T02:15:54.3214350Z [1m[92m   Compiling[0m zerocopy v0.8.31
+2025-12-22T02:15:54.3650480Z [1m[92m   Compiling[0m adler2 v2.0.1
+2025-12-22T02:15:54.5157580Z [1m[92m   Compiling[0m miniz_oxide v0.8.9
+2025-12-22T02:15:56.4749290Z [1m[92m   Compiling[0m curve25519-dalek v4.1.3
+2025-12-22T02:15:57.2357140Z [1m[92m   Compiling[0m inout v0.1.4
+2025-12-22T02:15:57.3070380Z [1m[92m   Compiling[0m os_pipe v1.2.3
+2025-12-22T02:15:57.3099790Z [1m[92m   Compiling[0m curve25519-dalek-derive v0.1.1
+2025-12-22T02:15:57.3688430Z [1m[92m   Compiling[0m pathdiff v0.2.3
+2025-12-22T02:15:57.4075900Z [1m[92m   Compiling[0m open v5.3.3
+2025-12-22T02:15:57.4853880Z [1m[92m   Compiling[0m sigchld v0.2.4
+2025-12-22T02:15:57.5647920Z [1m[92m   Compiling[0m tauri-plugin-store v2.4.1
+2025-12-22T02:15:57.6090030Z [1m[92m   Compiling[0m tauri-plugin-http v2.5.4
+2025-12-22T02:15:57.6465920Z [1m[92m   Compiling[0m tauri-plugin-opener v2.5.2
+2025-12-22T02:16:00.6437870Z [1m[92m   Compiling[0m tauri-plugin-shell v2.3.3
+2025-12-22T02:16:07.8530350Z [1m[92m   Compiling[0m tauri-plugin-dialog v2.4.2
+2025-12-22T02:16:11.2578920Z [1m[92m   Compiling[0m cipher v0.4.4
+2025-12-22T02:16:11.5798050Z [1m[92m   Compiling[0m ppv-lite86 v0.2.21
+2025-12-22T02:16:11.9862920Z [1m[92m   Compiling[0m pxfm v0.1.27
+2025-12-22T02:16:15.9262180Z [1m[92m   Compiling[0m zstd-safe v7.2.4
+2025-12-22T02:16:15.9390430Z [1m[92m   Compiling[0m flate2 v1.1.5
+2025-12-22T02:16:16.5460600Z [1m[92m   Compiling[0m fdeflate v0.3.7
+2025-12-22T02:16:18.5143190Z [1m[92m   Compiling[0m universal-hash v0.5.1
+2025-12-22T02:16:18.6027880Z [1m[92m   Compiling[0m signature v2.2.0
+2025-12-22T02:16:18.6664630Z [1m[92m   Compiling[0m zune-core v0.5.0
+2025-12-22T02:16:18.9191670Z [1m[92m   Compiling[0m quick-error v2.0.1
+2025-12-22T02:16:18.9794300Z [1m[92m   Compiling[0m pqcrypto-traits v0.3.5
+2025-12-22T02:16:19.0498550Z [1m[92m   Compiling[0m opaque-debug v0.3.1
+2025-12-22T02:16:19.1000590Z [1m[92m   Compiling[0m byteorder-lite v0.1.0
+2025-12-22T02:16:19.3215410Z [1m[92m   Compiling[0m base64ct v1.8.1
+2025-12-22T02:16:19.6223340Z [1m[92m   Compiling[0m password-hash v0.5.0
+2025-12-22T02:16:20.5458610Z [1m[92m   Compiling[0m image-webp v0.2.4
+2025-12-22T02:16:24.0806720Z [1m[92m   Compiling[0m poly1305 v0.8.0
+2025-12-22T02:16:24.8384740Z [1m[92m   Compiling[0m snap v1.1.1
+2025-12-22T02:16:24.8486430Z [1m[92m   Compiling[0m zune-jpeg v0.5.7
+2025-12-22T02:16:25.0602460Z [1m[92m   Compiling[0m ed25519 v2.2.3
+2025-12-22T02:16:25.2013370Z [1m[92m   Compiling[0m blake3 v1.8.2
+2025-12-22T02:16:26.3034650Z [1m[92m   Compiling[0m pqcrypto-mlkem v0.1.1
+2025-12-22T02:16:26.7036540Z [1m[92m   Compiling[0m pqcrypto-dilithium v0.5.0
+2025-12-22T02:16:30.0350770Z [1m[92m   Compiling[0m png v0.18.0
+2025-12-22T02:16:33.0767820Z [1m[92m   Compiling[0m moxcms v0.7.11
+2025-12-22T02:16:46.2623580Z [1m[92m   Compiling[0m rand_chacha v0.3.1
+2025-12-22T02:16:46.6411980Z [1m[92m   Compiling[0m chacha20 v0.9.1
+2025-12-22T02:16:46.7220400Z [1m[92m   Compiling[0m shared_child v1.1.1
+2025-12-22T02:16:46.7626560Z [1m[92m   Compiling[0m sha2 v0.10.9
+2025-12-22T02:16:46.8846870Z [1m[92m   Compiling[0m blake2 v0.10.6
+2025-12-22T02:16:47.2454450Z [1m[92m   Compiling[0m hmac v0.12.1
+2025-12-22T02:16:47.3257540Z [1m[92m   Compiling[0m cookie_store v0.21.1
+2025-12-22T02:16:47.9227030Z [1m[92m   Compiling[0m dirs-sys v0.4.1
+2025-12-22T02:16:47.9722570Z [1m[92m   Compiling[0m futures-executor v0.3.31
+2025-12-22T02:16:48.2789630Z [1m[92m   Compiling[0m brotli-decompressor v4.0.3
+2025-12-22T02:16:48.8845300Z [1m[92m   Compiling[0m aead v0.5.2
+2025-12-22T02:16:48.9638750Z [1m[92m   Compiling[0m arrayvec v0.7.6
+2025-12-22T02:16:49.0709930Z [1m[92m   Compiling[0m arrayref v0.3.9
+2025-12-22T02:16:49.0935580Z [1m[92m   Compiling[0m bytemuck v1.24.0
+2025-12-22T02:16:49.2416310Z [1m[92m   Compiling[0m constant_time_eq v0.3.1
+2025-12-22T02:16:49.2980450Z [1m[92m   Compiling[0m twox-hash v2.1.2
+2025-12-22T02:16:49.3741780Z [1m[92m   Compiling[0m data-url v0.3.2
+2025-12-22T02:16:52.0175380Z [1m[92m   Compiling[0m lz4_flex v0.11.5
+2025-12-22T02:16:52.8809370Z [1m[92m   Compiling[0m image v0.25.9
+2025-12-22T02:16:54.0982510Z [1m[92m   Compiling[0m vortex-image v0.1.0 (/Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src-tauri)
+2025-12-22T02:16:54.2279860Z [1m[92m   Compiling[0m chacha20poly1305 v0.10.1
+2025-12-22T02:16:54.2798030Z [1m[92m   Compiling[0m brotli v7.0.0
+2025-12-22T02:16:58.6232760Z [1m[92m   Compiling[0m futures v0.3.31
+2025-12-22T02:16:58.6735800Z [1m[92m   Compiling[0m dirs v5.0.1
+2025-12-22T02:16:58.7544910Z [1m[92m   Compiling[0m hkdf v0.12.4
+2025-12-22T02:16:58.8573260Z [1m[92m   Compiling[0m argon2 v0.5.3
+2025-12-22T02:16:59.9833320Z [1m[92m   Compiling[0m ed25519-dalek v2.2.0
+2025-12-22T02:17:04.4871990Z [1m[92m   Compiling[0m rand v0.8.5
+2025-12-22T02:17:05.5720860Z [1m[92m   Compiling[0m zstd v0.13.3
+2025-12-22T02:17:06.7698400Z [1m[92m   Compiling[0m x25519-dalek v2.0.1
+2025-12-22T02:17:06.9536910Z [1m[92m   Compiling[0m hex v0.4.3
+2025-12-22T02:17:15.5077260Z [1m[33mwarning[0m[1m: variant `UnsupportedAlgorithm` is never constructed[0m
+2025-12-22T02:17:15.5079490Z   [1m[94m--> [0msrc/compress.rs:18:5
+2025-12-22T02:17:15.5137650Z    [1m[94m|[0m
+2025-12-22T02:17:15.5140010Z [1m[94m10[0m [1m[94m|[0m pub enum CompressError {
+2025-12-22T02:17:15.5142420Z    [1m[94m|[0m          [1m[94m-------------[0m [1m[94mvariant in this enum[0m
+2025-12-22T02:17:15.5143610Z [1m[94m...[0m
+2025-12-22T02:17:15.5158990Z [1m[94m18[0m [1m[94m|[0m     UnsupportedAlgorithm(String),
+2025-12-22T02:17:15.5159700Z    [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^^^^^^^^[0m
+2025-12-22T02:17:15.5160090Z    [1m[94m|[0m
+2025-12-22T02:17:15.5160860Z    [1m[94m= [0m[1mnote[0m: `CompressError` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+2025-12-22T02:17:15.5161790Z    [1m[94m= [0m[1mnote[0m: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+2025-12-22T02:17:15.5162200Z 
+2025-12-22T02:17:15.5162730Z [1m[33mwarning[0m[1m: variant `KeyGeneration` is never constructed[0m
+2025-12-22T02:17:15.5163360Z   [1m[94m--> [0msrc/crypto.rs:31:5
+2025-12-22T02:17:15.5163740Z    [1m[94m|[0m
+2025-12-22T02:17:15.5164350Z [1m[94m19[0m [1m[94m|[0m pub enum CryptoError {
+2025-12-22T02:17:15.5164930Z    [1m[94m|[0m          [1m[94m-----------[0m [1m[94mvariant in this enum[0m
+2025-12-22T02:17:15.5165400Z [1m[94m...[0m
+2025-12-22T02:17:15.5165840Z [1m[94m31[0m [1m[94m|[0m     KeyGeneration(String),
+2025-12-22T02:17:15.5166340Z    [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^[0m
+2025-12-22T02:17:15.5166690Z    [1m[94m|[0m
+2025-12-22T02:17:15.5167410Z    [1m[94m= [0m[1mnote[0m: `CryptoError` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+2025-12-22T02:17:15.5167850Z 
+2025-12-22T02:17:15.5168220Z [1m[33mwarning[0m[1m: method `verify` is never used[0m
+2025-12-22T02:17:15.5168670Z    [1m[94m--> [0msrc/crypto.rs:128:12
+2025-12-22T02:17:15.5217390Z     [1m[94m|[0m
+2025-12-22T02:17:15.5217740Z  [1m[94m87[0m [1m[94m|[0m impl HybridKeypair {
+2025-12-22T02:17:15.5218260Z     [1m[94m|[0m [1m[94m------------------[0m [1m[94mmethod in this implementation[0m
+2025-12-22T02:17:15.5218670Z [1m[94m...[0m
+2025-12-22T02:17:15.5219270Z [1m[94m128[0m [1m[94m|[0m     pub fn verify(&self, data: &[u8], signature: &[u8]) -> Result<(), CryptoError> {
+2025-12-22T02:17:15.5219780Z     [1m[94m|[0m            [1m[33m^^^^^^[0m
+2025-12-22T02:17:15.5219930Z 
+2025-12-22T02:18:16.3990960Z [1m[33mwarning[0m: `vortex-image` (lib) generated 3 warnings
+2025-12-22T02:18:17.1534040Z [1m[92m    Finished[0m `release` profile [optimized] target(s) in 4m 16s
+2025-12-22T02:18:17.6154010Z target/x86_64-apple-ios/release/libvortex_image_lib.a
+2025-12-22T02:18:17.6154760Z target/x86_64-apple-ios/release/deps/libvortex_image_lib.a
+2025-12-22T02:18:17.6155610Z target/x86_64-apple-ios/release/build/blake3-42d43f1292e6ff0a/out/libblake3_sse2_sse41_avx2_assembly.a
+2025-12-22T02:18:17.6156660Z target/x86_64-apple-ios/release/build/blake3-42d43f1292e6ff0a/out/libblake3_avx512_assembly.a
+2025-12-22T02:18:17.6158810Z target/x86_64-apple-ios/release/build/zstd-sys-5635d9be5eaab742/out/libzstd.a
+2025-12-22T02:18:17.6448830Z ##[group]Run # Build with xcodebuild
+2025-12-22T02:18:17.6449390Z [36;1m# Build with xcodebuild[0m
+2025-12-22T02:18:17.6449630Z [36;1mxcodebuild build \[0m
+2025-12-22T02:18:17.6449870Z [36;1m  -project "$XCODEPROJ" \[0m
+2025-12-22T02:18:17.6450190Z [36;1m  -scheme "$SCHEME" \[0m
+2025-12-22T02:18:17.6450450Z [36;1m  -configuration Debug \[0m
+2025-12-22T02:18:17.6450740Z [36;1m  -destination "generic/platform=iOS Simulator" \[0m
+2025-12-22T02:18:17.6451110Z [36;1m  -derivedDataPath ./build \[0m
+2025-12-22T02:18:17.6451370Z [36;1m  CODE_SIGN_IDENTITY="" \[0m
+2025-12-22T02:18:17.6451600Z [36;1m  CODE_SIGNING_REQUIRED=NO \[0m
+2025-12-22T02:18:17.6451900Z [36;1m  CODE_SIGNING_ALLOWED=NO \[0m
+2025-12-22T02:18:17.6452180Z [36;1m  DEVELOPMENT_TEAM="" \[0m
+2025-12-22T02:18:17.6452670Z [36;1m  AD_HOC_CODE_SIGNING_ALLOWED=YES \[0m
+2025-12-22T02:18:17.6452990Z [36;1m  ONLY_ACTIVE_ARCH=NO || {[0m
+2025-12-22T02:18:17.6453540Z [36;1m    echo "::warning::xcodebuild failed, trying alternative approach..."[0m
+2025-12-22T02:18:17.6453860Z [36;1m    [0m
+2025-12-22T02:18:17.6454260Z [36;1m    # Alternative: Build just the app bundle structure manually[0m
+2025-12-22T02:18:17.6454690Z [36;1m    mkdir -p ./build/Build/Products/Debug-iphonesimulator/iMAGE.app[0m
+2025-12-22T02:18:17.6455010Z [36;1m    [0m
+2025-12-22T02:18:17.6455310Z [36;1m    # Copy web assets[0m
+2025-12-22T02:18:17.6455710Z [36;1m    cp -R dist/* ./build/Build/Products/Debug-iphonesimulator/iMAGE.app/ 2>/dev/null || true[0m
+2025-12-22T02:18:17.6456150Z [36;1m    [0m
+2025-12-22T02:18:17.6456370Z [36;1m    echo "Created minimal app structure"[0m
+2025-12-22T02:18:17.6456620Z [36;1m  }[0m
+2025-12-22T02:18:17.7130890Z shell: /bin/bash -e {0}
+2025-12-22T02:18:17.7131140Z env:
+2025-12-22T02:18:17.7131340Z   CARGO_TERM_COLOR: always
+2025-12-22T02:18:17.7131620Z   RUST_BACKTRACE: 1
+2025-12-22T02:18:17.7131820Z   APP_NAME: iMAGE
+2025-12-22T02:18:17.7132020Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:18:17.7132340Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:18:17.7132710Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:18:17.7133040Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:18:17.7133320Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:18:17.7133520Z   CACHE_ON_FAILURE: true
+2025-12-22T02:18:17.7133770Z   XCODEPROJ: src-tauri/gen/apple/vortex-image.xcodeproj
+2025-12-22T02:18:17.7134090Z   SCHEME: vortex-image_iOS
+2025-12-22T02:18:17.7134300Z ##[endgroup]
+2025-12-22T02:18:20.7548160Z Command line invocation:
+2025-12-22T02:18:20.7552390Z     /Applications/Xcode_16.2.app/Contents/Developer/usr/bin/xcodebuild build -project src-tauri/gen/apple/vortex-image.xcodeproj -scheme vortex-image_iOS -configuration Debug -destination "generic/platform=iOS Simulator" -derivedDataPath ./build CODE_SIGN_IDENTITY= CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO DEVELOPMENT_TEAM= AD_HOC_CODE_SIGNING_ALLOWED=YES ONLY_ACTIVE_ARCH=NO
+2025-12-22T02:18:20.7578920Z 
+2025-12-22T02:18:20.7579340Z User defaults from command line:
+2025-12-22T02:18:20.7579820Z     IDEDerivedDataPathOverride = /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/build
+2025-12-22T02:18:20.7580340Z     IDEPackageSupportUseBuiltinSCM = YES
+2025-12-22T02:18:20.7580490Z 
+2025-12-22T02:18:20.7580710Z Build settings from command line:
+2025-12-22T02:18:20.7582130Z     AD_HOC_CODE_SIGNING_ALLOWED = YES
+2025-12-22T02:18:20.7584800Z     CODE_SIGN_IDENTITY = 
+2025-12-22T02:18:20.7585500Z     CODE_SIGNING_ALLOWED = NO
+2025-12-22T02:18:20.7585780Z     CODE_SIGNING_REQUIRED = NO
+2025-12-22T02:18:20.7586090Z     DEVELOPMENT_TEAM = 
+2025-12-22T02:18:20.7586360Z     ONLY_ACTIVE_ARCH = NO
+2025-12-22T02:18:20.7586540Z 
+2025-12-22T02:18:20.8662160Z 2025-12-22 02:18:20.863 xcodebuild[44751:133480] CFPropertyListCreateFromXMLData(): Old-style plist parser: missing semicolon in dictionary on line 245. Parsing will be abandoned. Break on _CFPropertyListMissingSemicolon to debug.
+2025-12-22T02:18:20.8666860Z 2025-12-22 02:18:20.865 xcodebuild[44751:133480] Error Domain=NSCocoaErrorDomain Code=3840 "JSON text did not start with array or object and option to allow fragments not set. around line 1, column 0." UserInfo={NSDebugDescription=JSON text did not start with array or object and option to allow fragments not set. around line 1, column 0., NSJSONSerializationErrorIndex=0}
+2025-12-22T02:18:20.8797290Z 2025-12-22 02:18:20.879 xcodebuild[44751:133480] Writing error result bundle to /var/folders/sm/xrr7tmqj20s7hrsh1qhfl1d40000gn/T/ResultBundle_2025-22-12_02-18-0020.xcresult
+2025-12-22T02:18:22.1032130Z xcodebuild: error: Unable to read project 'vortex-image.xcodeproj' from folder '/Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src-tauri/gen/apple'.
+2025-12-22T02:18:22.1038830Z 	Reason: The project ‘vortex-image’ is damaged and cannot be opened due to a parse error. Examine the project file for invalid edits or unresolved source control conflicts.
+2025-12-22T02:18:22.1041450Z 
+2025-12-22T02:18:22.1042600Z Path: /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src-tauri/gen/apple/vortex-image.xcodeproj
+2025-12-22T02:18:22.1043060Z 
+2025-12-22T02:18:22.1043120Z 
+2025-12-22T02:18:22.1347150Z ##[warning]xcodebuild failed, trying alternative approach...
+2025-12-22T02:18:22.1470330Z Created minimal app structure
+2025-12-22T02:18:22.1606520Z ##[group]Run mkdir -p ./build-output
+2025-12-22T02:18:22.1606940Z [36;1mmkdir -p ./build-output[0m
+2025-12-22T02:18:22.1607240Z [36;1m[0m
+2025-12-22T02:18:22.1607430Z [36;1m# Find IPA files[0m
+2025-12-22T02:18:22.1607760Z [36;1mfind . -name "*.ipa" -type f -exec cp {} ./build-output/ \; 2>/dev/null || true[0m
+2025-12-22T02:18:22.1608170Z [36;1m[0m
+2025-12-22T02:18:22.1608370Z [36;1m# Find app bundles from build output[0m
+2025-12-22T02:18:22.1608730Z [36;1mAPP_PATH=$(find ./build -name "*.app" -type d 2>/dev/null | head -1)[0m
+2025-12-22T02:18:22.1609150Z [36;1m[0m
+2025-12-22T02:18:22.1609340Z [36;1m# Fallback to gen/apple[0m
+2025-12-22T02:18:22.1609580Z [36;1mif [[ -z "$APP_PATH" ]]; then[0m
+2025-12-22T02:18:22.1610000Z [36;1m  APP_PATH=$(find src-tauri/gen/apple -name "*.app" -type d 2>/dev/null | head -1)[0m
+2025-12-22T02:18:22.1610360Z [36;1mfi[0m
+2025-12-22T02:18:22.1610580Z [36;1m[0m
+2025-12-22T02:18:22.1610870Z [36;1mif [[ -n "$APP_PATH" ]]; then[0m
+2025-12-22T02:18:22.1611210Z [36;1m  echo "Found app: $APP_PATH"[0m
+2025-12-22T02:18:22.1611540Z [36;1m  # Zip the .app for upload[0m
+2025-12-22T02:18:22.1611920Z [36;1m  APP_NAME=$(basename "$APP_PATH" .app)[0m
+2025-12-22T02:18:22.1612210Z [36;1m  cd "$(dirname "$APP_PATH")"[0m
+2025-12-22T02:18:22.1612600Z [36;1m  zip -r "$GITHUB_WORKSPACE/build-output/${APP_NAME}.app.zip" "$(basename "$APP_PATH")"[0m
+2025-12-22T02:18:22.1613060Z [36;1m  cd "$GITHUB_WORKSPACE"[0m
+2025-12-22T02:18:22.1613470Z [36;1mfi[0m
+2025-12-22T02:18:22.1613650Z [36;1m[0m
+2025-12-22T02:18:22.1613840Z [36;1m# Check what we have[0m
+2025-12-22T02:18:22.1614130Z [36;1mecho "Build output contents:"[0m
+2025-12-22T02:18:22.1614360Z [36;1mls -la ./build-output/ || echo "No build output"[0m
+2025-12-22T02:18:22.1614640Z [36;1m[0m
+2025-12-22T02:18:22.1614880Z [36;1mif ls ./build-output/*.ipa 1>/dev/null 2>&1; then[0m
+2025-12-22T02:18:22.1615180Z [36;1m  echo "has_ipa=true" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:18:22.1615420Z [36;1melse[0m
+2025-12-22T02:18:22.1615610Z [36;1m  echo "has_ipa=false" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:18:22.1615830Z [36;1mfi[0m
+2025-12-22T02:18:22.2294570Z shell: /bin/bash -e {0}
+2025-12-22T02:18:22.2295140Z env:
+2025-12-22T02:18:22.2295500Z   CARGO_TERM_COLOR: always
+2025-12-22T02:18:22.2295920Z   RUST_BACKTRACE: 1
+2025-12-22T02:18:22.2296450Z   APP_NAME: iMAGE
+2025-12-22T02:18:22.2296850Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:18:22.2297590Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:18:22.2298430Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:18:22.2299180Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:18:22.2299750Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:18:22.2300170Z   CACHE_ON_FAILURE: true
+2025-12-22T02:18:22.2300630Z ##[endgroup]
+2025-12-22T02:18:23.3087750Z Found app: ./build/Build/Products/Debug-iphonesimulator/iMAGE.app
+2025-12-22T02:18:23.3415910Z   adding: iMAGE.app/ (stored 0%)
+2025-12-22T02:18:23.3421550Z   adding: iMAGE.app/index.html (deflated 72%)
+2025-12-22T02:18:23.3423500Z   adding: iMAGE.app/vite.svg (deflated 50%)
+2025-12-22T02:18:23.3424080Z   adding: iMAGE.app/assets/ (stored 0%)
+2025-12-22T02:18:23.3507030Z   adding: iMAGE.app/assets/index-COnt8nEX.js (deflated 68%)
+2025-12-22T02:18:23.3527840Z   adding: iMAGE.app/assets/index-8AMpYVXV.css (deflated 85%)
+2025-12-22T02:18:23.3529360Z   adding: iMAGE.app/tauri.svg (deflated 49%)
+2025-12-22T02:18:23.3540380Z Build output contents:
+2025-12-22T02:18:23.3658650Z total 200
+2025-12-22T02:18:23.3666780Z drwxr-xr-x   3 runner  staff      96 Dec 22 02:18 .
+2025-12-22T02:18:23.3674370Z drwxr-xr-x  33 runner  staff    1056 Dec 22 02:18 ..
+2025-12-22T02:18:23.3675090Z -rw-r--r--   1 runner  staff  100008 Dec 22 02:18 iMAGE.app.zip
+2025-12-22T02:18:23.3780100Z ##[group]Run echo "artifact_name=ios-debug-6352fa7547b84478cec552db13df60b93edb033a" >> $GITHUB_OUTPUT
+2025-12-22T02:18:23.3782470Z [36;1mecho "artifact_name=ios-debug-6352fa7547b84478cec552db13df60b93edb033a" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:18:23.3989420Z shell: /bin/bash -e {0}
+2025-12-22T02:18:23.3989990Z env:
+2025-12-22T02:18:23.3990470Z   CARGO_TERM_COLOR: always
+2025-12-22T02:18:23.3991090Z   RUST_BACKTRACE: 1
+2025-12-22T02:18:23.3991640Z   APP_NAME: iMAGE
+2025-12-22T02:18:23.3992150Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:18:23.3992890Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:18:23.3993760Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:18:23.3994580Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:18:23.3995240Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:18:23.3995750Z   CACHE_ON_FAILURE: true
+2025-12-22T02:18:23.3996270Z ##[endgroup]
+2025-12-22T02:18:23.4719760Z ##[group]Run actions/upload-artifact@v4
+2025-12-22T02:18:23.4720090Z with:
+2025-12-22T02:18:23.4720280Z   name: ios-debug-6352fa7547b84478cec552db13df60b93edb033a
+2025-12-22T02:18:23.4720610Z   path: ./build-output/
+2025-12-22T02:18:23.4720790Z   retention-days: 30
+2025-12-22T02:18:23.4720950Z   if-no-files-found: warn
+2025-12-22T02:18:23.4721130Z   compression-level: 6
+2025-12-22T02:18:23.4721290Z   overwrite: false
+2025-12-22T02:18:23.4721460Z   include-hidden-files: false
+2025-12-22T02:18:23.4721670Z env:
+2025-12-22T02:18:23.4721900Z   CARGO_TERM_COLOR: always
+2025-12-22T02:18:23.4722130Z   RUST_BACKTRACE: 1
+2025-12-22T02:18:23.4722350Z   APP_NAME: iMAGE
+2025-12-22T02:18:23.4722510Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:18:23.4722770Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:18:23.4723540Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:18:23.4723850Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:18:23.4724090Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:18:23.4724250Z   CACHE_ON_FAILURE: true
+2025-12-22T02:18:23.4724430Z ##[endgroup]
+2025-12-22T02:18:24.2793730Z With the provided path, there will be 1 file uploaded
+2025-12-22T02:18:24.2797020Z Artifact name is valid!
+2025-12-22T02:18:24.2802600Z Root directory input is valid!
+2025-12-22T02:18:24.5292630Z Beginning upload of artifact content to blob storage
+2025-12-22T02:18:24.7937590Z Uploaded bytes 99580
+2025-12-22T02:18:24.8389510Z Finished uploading artifact content to blob storage!
+2025-12-22T02:18:24.8390350Z SHA256 digest of uploaded artifact zip is 8c514d0de8a84ff6d2dac169eb0d8589a53abf3a04c6afbcc3c4ead432c9dcfe
+2025-12-22T02:18:24.8390870Z Finalizing artifact upload
+2025-12-22T02:18:24.9490370Z Artifact ios-debug-6352fa7547b84478cec552db13df60b93edb033a.zip successfully finalized. Artifact ID 4939250203
+2025-12-22T02:18:24.9496000Z Artifact ios-debug-6352fa7547b84478cec552db13df60b93edb033a has been successfully uploaded! Final size is 99580 bytes. Artifact ID is 4939250203
+2025-12-22T02:18:24.9502550Z Artifact download URL: https://github.com/HautlyS/Vortex-iMAGE/actions/runs/20419597612/artifacts/4939250203
+2025-12-22T02:18:24.9708260Z ##[group]Run security delete-keychain $RUNNER_TEMP/app-signing.keychain-db 2>/dev/null || true
+2025-12-22T02:18:24.9708830Z [36;1msecurity delete-keychain $RUNNER_TEMP/app-signing.keychain-db 2>/dev/null || true[0m
+2025-12-22T02:18:25.0272710Z shell: /bin/bash -e {0}
+2025-12-22T02:18:25.0273290Z env:
+2025-12-22T02:18:25.0273700Z   CARGO_TERM_COLOR: always
+2025-12-22T02:18:25.0274190Z   RUST_BACKTRACE: 1
+2025-12-22T02:18:25.0274600Z   APP_NAME: iMAGE
+2025-12-22T02:18:25.0275020Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:18:25.0275630Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:18:25.0276460Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:18:25.0277210Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:18:25.0277710Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:18:25.0278140Z   CACHE_ON_FAILURE: true
+2025-12-22T02:18:25.0278580Z ##[endgroup]
+2025-12-22T02:18:25.1636220Z Post job cleanup.
+2025-12-22T02:18:25.4769380Z Cache up-to-date.
+2025-12-22T02:18:27.7142030Z Post job cleanup.
+2025-12-22T02:18:27.8520860Z [command]/opt/homebrew/bin/gtar --posix -cf cache.tzst --exclude cache.tzst -P -C /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE --files-from manifest.txt --delay-directory-restore --use-compress-program zstdmt
+2025-12-22T02:18:31.8744940Z Sent 37317180 of 37317180 (100.0%), 35.1 MBs/sec
+2025-12-22T02:18:32.0061260Z Cache saved with key: macOS-pnpm-store-a444fbc8a552b3d2bf8e0cfe7677fdc6deb354cbda884dd7eea6f931203e6775
+2025-12-22T02:18:32.0260390Z Post job cleanup.
+2025-12-22T02:18:32.1296650Z Pruning is unnecessary.
+2025-12-22T02:18:32.1487700Z Post job cleanup.
+2025-12-22T02:18:32.3065720Z Post job cleanup.
+2025-12-22T02:18:32.4309300Z [command]/opt/homebrew/bin/git version
+2025-12-22T02:18:32.4557240Z git version 2.50.1
+2025-12-22T02:18:32.4593660Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/d7ca41c2-52e3-4fda-9d00-69d7ba0abea5/.gitconfig'
+2025-12-22T02:18:32.4597460Z Temporarily overriding HOME='/Users/runner/work/_temp/d7ca41c2-52e3-4fda-9d00-69d7ba0abea5' before making global git config changes
+2025-12-22T02:18:32.4598310Z Adding repository directory to the temporary git global config as a safe directory
+2025-12-22T02:18:32.4618540Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE
+2025-12-22T02:18:32.4723220Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-12-22T02:18:32.4776640Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-12-22T02:18:32.5550580Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-12-22T02:18:32.5592220Z http.https://github.com/.extraheader
+2025-12-22T02:18:32.5607470Z [command]/opt/homebrew/bin/git config --local --unset-all http.https://github.com/.extraheader
+2025-12-22T02:18:32.5675670Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-12-22T02:18:32.6330130Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2025-12-22T02:18:32.6379840Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2025-12-22T02:18:32.7135260Z Evaluate and set job outputs
+2025-12-22T02:18:32.7139240Z Set output 'artifact_name'
+2025-12-22T02:18:32.7140600Z Set output 'has_ipa'
+2025-12-22T02:18:32.7141210Z Cleaning up orphan processes

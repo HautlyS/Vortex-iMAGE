@@ -1,0 +1,57 @@
+﻿2025-12-22T02:18:22.1606500Z ##[group]Run mkdir -p ./build-output
+2025-12-22T02:18:22.1606930Z [36;1mmkdir -p ./build-output[0m
+2025-12-22T02:18:22.1607230Z [36;1m[0m
+2025-12-22T02:18:22.1607420Z [36;1m# Find IPA files[0m
+2025-12-22T02:18:22.1607760Z [36;1mfind . -name "*.ipa" -type f -exec cp {} ./build-output/ \; 2>/dev/null || true[0m
+2025-12-22T02:18:22.1608170Z [36;1m[0m
+2025-12-22T02:18:22.1608370Z [36;1m# Find app bundles from build output[0m
+2025-12-22T02:18:22.1608730Z [36;1mAPP_PATH=$(find ./build -name "*.app" -type d 2>/dev/null | head -1)[0m
+2025-12-22T02:18:22.1609150Z [36;1m[0m
+2025-12-22T02:18:22.1609340Z [36;1m# Fallback to gen/apple[0m
+2025-12-22T02:18:22.1609570Z [36;1mif [[ -z "$APP_PATH" ]]; then[0m
+2025-12-22T02:18:22.1610000Z [36;1m  APP_PATH=$(find src-tauri/gen/apple -name "*.app" -type d 2>/dev/null | head -1)[0m
+2025-12-22T02:18:22.1610360Z [36;1mfi[0m
+2025-12-22T02:18:22.1610570Z [36;1m[0m
+2025-12-22T02:18:22.1610840Z [36;1mif [[ -n "$APP_PATH" ]]; then[0m
+2025-12-22T02:18:22.1611210Z [36;1m  echo "Found app: $APP_PATH"[0m
+2025-12-22T02:18:22.1611540Z [36;1m  # Zip the .app for upload[0m
+2025-12-22T02:18:22.1611830Z [36;1m  APP_NAME=$(basename "$APP_PATH" .app)[0m
+2025-12-22T02:18:22.1612210Z [36;1m  cd "$(dirname "$APP_PATH")"[0m
+2025-12-22T02:18:22.1612600Z [36;1m  zip -r "$GITHUB_WORKSPACE/build-output/${APP_NAME}.app.zip" "$(basename "$APP_PATH")"[0m
+2025-12-22T02:18:22.1613060Z [36;1m  cd "$GITHUB_WORKSPACE"[0m
+2025-12-22T02:18:22.1613470Z [36;1mfi[0m
+2025-12-22T02:18:22.1613650Z [36;1m[0m
+2025-12-22T02:18:22.1613840Z [36;1m# Check what we have[0m
+2025-12-22T02:18:22.1614120Z [36;1mecho "Build output contents:"[0m
+2025-12-22T02:18:22.1614360Z [36;1mls -la ./build-output/ || echo "No build output"[0m
+2025-12-22T02:18:22.1614640Z [36;1m[0m
+2025-12-22T02:18:22.1614880Z [36;1mif ls ./build-output/*.ipa 1>/dev/null 2>&1; then[0m
+2025-12-22T02:18:22.1615180Z [36;1m  echo "has_ipa=true" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:18:22.1615420Z [36;1melse[0m
+2025-12-22T02:18:22.1615610Z [36;1m  echo "has_ipa=false" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:18:22.1615830Z [36;1mfi[0m
+2025-12-22T02:18:22.2294530Z shell: /bin/bash -e {0}
+2025-12-22T02:18:22.2295140Z env:
+2025-12-22T02:18:22.2295500Z   CARGO_TERM_COLOR: always
+2025-12-22T02:18:22.2295920Z   RUST_BACKTRACE: 1
+2025-12-22T02:18:22.2296440Z   APP_NAME: iMAGE
+2025-12-22T02:18:22.2296850Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:18:22.2297590Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:18:22.2298430Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:18:22.2299170Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:18:22.2299740Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:18:22.2300170Z   CACHE_ON_FAILURE: true
+2025-12-22T02:18:22.2300620Z ##[endgroup]
+2025-12-22T02:18:23.3087670Z Found app: ./build/Build/Products/Debug-iphonesimulator/iMAGE.app
+2025-12-22T02:18:23.3415870Z   adding: iMAGE.app/ (stored 0%)
+2025-12-22T02:18:23.3421470Z   adding: iMAGE.app/index.html (deflated 72%)
+2025-12-22T02:18:23.3423490Z   adding: iMAGE.app/vite.svg (deflated 50%)
+2025-12-22T02:18:23.3424070Z   adding: iMAGE.app/assets/ (stored 0%)
+2025-12-22T02:18:23.3506980Z   adding: iMAGE.app/assets/index-COnt8nEX.js (deflated 68%)
+2025-12-22T02:18:23.3527820Z   adding: iMAGE.app/assets/index-8AMpYVXV.css (deflated 85%)
+2025-12-22T02:18:23.3529350Z   adding: iMAGE.app/tauri.svg (deflated 49%)
+2025-12-22T02:18:23.3540360Z Build output contents:
+2025-12-22T02:18:23.3658620Z total 200
+2025-12-22T02:18:23.3666760Z drwxr-xr-x   3 runner  staff      96 Dec 22 02:18 .
+2025-12-22T02:18:23.3674350Z drwxr-xr-x  33 runner  staff    1056 Dec 22 02:18 ..
+2025-12-22T02:18:23.3675080Z -rw-r--r--   1 runner  staff  100008 Dec 22 02:18 iMAGE.app.zip

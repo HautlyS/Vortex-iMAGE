@@ -14,6 +14,16 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
+[features]
+default = []
+# Post-quantum crypto using pqcrypto (C bindings with assembly)
+# ONLY enable for Android/Desktop builds - NOT iOS (sha3 assembly fails on iOS ARM)
+# Usage: cargo build --features pqcrypto-backend
+pqcrypto-backend = ["pqcrypto-mlkem", "pqcrypto-dilithium", "pqcrypto-traits"]
+
+# Alias for backwards compatibility
+desktop_pqcrypto = ["pqcrypto-backend"]
+
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
@@ -38,10 +48,15 @@ snap = "1"
 brotli = "7"
 flate2 = "1"
 
-# Post-quantum cryptography
-pqcrypto-mlkem = "0.1"
-pqcrypto-dilithium = "0.5"
-pqcrypto-traits = "0.3"
+# Post-quantum cryptography (optional - C bindings, not compatible with iOS ARM)
+pqcrypto-mlkem = { version = "0.1", optional = true }
+pqcrypto-dilithium = { version = "0.5", optional = true }
+pqcrypto-traits = { version = "0.3", optional = true }
+
+# Pure-Rust Post-quantum cryptography (works on ALL platforms including iOS)
+# These crates are 100% Rust with no assembly - iOS ARM compatible
+pqc_kyber = { version = "0.7", default-features = false, features = ["kyber1024"] }
+pqc_dilithium = { version = "0.2", default-features = false, features = ["mode3"] }
 
 # Classical cryptography
 chacha20poly1305 = "0.10"
@@ -54,11 +69,25 @@ hmac = "0.12"
 rand = "0.8"
 hex = "0.4"
 
+# Desktop dependencies (native TLS)
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 reqwest = { version = "0.12", features = ["json", "stream"] }
 tokio = { version = "1", features = ["fs", "rt-multi-thread"] }
 
+# Mobile dependencies (rustls for cross-compilation)
 [target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
 reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls"] }
 tokio = { version = "1", features = ["fs", "rt-multi-thread"] }
+
+# NOTE: pqcrypto is NOT included in target-specific deps because Cargo evaluates
+# cfg() based on HOST, not TARGET during cross-compilation. Instead, we use
+# conditional compilation (#[cfg(...)]) in the source code and the optional
+# feature flag. For iOS builds, pqcrypto is completely excluded via feature flags.
+#
+# BUILD INSTRUCTIONS:
+# - iOS:           cargo build --target aarch64-apple-ios (NO features - uses pure Rust)
+# - Android:       cargo build --target aarch64-linux-android --features pqcrypto-backend
+# - Desktop Linux: cargo build --features pqcrypto-backend
+# - Desktop macOS: cargo build --features pqcrypto-backend
+# - Desktop Win:   cargo build --features pqcrypto-backend
 

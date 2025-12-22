@@ -1,0 +1,54 @@
+﻿2025-12-22T02:08:08.2743740Z ##[group]Run pnpm install --frozen-lockfile
+2025-12-22T02:08:08.2744520Z [36;1mpnpm install --frozen-lockfile[0m
+2025-12-22T02:08:08.2797330Z shell: /bin/bash -e {0}
+2025-12-22T02:08:08.2797520Z env:
+2025-12-22T02:08:08.2797650Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:08.2797790Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:08.2797910Z   APP_NAME: iMAGE
+2025-12-22T02:08:08.2798040Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:08.2798240Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:08.2798550Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:08.2798790Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:08.2798950Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:08:08.2799110Z   CACHE_ON_FAILURE: true
+2025-12-22T02:08:08.2799260Z ##[endgroup]
+2025-12-22T02:08:08.5658830Z Lockfile is up to date, resolution step is skipped
+2025-12-22T02:08:08.5804070Z Progress: resolved 1, reused 0, downloaded 0, added 0
+2025-12-22T02:08:08.5930730Z Packages: +171
+2025-12-22T02:08:08.5931990Z ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+2025-12-22T02:08:09.5848570Z Progress: resolved 171, reused 0, downloaded 119, added 115
+2025-12-22T02:08:10.5863210Z Progress: resolved 171, reused 0, downloaded 171, added 170
+2025-12-22T02:08:10.6203930Z Progress: resolved 171, reused 0, downloaded 171, added 171, done
+2025-12-22T02:08:10.6687260Z .../esbuild@0.25.12/node_modules/esbuild postinstall$ node install.js
+2025-12-22T02:08:10.7186920Z .../esbuild@0.25.12/node_modules/esbuild postinstall: Done
+2025-12-22T02:08:10.7674470Z 
+2025-12-22T02:08:10.7675080Z dependencies:
+2025-12-22T02:08:10.7678200Z + @tauri-apps/api 2.9.1
+2025-12-22T02:08:10.7681850Z + @tauri-apps/plugin-dialog 2.4.2
+2025-12-22T02:08:10.7682580Z + @tauri-apps/plugin-fs 2.4.4
+2025-12-22T02:08:10.7682870Z + @tauri-apps/plugin-http 2.5.4
+2025-12-22T02:08:10.7683130Z + @tauri-apps/plugin-opener 2.5.2
+2025-12-22T02:08:10.7683430Z + @tauri-apps/plugin-shell 2.3.3
+2025-12-22T02:08:10.7683690Z + @tauri-apps/plugin-store 2.4.1
+2025-12-22T02:08:10.7683910Z + vue 3.5.26
+2025-12-22T02:08:10.7684000Z 
+2025-12-22T02:08:10.7684070Z devDependencies:
+2025-12-22T02:08:10.7684360Z + @playwright/experimental-ct-vue 1.57.0
+2025-12-22T02:08:10.7684610Z + @playwright/test 1.57.0
+2025-12-22T02:08:10.7684810Z + @tailwindcss/vite 4.1.18
+2025-12-22T02:08:10.7685080Z + @tauri-apps/cli 2.9.6
+2025-12-22T02:08:10.7685250Z + @types/node 25.0.3
+2025-12-22T02:08:10.7685450Z + @vitejs/plugin-vue 5.2.4
+2025-12-22T02:08:10.7685640Z + @vue/compiler-dom 3.5.26
+2025-12-22T02:08:10.7685830Z + @vue/test-utils 2.4.6
+2025-12-22T02:08:10.7686030Z + autoprefixer 10.4.23
+2025-12-22T02:08:10.7686240Z + fast-check 4.5.2
+2025-12-22T02:08:10.7686420Z + happy-dom 20.0.11
+2025-12-22T02:08:10.7686580Z + postcss 8.5.6
+2025-12-22T02:08:10.7686740Z + tailwindcss 4.1.18
+2025-12-22T02:08:10.7686920Z + typescript 5.6.3
+2025-12-22T02:08:10.7687060Z + vite 6.4.1
+2025-12-22T02:08:10.7687190Z + vitest 4.0.16
+2025-12-22T02:08:10.7687350Z + vue-tsc 2.2.12
+2025-12-22T02:08:10.7687440Z 
+2025-12-22T02:08:10.7742110Z Done in 2.4s using pnpm v9.15.9

@@ -1,0 +1,36 @@
+﻿2025-12-22T02:08:35.3761670Z ##[group]Run XCODEPROJ=$(find src-tauri/gen/apple -name "*.xcodeproj" -type d | head -1)
+2025-12-22T02:08:35.3762260Z [36;1mXCODEPROJ=$(find src-tauri/gen/apple -name "*.xcodeproj" -type d | head -1)[0m
+2025-12-22T02:08:35.3762580Z [36;1m[0m
+2025-12-22T02:08:35.3762760Z [36;1mif [[ -z "$XCODEPROJ" ]]; then[0m
+2025-12-22T02:08:35.3763030Z [36;1m  echo "::error::No Xcode project found"[0m
+2025-12-22T02:08:35.3763250Z [36;1m  exit 1[0m
+2025-12-22T02:08:35.3763420Z [36;1mfi[0m
+2025-12-22T02:08:35.3763690Z [36;1m[0m
+2025-12-22T02:08:35.3763930Z [36;1mecho "xcodeproj=$XCODEPROJ" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:08:35.3764190Z [36;1m[0m
+2025-12-22T02:08:35.3764370Z [36;1m# Get scheme name[0m
+2025-12-22T02:08:35.3764700Z [36;1mSCHEME=$(xcodebuild -project "$XCODEPROJ" -list 2>/dev/null | \[0m
+2025-12-22T02:08:35.3765120Z [36;1m  awk '/Schemes:/{found=1; next} found && /^[[:space:]]+[^[:space:]]/{print $1; exit}')[0m
+2025-12-22T02:08:35.3765460Z [36;1m[0m
+2025-12-22T02:08:35.3765650Z [36;1mif [[ -z "$SCHEME" ]]; then[0m
+2025-12-22T02:08:35.3765940Z [36;1m  # Fallback: derive from project name[0m
+2025-12-22T02:08:35.3766280Z [36;1m  SCHEME=$(basename "$XCODEPROJ" .xcodeproj)_iOS[0m
+2025-12-22T02:08:35.3766550Z [36;1mfi[0m
+2025-12-22T02:08:35.3766700Z [36;1m[0m
+2025-12-22T02:08:35.3766850Z [36;1mecho "scheme=$SCHEME" >> $GITHUB_OUTPUT[0m
+2025-12-22T02:08:35.3767100Z [36;1mecho "Found project: $XCODEPROJ"[0m
+2025-12-22T02:08:35.3767370Z [36;1mecho "Found scheme: $SCHEME"[0m
+2025-12-22T02:08:35.3919030Z shell: /bin/bash -e {0}
+2025-12-22T02:08:35.3919240Z env:
+2025-12-22T02:08:35.3919470Z   CARGO_TERM_COLOR: always
+2025-12-22T02:08:35.3919640Z   RUST_BACKTRACE: 1
+2025-12-22T02:08:35.3919880Z   APP_NAME: iMAGE
+2025-12-22T02:08:35.3920200Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:08:35.3920510Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:08:35.3920850Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:08:35.3921180Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:08:35.3921460Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:08:35.3921680Z   CACHE_ON_FAILURE: true
+2025-12-22T02:08:35.3921980Z ##[endgroup]
+2025-12-22T02:08:38.1727340Z Found project: src-tauri/gen/apple/vortex-image.xcodeproj
+2025-12-22T02:08:38.1728210Z Found scheme: vortex-image_iOS

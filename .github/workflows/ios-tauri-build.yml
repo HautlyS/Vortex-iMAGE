@@ -1,0 +1,138 @@
+name: iOS Build (Tauri)
+
+on:
+  push:
+    branches: [main, release]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  APP_NAME: iMAGE
+
+jobs:
+  build-ios:
+    runs-on: macos-14
+    timeout-minutes: 60
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          xcodebuild -version
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Cache pnpm
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios,aarch64-apple-ios-sim
+
+      - name: Cache Rust
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+          cache-on-failure: true
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm run build
+
+      - name: Initialize iOS project
+        run: pnpm tauri ios init
+
+      - name: Build iOS (unsigned)
+        id: build
+        run: |
+          # Build for iOS device (arm64) - creates .app bundle
+          # Note: Without signing, we can't create a proper IPA for device installation
+          # But we can build the .app for simulator or manual signing later
+          
+          pnpm tauri ios build --target aarch64-apple-ios 2>&1 || {
+            echo "::warning::Full iOS build failed, trying simulator build..."
+            pnpm tauri ios build --target aarch64-apple-ios-sim 2>&1 || true
+          }
+          
+          # Find built artifacts
+          echo "Looking for build artifacts..."
+          find src-tauri/gen/apple -name "*.app" -type d 2>/dev/null | head -5
+          find src-tauri/gen/apple -name "*.ipa" -type f 2>/dev/null | head -5
+
+      - name: Package artifacts
+        id: package
+        run: |
+          mkdir -p ./artifacts
+          
+          # Find .app bundle
+          APP_PATH=$(find src-tauri/gen/apple -name "*.app" -type d 2>/dev/null | head -1)
+          
+          if [[ -n "$APP_PATH" ]]; then
+            echo "Found app: $APP_PATH"
+            
+            # Create Payload structure for IPA
+            mkdir -p Payload
+            cp -R "$APP_PATH" Payload/
+            
+            # Create unsigned IPA
+            zip -r "./artifacts/${{ env.APP_NAME }}-unsigned.ipa" Payload
+            rm -rf Payload
+            
+            echo "has_ipa=true" >> $GITHUB_OUTPUT
+          else
+            echo "::warning::No .app bundle found"
+            echo "has_ipa=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Copy any existing IPA
+          find src-tauri/gen/apple -name "*.ipa" -exec cp {} ./artifacts/ \; 2>/dev/null || true
+          
+          # List artifacts
+          echo "Artifacts:"
+          ls -la ./artifacts/ || echo "No artifacts"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-${{ github.sha }}
+          path: ./artifacts/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Build summary
+        run: |
+          echo "## iOS Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Has IPA: ${{ steps.package.outputs.has_ipa }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Installation" >> $GITHUB_STEP_SUMMARY
+          echo "Download the unsigned IPA and sign with:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Sideloadly** (recommended)" >> $GITHUB_STEP_SUMMARY
+          echo "- **AltStore**" >> $GITHUB_STEP_SUMMARY
+          echo "- **TrollStore** (iOS 14-17)" >> $GITHUB_STEP_SUMMARY

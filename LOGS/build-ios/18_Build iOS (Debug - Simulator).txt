@@ -1,0 +1,64 @@
+﻿2025-12-22T02:18:17.6448800Z ##[group]Run # Build with xcodebuild
+2025-12-22T02:18:17.6449380Z [36;1m# Build with xcodebuild[0m
+2025-12-22T02:18:17.6449620Z [36;1mxcodebuild build \[0m
+2025-12-22T02:18:17.6449870Z [36;1m  -project "$XCODEPROJ" \[0m
+2025-12-22T02:18:17.6450190Z [36;1m  -scheme "$SCHEME" \[0m
+2025-12-22T02:18:17.6450440Z [36;1m  -configuration Debug \[0m
+2025-12-22T02:18:17.6450740Z [36;1m  -destination "generic/platform=iOS Simulator" \[0m
+2025-12-22T02:18:17.6451100Z [36;1m  -derivedDataPath ./build \[0m
+2025-12-22T02:18:17.6451370Z [36;1m  CODE_SIGN_IDENTITY="" \[0m
+2025-12-22T02:18:17.6451600Z [36;1m  CODE_SIGNING_REQUIRED=NO \[0m
+2025-12-22T02:18:17.6451900Z [36;1m  CODE_SIGNING_ALLOWED=NO \[0m
+2025-12-22T02:18:17.6452180Z [36;1m  DEVELOPMENT_TEAM="" \[0m
+2025-12-22T02:18:17.6452660Z [36;1m  AD_HOC_CODE_SIGNING_ALLOWED=YES \[0m
+2025-12-22T02:18:17.6452990Z [36;1m  ONLY_ACTIVE_ARCH=NO || {[0m
+2025-12-22T02:18:17.6453430Z [36;1m    echo "::warning::xcodebuild failed, trying alternative approach..."[0m
+2025-12-22T02:18:17.6453860Z [36;1m    [0m
+2025-12-22T02:18:17.6454260Z [36;1m    # Alternative: Build just the app bundle structure manually[0m
+2025-12-22T02:18:17.6454690Z [36;1m    mkdir -p ./build/Build/Products/Debug-iphonesimulator/iMAGE.app[0m
+2025-12-22T02:18:17.6455000Z [36;1m    [0m
+2025-12-22T02:18:17.6455310Z [36;1m    # Copy web assets[0m
+2025-12-22T02:18:17.6455710Z [36;1m    cp -R dist/* ./build/Build/Products/Debug-iphonesimulator/iMAGE.app/ 2>/dev/null || true[0m
+2025-12-22T02:18:17.6456150Z [36;1m    [0m
+2025-12-22T02:18:17.6456370Z [36;1m    echo "Created minimal app structure"[0m
+2025-12-22T02:18:17.6456610Z [36;1m  }[0m
+2025-12-22T02:18:17.7130870Z shell: /bin/bash -e {0}
+2025-12-22T02:18:17.7131140Z env:
+2025-12-22T02:18:17.7131340Z   CARGO_TERM_COLOR: always
+2025-12-22T02:18:17.7131620Z   RUST_BACKTRACE: 1
+2025-12-22T02:18:17.7131820Z   APP_NAME: iMAGE
+2025-12-22T02:18:17.7132020Z   BUNDLE_ID: com.vortex.image
+2025-12-22T02:18:17.7132330Z   PNPM_HOME: /Users/runner/setup-pnpm/node_modules/.bin
+2025-12-22T02:18:17.7132700Z   STORE_PATH: /Users/runner/setup-pnpm/node_modules/.bin/store/v3
+2025-12-22T02:18:17.7133040Z   CARGO_HOME: /Users/runner/.cargo
+2025-12-22T02:18:17.7133320Z   CARGO_INCREMENTAL: 0
+2025-12-22T02:18:17.7133520Z   CACHE_ON_FAILURE: true
+2025-12-22T02:18:17.7133770Z   XCODEPROJ: src-tauri/gen/apple/vortex-image.xcodeproj
+2025-12-22T02:18:17.7134080Z   SCHEME: vortex-image_iOS
+2025-12-22T02:18:17.7134300Z ##[endgroup]
+2025-12-22T02:18:20.7547990Z Command line invocation:
+2025-12-22T02:18:20.7552370Z     /Applications/Xcode_16.2.app/Contents/Developer/usr/bin/xcodebuild build -project src-tauri/gen/apple/vortex-image.xcodeproj -scheme vortex-image_iOS -configuration Debug -destination "generic/platform=iOS Simulator" -derivedDataPath ./build CODE_SIGN_IDENTITY= CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO DEVELOPMENT_TEAM= AD_HOC_CODE_SIGNING_ALLOWED=YES ONLY_ACTIVE_ARCH=NO
+2025-12-22T02:18:20.7578900Z 
+2025-12-22T02:18:20.7579250Z User defaults from command line:
+2025-12-22T02:18:20.7579810Z     IDEDerivedDataPathOverride = /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/build
+2025-12-22T02:18:20.7580340Z     IDEPackageSupportUseBuiltinSCM = YES
+2025-12-22T02:18:20.7580490Z 
+2025-12-22T02:18:20.7580700Z Build settings from command line:
+2025-12-22T02:18:20.7582130Z     AD_HOC_CODE_SIGNING_ALLOWED = YES
+2025-12-22T02:18:20.7584800Z     CODE_SIGN_IDENTITY = 
+2025-12-22T02:18:20.7585500Z     CODE_SIGNING_ALLOWED = NO
+2025-12-22T02:18:20.7585780Z     CODE_SIGNING_REQUIRED = NO
+2025-12-22T02:18:20.7586090Z     DEVELOPMENT_TEAM = 
+2025-12-22T02:18:20.7586360Z     ONLY_ACTIVE_ARCH = NO
+2025-12-22T02:18:20.7586540Z 
+2025-12-22T02:18:20.8662080Z 2025-12-22 02:18:20.863 xcodebuild[44751:133480] CFPropertyListCreateFromXMLData(): Old-style plist parser: missing semicolon in dictionary on line 245. Parsing will be abandoned. Break on _CFPropertyListMissingSemicolon to debug.
+2025-12-22T02:18:20.8665950Z 2025-12-22 02:18:20.865 xcodebuild[44751:133480] Error Domain=NSCocoaErrorDomain Code=3840 "JSON text did not start with array or object and option to allow fragments not set. around line 1, column 0." UserInfo={NSDebugDescription=JSON text did not start with array or object and option to allow fragments not set. around line 1, column 0., NSJSONSerializationErrorIndex=0}
+2025-12-22T02:18:20.8797240Z 2025-12-22 02:18:20.879 xcodebuild[44751:133480] Writing error result bundle to /var/folders/sm/xrr7tmqj20s7hrsh1qhfl1d40000gn/T/ResultBundle_2025-22-12_02-18-0020.xcresult
+2025-12-22T02:18:22.1032060Z xcodebuild: error: Unable to read project 'vortex-image.xcodeproj' from folder '/Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src-tauri/gen/apple'.
+2025-12-22T02:18:22.1038810Z 	Reason: The project ‘vortex-image’ is damaged and cannot be opened due to a parse error. Examine the project file for invalid edits or unresolved source control conflicts.
+2025-12-22T02:18:22.1041420Z 
+2025-12-22T02:18:22.1042580Z Path: /Users/runner/work/Vortex-iMAGE/Vortex-iMAGE/src-tauri/gen/apple/vortex-image.xcodeproj
+2025-12-22T02:18:22.1043060Z 
+2025-12-22T02:18:22.1043120Z 
+2025-12-22T02:18:22.1347120Z ##[warning]xcodebuild failed, trying alternative approach...
+2025-12-22T02:18:22.1470310Z Created minimal app structure
