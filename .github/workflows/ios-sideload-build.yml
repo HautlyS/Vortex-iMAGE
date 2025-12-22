@@ -5,6 +5,10 @@ name: iOS Sideload Build (Free Apple ID)
 # No paid Developer account required!
 
 on:
+  push:
+    branches: [main, release]
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       bundle_id:
@@ -200,16 +204,32 @@ jobs:
     needs: build-unsigned
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: ${{ secrets.APPLE_ID != '' && secrets.APPLE_ID_PASSWORD != '' }}
+    # Always run - will check for secrets inside the job
     
     steps:
+      - name: Check for Apple ID credentials
+        id: check-creds
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+        run: |
+          if [[ -n "$APPLE_ID" && -n "$APPLE_ID_PASSWORD" ]]; then
+            echo "has_creds=true" >> $GITHUB_OUTPUT
+            echo "Apple ID credentials found"
+          else
+            echo "has_creds=false" >> $GITHUB_OUTPUT
+            echo "::warning::No Apple ID credentials configured. Set APPLE_ID and APPLE_ID_PASSWORD secrets."
+          fi
+
       - name: Download unsigned IPA
+        if: steps.check-creds.outputs.has_creds == 'true'
         uses: actions/download-artifact@v4
         with:
           name: unsigned-ipa
           path: ./
 
       - name: Install dependencies
+        if: steps.check-creds.outputs.has_creds == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -223,6 +243,7 @@ jobs:
             zip
 
       - name: Download AltServer-Linux
+        if: steps.check-creds.outputs.has_creds == 'true'
         run: |
           # Download pre-built AltServer-Linux
           wget -q https://github.com/NyaMisty/AltServer-Linux/releases/download/v0.0.5/AltServer-x86_64 -O AltServer
@@ -232,33 +253,34 @@ jobs:
           ./AltServer --version || echo "AltServer downloaded"
 
       - name: Sign IPA with Apple ID
+        if: steps.check-creds.outputs.has_creds == 'true'
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
-          ANISETTE_URL: ${{ secrets.ANISETTE_URL || 'https://ani.f1sh.me' }}
+          ANISETTE_URL: ${{ secrets.ANISETTE_URL }}
         run: |
           IPA_FILE="${{ needs.build-unsigned.outputs.ipa_name }}"
           SIGNED_IPA="${{ env.APP_NAME }}-signed.ipa"
           BUNDLE_ID="${{ github.event.inputs.bundle_id || env.DEFAULT_BUNDLE_ID }}"
+          ANISETTE="${ANISETTE_URL:-https://ani.f1sh.me}"
           
           echo "Signing $IPA_FILE with Apple ID..."
           echo "Bundle ID: $BUNDLE_ID"
+          echo "Anisette server: $ANISETTE"
           
           # Use AltServer to sign
-          # Note: This requires anisette data from a server
           ./AltServer -u "$APPLE_ID" -p "$APPLE_ID_PASSWORD" \
-            -a "$ANISETTE_URL" \
+            -a "$ANISETTE" \
             -b "$BUNDLE_ID" \
             -o "$SIGNED_IPA" \
             "$IPA_FILE" || {
-              echo "::warning::AltServer signing failed, trying alternative method..."
+              echo "::warning::AltServer signing failed, trying zsign ad-hoc..."
               
               # Fallback: Use zsign for ad-hoc signing
-              echo "Downloading zsign..."
-              wget -q https://github.com/zhlynn/zsign/releases/latest/download/zsign-linux-x64 -O zsign
+              wget -q https://github.com/zhlynn/zsign/releases/latest/download/zsign-linux-x64 -O zsign || \
+              wget -q https://github.com/xtool-org/zsign/releases/latest/download/zsign-linux-x64 -O zsign
               chmod +x zsign
               
-              # Ad-hoc sign (won't work on real devices without jailbreak)
               ./zsign -a -o "$SIGNED_IPA" "$IPA_FILE"
             }
           
@@ -271,11 +293,19 @@ jobs:
           fi
 
       - name: Upload signed IPA
+        if: steps.check-creds.outputs.has_creds == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: signed-ipa-${{ github.sha }}
           path: ${{ env.APP_NAME }}-signed.ipa
           retention-days: 7
+          if-no-files-found: warn
+
+      - name: Skip notice
+        if: steps.check-creds.outputs.has_creds != 'true'
+        run: |
+          echo "::notice::Skipping Apple ID signing - no credentials configured"
+          echo "To enable: Add APPLE_ID and APPLE_ID_PASSWORD to repository secrets"
 
   # Alternative: Sign using zsign (ad-hoc, for jailbroken devices)
   sign-adhoc:
