@@ -1,3 +1,4 @@
+<template>
   <div 
     v-if="visible"
     ref="menuRef"

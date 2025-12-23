@@ -842,6 +842,7 @@ function closeContextMenu() {
   margin-top: 0.125rem;
 }
 
+@media (max-width: 768px) {
   .list-column:nth-child(3) {
     display: none;
   }
