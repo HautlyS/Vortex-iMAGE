@@ -52,9 +52,9 @@ jobs:
           cd src-tauri
           cargo build --release --target aarch64-apple-ios
           
-          # Copy to where Xcode expects it
+          # Copy to where Xcode expects it (library name from Cargo.toml)
           mkdir -p gen/apple/Externals/aarch64-apple-ios/release
-          cp target/aarch64-apple-ios/release/libapp.a gen/apple/Externals/aarch64-apple-ios/release/
+          cp target/aarch64-apple-ios/release/libvortex_image_lib.a gen/apple/Externals/aarch64-apple-ios/release/
           
           echo "✅ Rust library built"
           ls -la target/aarch64-apple-ios/release/*.a
