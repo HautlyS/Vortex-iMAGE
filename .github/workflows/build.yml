@@ -59,7 +59,7 @@ jobs:
       - name: Build Rust library for iOS
         run: |
           cd src-tauri
-          cargo build --target aarch64-apple-ios
+          cargo build --release --target aarch64-apple-ios
 
       - name: Build iOS App (Unsigned)
         run: |
@@ -110,7 +110,7 @@ jobs:
           xcodebuild build \
             -project "$XCODEPROJ" \
             -scheme "$SCHEME" \
-            -configuration Debug \
+            -configuration Release \
             -sdk iphoneos \
             -destination "generic/platform=iOS" \
             -derivedDataPath ./build \
@@ -137,11 +137,11 @@ jobs:
           echo "🔍 Searching for .app bundle..."
           
           # Search for .app bundle in multiple locations
-          APP_PATH=$(find ./build/Build/Products/Debug-iphoneos -name "*.app" -type d 2>/dev/null | head -1)
+          APP_PATH=$(find ./build/Build/Products/Release-iphoneos -name "*.app" -type d 2>/dev/null | head -1)
           
           if [ -z "$APP_PATH" ]; then
-            echo "ℹ️  Not found in Debug-iphoneos, checking Release-iphoneos..."
-            APP_PATH=$(find ./build/Build/Products/Release-iphoneos -name "*.app" -type d 2>/dev/null | head -1)
+            echo "ℹ️  Not found in Release-iphoneos, performing broad search..."
+            APP_PATH=$(find ./build -name "*.app" -type d 2>/dev/null | grep -v "Simulator" | head -1)
           fi
           
           if [ -z "$APP_PATH" ]; then
