@@ -1,3 +1,10 @@
+<script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useTheme, ACCENT_COLORS } from '../composables/useTheme'
+import { useGitHubAuth } from '../composables/useGitHubAuth'
+import { useCrypto } from '../composables/useCrypto'
+import { useCompression } from '../composables/useCompression'
+import { useDataDriver } from '../composables/useDataDriver'
 import GlassSurface from './GlassSurface.vue'
 
 defineProps<{
@@ -27,9 +34,11 @@ const { token, logout } = useGitHubAuth()
 
 // Crypto
 const { hasStoredKeypair, isUnlocked, cryptoInfo, initialize: initCrypto } = useCrypto()
+const cryptoStatus = computed(() => hasStoredKeypair.value ? (isUnlocked.value ? 'Desbloqueado' : 'Bloqueado') : 'Não configurado')
 
 // Compression
 const { availableAlgorithms, initialize: initCompression, getAlgorithmInfo } = useCompression()
+const compressionInfo = computed(() => availableAlgorithms.value.map(a => ({ algo: a, info: getAlgorithmInfo(a) })))
 
 // Data Drivers
 const { githubDrivers, loadDrivers } = useDataDriver()
@@ -168,6 +177,30 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
 
                  <div class="section-divider" />
                  
+                 <section class="section">
+                   <h4>Efeitos Visuais</h4>
+                   <label class="toggle-item">
+                     <div class="text-stack">
+                       <span class="primary">Glassmorphism</span>
+                       <span class="secondary">Efeito de vidro fosco</span>
+                     </div>
+                     <button :class="['toggle-switch', { active: theme.glassMorphism }]" @click="setGlassMorphism(!theme.glassMorphism)">
+                       <div class="toggle-thumb" />
+                     </button>
+                   </label>
+                   <label class="toggle-item">
+                     <div class="text-stack">
+                       <span class="primary">Brilho</span>
+                       <span class="secondary">Efeito de glow nos elementos</span>
+                     </div>
+                     <button :class="['toggle-switch', { active: theme.glow }]" @click="setGlow(!theme.glow)">
+                       <div class="toggle-thumb" />
+                     </button>
+                   </label>
+                 </section>
+
+                 <div class="section-divider" />
+                 
                  <button class="btn-reset" @click="resetTheme">
                    Restaurar Padrão
                  </button>
@@ -216,12 +249,31 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
               <!-- Security Tab -->
               <div v-if="activeTab === 'security'" class="tab-content">
                   <section class="section">
-                    <h4>Criptografia</h4>
+                    <h4>Status</h4>
                     <div class="premium-card">
+                      <div class="card-content">
+                        <div class="text-stack">
+                          <span class="primary">{{ cryptoStatus }}</span>
+                          <span class="secondary">Chave de criptografia</span>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                  <section class="section">
+                    <h4>Detalhes</h4>
+                    <div class="premium-card column">
                        <div class="card-row" v-for="(value, key) in cryptoInfo" :key="key">
                           <span class="label">{{ key }}</span>
                           <span class="value">{{ value }}</span>
                        </div>
+                    </div>
+                  </section>
+                  <section class="section">
+                    <h4>Compressão</h4>
+                    <div class="algo-grid">
+                      <div v-for="algo in compressionInfo" :key="algo.algo" class="premium-card algo-card">
+                        <span class="algo-name">{{ algo.algo }}</span>
+                      </div>
                     </div>
                   </section>
               </div>
@@ -628,6 +680,57 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
 
 .btn-danger:hover {
   background: rgba(239, 68, 68, 0.2);
+}
+
+.premium-card.column {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.card-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.card-row:last-child {
+  border-bottom: none;
+}
+
+.card-row .label {
+  color: #71717a;
+  font-size: 0.875rem;
+}
+
+.card-row .value {
+  color: #fff;
+  font-size: 0.875rem;
+}
+
+.algo-grid, .repo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.algo-card, .repo-card {
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 1rem;
+}
+
+.algo-name, .repo-name {
+  color: #fff;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.repo-path {
+  color: #71717a;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
 }
 
 /* Toggles */

@@ -37,14 +37,14 @@ export interface CompressionRecommendation {
   estimated_ratio: number
 }
 
-const availableAlgorithms = ref<string[]>([])
+const availableAlgorithms = ref<CompressionAlgorithm[]>([])
 let initialized = false
 
 export function useCompression() {
   async function initialize(): Promise<void> {
     if (initialized) return
     try {
-      availableAlgorithms.value = await invoke<string[]>('list_compression_algorithms')
+      availableAlgorithms.value = await invoke<CompressionAlgorithm[]>('list_compression_algorithms')
       initialized = true
     } catch (e) {
       console.error('Failed to load compression algorithms:', e)
