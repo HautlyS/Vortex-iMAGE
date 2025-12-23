@@ -2,6 +2,18 @@
 import { useGitHubAuth } from '../composables/useGitHubAuth'
 
 const { user, loading, userCode, error, startLogin, logout } = useGitHubAuth()
+
+// Copy code to clipboard with haptic feedback
+async function copyCode() {
+  if (!userCode.value) return
+  try {
+    await navigator.clipboard.writeText(userCode.value)
+    // Trigger haptic feedback on iOS if available
+    if ('vibrate' in navigator) {
+      navigator.vibrate(10)
+    }
+  } catch {}
+}
 </script>
 
 <template>
@@ -28,8 +40,14 @@ const { user, loading, userCode, error, startLogin, logout } = useGitHubAuth()
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
         <span>Código de Acesso</span>
       </div>
-      <div class="code-value">{{ userCode }}</div>
-      <p class="code-hint">Digite este código no GitHub</p>
+      <button class="code-value" @click="copyCode" title="Toque para copiar">
+        {{ userCode }}
+      </button>
+      <p class="code-hint">Toque no código para copiar • Abra github.com/login/device</p>
+      <div class="code-loading">
+        <div class="code-spinner" />
+        <span>Aguardando autorização...</span>
+      </div>
     </div>
 
     <!-- Login Button -->
@@ -39,7 +57,7 @@ const { user, loading, userCode, error, startLogin, logout } = useGitHubAuth()
         <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
       </svg>
       <svg v-else viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
       </svg>
       <span>{{ loading ? 'Conectando...' : 'Entrar com GitHub' }}</span>
     </button>
@@ -49,7 +67,10 @@ const { user, loading, userCode, error, startLogin, logout } = useGitHubAuth()
 </template>
 
 <style scoped>
-.auth { width: 100%; }
+.auth { 
+  width: 100%;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
 
 /* User Card - iOS Style */
 .user-card {
@@ -87,8 +108,8 @@ const { user, loading, userCode, error, startLogin, logout } = useGitHubAuth()
 }
 
 .btn-logout {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -98,18 +119,20 @@ const { user, loading, userCode, error, startLogin, logout } = useGitHubAuth()
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.btn-logout:hover {
+.btn-logout:active {
   background: rgba(255, 59, 48, 0.12);
   color: var(--systemRed);
+  transform: scale(0.95);
 }
 
 .btn-logout svg { width: 18px; height: 18px; }
 
 /* Code Card - iOS Style */
 .code-card {
-  padding: 20px;
+  padding: 24px 20px;
   background: var(--pageBG);
   border-radius: var(--global-border-radius-large);
   box-shadow: var(--shadow-medium);
@@ -121,7 +144,7 @@ const { user, loading, userCode, error, startLogin, logout } = useGitHubAuth()
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   color: var(--systemSecondary);
   font-size: 13px;
   font-weight: 500;
@@ -130,18 +153,52 @@ const { user, loading, userCode, error, startLogin, logout } = useGitHubAuth()
 .code-header svg { width: 16px; height: 16px; }
 
 .code-value {
+  display: block;
+  width: 100%;
   font-family: 'SF Mono', ui-monospace, monospace;
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.2em;
   color: var(--systemPrimary);
   user-select: all;
+  -webkit-user-select: all;
   margin-bottom: 8px;
+  padding: 16px;
+  background: rgba(var(--accent-rgb, 0, 122, 255), 0.08);
+  border: 1px solid rgba(var(--accent-rgb, 0, 122, 255), 0.2);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.code-value:active {
+  transform: scale(0.98);
+  background: rgba(var(--accent-rgb, 0, 122, 255), 0.15);
 }
 
 .code-hint {
   font-size: 13px;
   color: var(--systemTertiary);
+  margin-bottom: 16px;
+}
+
+.code-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--systemSecondary);
+  font-size: 13px;
+}
+
+.code-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(var(--accent-rgb, 0, 122, 255), 0.2);
+  border-top-color: var(--accent-color, #007aff);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
 /* Login Button - iOS Get Button Style */
@@ -151,7 +208,8 @@ const { user, loading, userCode, error, startLogin, logout } = useGitHubAuth()
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 14px 20px;
+  padding: 16px 20px;
+  min-height: 50px;
   background: var(--keyColor);
   border: none;
   color: #ffffff;
@@ -159,7 +217,9 @@ const { user, loading, userCode, error, startLogin, logout } = useGitHubAuth()
   font-weight: 600;
   border-radius: 1000px;
   cursor: pointer;
-  transition: background-color 0.14s ease-out;
+  transition: all 0.14s ease-out;
+  -webkit-tap-highlight-color: transparent;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
 }
 
 .btn-login:hover {
@@ -168,6 +228,7 @@ const { user, loading, userCode, error, startLogin, logout } = useGitHubAuth()
 
 .btn-login:active {
   background: color-mix(in srgb, var(--keyColor), #000 15%);
+  transform: scale(0.98);
 }
 
 .btn-login:disabled {
@@ -187,5 +248,11 @@ const { user, loading, userCode, error, startLogin, logout } = useGitHubAuth()
   border-radius: var(--global-border-radius-small);
   font-size: 13px;
   color: var(--systemRed);
+}
+
+@supports (-webkit-touch-callout: none) {
+  .btn-login, .btn-logout, .code-value {
+    -webkit-touch-callout: none;
+  }
 }
 </style>

@@ -1021,3 +1021,157 @@
     display: none !important;
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   iOS PRODUCTION ENHANCEMENTS
+   Native feel, haptic feedback hints, smooth scrolling
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* iOS-specific optimizations */
+@supports (-webkit-touch-callout: none) {
+  /* Prevent text selection on interactive elements */
+  button, .btn, .nav-item, .tab {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Smooth momentum scrolling */
+  .scroll-container,
+  .content,
+  .gallery-container,
+  .mobile-search-results {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+  
+  /* Disable tap highlight on iOS */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* iOS rubber band effect on pull */
+  .main-dock {
+    overscroll-behavior-y: none;
+  }
+}
+
+/* iOS Safe Area - Dynamic Island / Notch */
+@media (max-width: 768px) {
+  .app-dock {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+  
+  /* Bottom navigation safe area */
+  .mobile-dock,
+  .macos-dock.mobile-dock {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    margin-bottom: 0;
+  }
+  
+  /* Full-screen modals */
+  .photo-detail,
+  .settings-overlay,
+  .mobile-search-overlay {
+    padding-top: env(safe-area-inset-top, 0);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  
+  /* Loading screen */
+  .loader-content {
+    padding-top: env(safe-area-inset-top, 0);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+}
+
+/* iOS Touch Feedback - Scale on press */
+@media (max-width: 768px) {
+  .btn:active,
+  .nav-item:active,
+  .photo-item:active,
+  .album-card:active,
+  .action-btn:active {
+    transform: scale(0.97);
+    transition: transform 0.1s ease-out;
+  }
+  
+  /* Larger touch targets for iOS */
+  .btn,
+  .nav-item,
+  .action-btn,
+  .icon-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* iOS Dark Mode - True Black AMOLED */
+@media (prefers-color-scheme: dark) and (max-width: 768px) {
+  :root {
+    --pageBG: #000000;
+    --systemBackground: #000000;
+  }
+  
+  body {
+    background: #000000;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .app-icon,
+  .mobile-search-fab,
+  .mobile-upload-btn {
+    animation: none !important;
+  }
+}
+
+/* iOS Keyboard handling */
+@media (max-width: 768px) {
+  /* When keyboard is open, adjust layout */
+  .auth,
+  .repo-setup {
+    padding-bottom: env(keyboard-inset-height, 0);
+  }
+  
+  /* Prevent zoom on input focus (iOS) */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* iOS Pull-to-refresh native feel */
+@media (max-width: 768px) {
+  .pull-indicator {
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.8) 0%,
+      transparent 100%
+    );
+  }
+  
+  .pull-indicator svg {
+    transition: transform 0.2s ease-out;
+  }
+  
+  .pull-indicator.active svg {
+    transform: rotate(180deg);
+  }
+}
+
+/* iOS Status Bar area protection */
+@media (max-width: 768px) {
+  .header-dock,
+  .top-header {
+    padding-top: calc(var(--mobile-gap-md) + env(safe-area-inset-top, 0));
+  }
+}

@@ -73,6 +73,9 @@ onUnmounted(() => {
   width: 100vw !important;
   height: 100vh !important;
   z-index: 9999;
+  /* iOS safe areas */
+  padding-top: env(safe-area-inset-top, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 .loader-content {
@@ -82,6 +85,9 @@ onUnmounted(() => {
   justify-content: center;
   height: 100%;
   gap: 24px;
+  /* Account for iOS notch */
+  padding-top: env(safe-area-inset-top, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 .app-icon-wrapper {
@@ -94,6 +100,7 @@ onUnmounted(() => {
   border-radius: 18px;
   background: rgba(28, 28, 30, 0.8);
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   box-shadow: 
     0 0 0 0.5px rgba(255, 255, 255, 0.1),
     0 10px 40px rgba(0, 122, 255, 0.3);
@@ -108,6 +115,13 @@ onUnmounted(() => {
   50% { transform: translateY(-8px); }
 }
 
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .app-icon {
+    animation: none;
+  }
+}
+
 .app-icon svg {
   width: 56px;
   height: 56px;
@@ -115,6 +129,7 @@ onUnmounted(() => {
 
 .progress-wrapper {
   width: 200px;
+  max-width: 80vw;
 }
 
 .progress-track {
@@ -135,5 +150,6 @@ onUnmounted(() => {
   font-size: 13px;
   color: rgba(255, 255, 255, 0.6);
   font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
 }
 </style>

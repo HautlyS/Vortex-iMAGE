@@ -418,8 +418,6 @@ function closeContextMenu() {
             </div>
         </Transition>
     </Teleport>
-  </div>
-    </Teleport>
 
     <!-- Tag System Components -->
     <FloatingTagPanel 
