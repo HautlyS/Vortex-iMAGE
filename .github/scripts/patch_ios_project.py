@@ -1,68 +1,74 @@
 #!/usr/bin/env python3
 """
 Patch Tauri iOS project for unsigned builds.
-Uses safe regex operations that preserve pbxproj format.
+Uses line-by-line processing to preserve pbxproj format.
 """
-import os
 import glob
 import sys
 import re
 
 def patch_pbxproj(path):
-    """Patch pbxproj using regex-safe replacements."""
+    """Patch pbxproj safely line by line."""
     print(f"Patching: {path}")
     
     with open(path, 'r') as f:
-        content = f.read()
+        lines = f.readlines()
     
-    original = content
+    new_lines = []
+    modified = False
     
-    # Replace tauri xcode-script shellScript (handles multiline)
-    content = re.sub(
-        r'(shellScript\s*=\s*")[^"]*tauri[^"]*(")',
-        r'\1echo "Pre-built Rust library"\2',
-        content,
-        flags=re.IGNORECASE
-    )
-    
-    # Safe key-value replacements
-    replacements = [
-        (r'CODE_SIGN_IDENTITY\s*=\s*"[^"]*"', 'CODE_SIGN_IDENTITY = ""'),
-        (r'CODE_SIGNING_REQUIRED\s*=\s*YES', 'CODE_SIGNING_REQUIRED = NO'),
-        (r'CODE_SIGNING_ALLOWED\s*=\s*YES', 'CODE_SIGNING_ALLOWED = NO'),
-        (r'CODE_SIGN_STYLE\s*=\s*Automatic', 'CODE_SIGN_STYLE = Manual'),
-        (r'ProvisioningStyle\s*=\s*Automatic', 'ProvisioningStyle = Manual'),
-        # Clear DEVELOPMENT_TEAM (handles quoted and unquoted values)
-        (r'DEVELOPMENT_TEAM\s*=\s*"[^"]*"', 'DEVELOPMENT_TEAM = ""'),
-        (r'DEVELOPMENT_TEAM\s*=\s*[A-Z0-9]+;', 'DEVELOPMENT_TEAM = "";'),
-        # Switch from debug to release library
-        (r'debug/libapp\.a', 'release/libapp.a'),
-    ]
-    
-    for pattern, replacement in replacements:
-        content = re.sub(pattern, replacement, content)
-    
-    # Validate: check for obvious syntax issues
-    if content.count('{') != content.count('}'):
-        print(f"⚠️  Warning: Brace mismatch in {path}")
+    for line in lines:
+        original_line = line
+        
+        # Skip shellScript lines containing tauri - replace with no-op
+        if 'shellScript' in line and 'tauri' in line.lower():
+            # Preserve indentation, replace content
+            indent = len(line) - len(line.lstrip())
+            line = ' ' * indent + 'shellScript = "echo \\"Rust library pre-built\\"";\n'
+            modified = True
+        
+        # Simple string replacements (exact matches)
+        simple_replacements = [
+            ('CODE_SIGN_IDENTITY = "Apple Development"', 'CODE_SIGN_IDENTITY = ""'),
+            ('CODE_SIGN_IDENTITY = "-"', 'CODE_SIGN_IDENTITY = ""'),
+            ('CODE_SIGN_IDENTITY = "iPhone Developer"', 'CODE_SIGN_IDENTITY = ""'),
+            ('CODE_SIGNING_REQUIRED = YES', 'CODE_SIGNING_REQUIRED = NO'),
+            ('CODE_SIGNING_ALLOWED = YES', 'CODE_SIGNING_ALLOWED = NO'),
+            ('CODE_SIGN_STYLE = Automatic', 'CODE_SIGN_STYLE = Manual'),
+            ('ProvisioningStyle = Automatic', 'ProvisioningStyle = Manual'),
+            ('debug/libapp.a', 'release/libapp.a'),
+        ]
+        
+        for old, new in simple_replacements:
+            if old in line:
+                line = line.replace(old, new)
+                modified = True
+        
+        # Handle DEVELOPMENT_TEAM with regex (various formats)
+        if 'DEVELOPMENT_TEAM' in line and '""' not in line:
+            new_line = re.sub(r'DEVELOPMENT_TEAM\s*=\s*[^;]+;', 'DEVELOPMENT_TEAM = "";', line)
+            if new_line != line:
+                line = new_line
+                modified = True
+        
+        new_lines.append(line)
     
     with open(path, 'w') as f:
-        f.write(content)
+        f.writelines(new_lines)
     
-    changes = len(original) != len(content) or original != content
-    print(f"✅ Patched: {path} ({'modified' if changes else 'no changes needed'})")
+    print(f"✅ Patched: {path} ({'modified' if modified else 'no changes'})")
 
 def main():
     pbxproj_files = glob.glob('src-tauri/gen/apple/**/*.pbxproj', recursive=True)
     
     if not pbxproj_files:
-        print("⚠️  No pbxproj files found - iOS project may not be initialized yet")
+        print("⚠️  No pbxproj files found")
         sys.exit(0)
     
     for pbx in pbxproj_files:
         patch_pbxproj(pbx)
     
-    print(f"✅ Patched {len(pbxproj_files)} file(s)")
+    print(f"✅ Done: {len(pbxproj_files)} file(s)")
 
 if __name__ == "__main__":
     main()

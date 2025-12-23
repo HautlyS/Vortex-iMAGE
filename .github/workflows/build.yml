@@ -52,12 +52,11 @@ jobs:
           cd src-tauri
           cargo build --release --target aarch64-apple-ios
           
-          # Xcode expects libapp.a in Externals/arm64/debug (even for release builds)
-          mkdir -p gen/apple/Externals/arm64/debug
-          cp target/aarch64-apple-ios/release/libvortex_image_lib.a gen/apple/Externals/arm64/debug/libapp.a
+          mkdir -p gen/apple/Externals/arm64/release
+          cp target/aarch64-apple-ios/release/libvortex_image_lib.a gen/apple/Externals/arm64/release/libapp.a
           
-          echo "✅ Rust library built and copied as libapp.a"
-          ls -la gen/apple/Externals/arm64/debug/
+          echo "✅ Rust library built"
+          ls -la gen/apple/Externals/arm64/release/
 
       - name: Build iOS Archive (Unsigned)
         run: |
@@ -66,7 +65,6 @@ jobs:
           XCODEPROJ=$(find src-tauri/gen/apple -name "*.xcodeproj" -type d | head -1)
           echo "Project: $XCODEPROJ"
           
-          # Get scheme name
           SCHEME=$(xcodebuild -project "$XCODEPROJ" -list 2>/dev/null | \
             awk '/Schemes:/{flag=1; next} flag && /^$/{flag=0} flag' | \
             sed 's/^[[:space:]]*//' | grep -i ios | head -1)
@@ -77,7 +75,6 @@ jobs:
           
           echo "Scheme: $SCHEME"
           
-          # Build archive with unsigned settings (per Export-unsigned-ipa-files approach)
           xcodebuild archive \
             -project "$XCODEPROJ" \
             -scheme "$SCHEME" \
@@ -97,7 +94,6 @@ jobs:
         run: |
           set -e
           
-          # Per Export-unsigned-ipa-files: extract from xcarchive
           ARCHIVE_PATH="./unsigned.xcarchive"
           
           if [ ! -d "$ARCHIVE_PATH" ]; then
@@ -105,43 +101,25 @@ jobs:
             exit 1
           fi
           
-          # Find .app in archive (Products/Applications/)
           APP_PATH=$(find "$ARCHIVE_PATH/Products/Applications" -name "*.app" -type d 2>/dev/null | head -1)
           
           if [ -z "$APP_PATH" ]; then
-            echo "Searching alternative locations..."
             APP_PATH=$(find "$ARCHIVE_PATH" -name "*.app" -type d 2>/dev/null | head -1)
           fi
           
           if [ -z "$APP_PATH" ]; then
             echo "❌ No .app found in archive"
-            find "$ARCHIVE_PATH" -type d | head -20
             exit 1
           fi
           
           echo "✅ Found: $APP_PATH"
           
-          # Create IPA structure
           mkdir -p Payload
           cp -R "$APP_PATH" Payload/
-          
-          # Package IPA
           zip -r -q iMAGE-unsigned.ipa Payload/
           rm -rf Payload
           
-          # Validate
-          unzip -t iMAGE-unsigned.ipa > /dev/null
-          IPA_SIZE=$(stat -f%z iMAGE-unsigned.ipa 2>/dev/null || stat -c%s iMAGE-unsigned.ipa)
-          IPA_SIZE_MB=$(echo "scale=2; $IPA_SIZE / 1024 / 1024" | bc)
-          
-          echo ""
-          echo "✅ IPA created: iMAGE-unsigned.ipa (${IPA_SIZE_MB}MB)"
-          echo ""
-          echo "📱 Install with Sideloadly:"
-          echo "   1. Download artifact"
-          echo "   2. Open Sideloadly"
-          echo "   3. Drag & drop IPA"
-          echo "   4. Sign with Apple ID"
+          echo "✅ IPA created: iMAGE-unsigned.ipa"
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
@@ -152,7 +130,7 @@ jobs:
 
   build-android:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -183,7 +161,9 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Install NDK
-        run: sdkmanager "ndk;27.0.12077973"
+        run: |
+          sdkmanager --install "ndk;27.0.12077973"
+          echo "NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -195,7 +175,7 @@ jobs:
         run: pnpm tauri android init
 
       - name: Build Android APK
-        run: pnpm tauri android build
+        run: pnpm tauri android build --features pqcrypto-backend
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
 
