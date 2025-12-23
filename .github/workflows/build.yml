@@ -52,11 +52,12 @@ jobs:
           cd src-tauri
           cargo build --release --target aarch64-apple-ios
           
-          mkdir -p gen/apple/Externals/arm64/release
-          cp target/aarch64-apple-ios/release/libvortex_image_lib.a gen/apple/Externals/arm64/release/libapp.a
+          # Xcode looks in debug folder even for release builds
+          mkdir -p gen/apple/Externals/arm64/debug
+          cp target/aarch64-apple-ios/release/libvortex_image_lib.a gen/apple/Externals/arm64/debug/libapp.a
           
           echo "✅ Rust library built"
-          ls -la gen/apple/Externals/arm64/release/
+          ls -la gen/apple/Externals/arm64/debug/
 
       - name: Build iOS Archive (Unsigned)
         run: |

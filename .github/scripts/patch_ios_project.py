@@ -36,7 +36,6 @@ def patch_pbxproj(path):
             ('CODE_SIGNING_ALLOWED = YES', 'CODE_SIGNING_ALLOWED = NO'),
             ('CODE_SIGN_STYLE = Automatic', 'CODE_SIGN_STYLE = Manual'),
             ('ProvisioningStyle = Automatic', 'ProvisioningStyle = Manual'),
-            ('debug/libapp.a', 'release/libapp.a'),
         ]
         
         for old, new in simple_replacements:
