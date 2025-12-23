@@ -60,6 +60,13 @@ jobs:
         run: |
           cd src-tauri
           cargo build --release --target aarch64-apple-ios
+          
+          # Copy library to where Xcode expects it
+          mkdir -p gen/apple/Externals/aarch64-apple-ios/release
+          cp target/aarch64-apple-ios/release/libapp.a gen/apple/Externals/aarch64-apple-ios/release/ || true
+          
+          echo "✅ Rust library built and copied"
+          ls -la target/aarch64-apple-ios/release/*.a 2>/dev/null || echo "No .a files found"
 
       - name: Build iOS App (Unsigned)
         run: |
