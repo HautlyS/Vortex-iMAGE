@@ -1,4 +1,4 @@
-import { ref, onErrorCaptured } from 'vue'
+import { ref, onErrorCaptured, onUnmounted } from 'vue'
 
 export interface ErrorInfo {
   message: string
@@ -43,16 +43,27 @@ export function useErrorBoundary() {
     return false // Prevent error from propagating
   })
 
-  // Capture global errors
-  if (typeof window !== 'undefined') {
-    window.addEventListener('error', (event) => {
-      captureError(new Error(event.message), 'Global')
-    })
-
-    window.addEventListener('unhandledrejection', (event) => {
-      captureError(new Error(event.reason), 'Promise')
-    })
+  // Global error handlers with cleanup
+  const handleError = (event: ErrorEvent) => {
+    captureError(new Error(event.message), 'Global')
   }
+
+  const handleRejection = (event: PromiseRejectionEvent) => {
+    captureError(new Error(event.reason), 'Promise')
+  }
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('error', handleError)
+    window.addEventListener('unhandledrejection', handleRejection)
+  }
+
+  // Cleanup on unmount
+  onUnmounted(() => {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('error', handleError)
+      window.removeEventListener('unhandledrejection', handleRejection)
+    }
+  })
 
   return {
     errors,

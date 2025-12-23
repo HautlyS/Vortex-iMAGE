@@ -61,11 +61,9 @@ pub fn run() {
             rename_album,
             // Photo Operations
             download_photo,
-            download_photo,
             download_secure_photo,
             upload_secure_message,
             download_secure_message,
-            delete_photo,
             delete_photo,
             remove_local_file,
             get_local_image_info,

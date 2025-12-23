@@ -323,6 +323,15 @@ const queueItems = computed(() =>
 )
 
 watch(queueItems, (items) => {
+  const activeIds = new Set(items.map(i => i.id))
+  
+  // Cleanup completed items no longer in queue
+  for (const [id, status] of queueStatusMap) {
+    if (!activeIds.has(id) && (status === 'success' || status === 'failed')) {
+      queueStatusMap.delete(id)
+    }
+  }
+  
   for (const item of items) {
     const prevStatus = queueStatusMap.get(item.id)
     if (prevStatus !== item.status) {

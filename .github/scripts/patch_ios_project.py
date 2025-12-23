@@ -45,8 +45,9 @@ def patch_pbxproj(path):
         (r'PROVISIONING_PROFILE_REQUIRED = YES', 'PROVISIONING_PROFILE_REQUIRED = NO'),
 
         # FIX: Force Tauri script to run in Release mode (prevents "missing addr file" panic)
-        # Matches --configuration ${CONFIGURATION} or ${CONFIGURATION:?}
-        (r'--configuration \$\{CONFIGURATION(:[^\}]*)?\}', '--configuration Release'),
+        # Matches --configuration ${CONFIGURATION}, "${CONFIGURATION}", \"${CONFIGURATION}\", ${CONFIGURATION:?} etc.
+        (r'--configuration\s*(?:[\\"]*)\$\{CONFIGURATION[^}]*\}(?:[\\"]*)', '--configuration Release'),
+
 
 
 

@@ -131,9 +131,10 @@ export function useGitHubAuth() {
       return
     }
 
+    // Check loading BEFORE clearing to prevent race condition
     if (loading.value) return
-    clearPolling()
     loading.value = true
+    clearPolling()
     error.value = null
 
     try {

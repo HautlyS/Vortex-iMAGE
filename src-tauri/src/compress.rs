@@ -147,7 +147,9 @@ pub fn snap_decompress(data: &[u8]) -> Result<Vec<u8>, CompressError> {
     if data.len() < 4 {
         return Err(CompressError::InvalidData);
     }
-    let original_size = u32::from_le_bytes(data[..4].try_into().unwrap()) as usize;
+    let original_size = u32::from_le_bytes(
+        data[..4].try_into().map_err(|_| CompressError::InvalidData)?
+    ) as usize;
     let mut decoder = snap::raw::Decoder::new();
     let mut output = vec![0u8; original_size];
     decoder.decompress(&data[4..], &mut output)

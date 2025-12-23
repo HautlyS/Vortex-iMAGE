@@ -114,7 +114,9 @@ export function usePhotoUpload() {
         filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }]
       })
       if (files) addToQueue(files as string[])
-    } catch { }
+    } catch (e) {
+      console.error('Failed to open file dialog:', e)
+    }
   }
 
   function addToQueue(paths: string[]) {
@@ -261,7 +263,9 @@ export function usePhotoUpload() {
           path: url
         }
       })
-    } catch { } finally {
+    } catch (e) {
+      console.error('Failed to load photos:', e)
+    } finally {
       loadingPhotos.value = false
     }
   }
