@@ -118,7 +118,6 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" \
-            AD_HOC_CODE_SIGNING_ALLOWED=YES \
             ONLY_ACTIVE_ARCH=NO \
             2>&1 | tee build.log
           
@@ -395,6 +394,7 @@ jobs:
 
       - name: Build Summary
         if: always()
+        shell: bash
         run: |
           echo "📋 Build Summary"
           echo "================"
@@ -413,3 +413,9 @@ jobs:
           if [ $FOUND -eq 0 ]; then
             echo "❌ Desktop ${{ matrix.target }}: No artifacts found"
           fi
+      - name: Upload build log (if failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-log
+          path: build.log
