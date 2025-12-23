@@ -55,6 +55,12 @@ def patch_pbxproj(path):
         # .*?                  : Any suffixes like ":?"
         # (?:\}|(?=\s)|(?=[\\"])) : End of variable (closing brace, or lookahead for space/quote)
         (r'--configuration\s+(?:[\\"]*)(?:\$)?(?:\{)?CONFIGURATION.*?(?:\}|(?=\s)|(?=[\\"]))', '--configuration Release'),
+
+        # FIX: Remove DEBUG=1 from GCC_PREPROCESSOR_DEFINITIONS passed to the script
+        # This prevents tauri-cli from thinking it's a debug build even if configuration is Release.
+        # Matches --gcc-preprocessor-definitions ... ${GCC_PREPROCESSOR_DEFINITIONS...} ...
+        (r'--gcc-preprocessor-definitions\s+(?:[\\"]*)(?:\$)?(?:\{)?GCC_PREPROCESSOR_DEFINITIONS.*?(?:\}|(?=\s)|(?=[\\"]))', '--gcc-preprocessor-definitions ""'),
+
     ]
 
     # Apply regex replacements
