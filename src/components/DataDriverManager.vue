@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { open } from '@tauri-apps/plugin-dialog'
 import { useDataDriver, type DataDriver } from '../composables/useDataDriver'
 import { useGitHubAuth } from '../composables/useGitHubAuth'
+import ConfirmDialog from './ui/ConfirmDialog.vue'
 
 const emit = defineEmits<{
   (e: 'close'): void
@@ -31,6 +32,7 @@ const newRepoInput = ref('')
 const newDriverName = ref('')
 const addingDriver = ref(false)
 const error = ref<string | null>(null)
+const driverToRemove = ref<DataDriver | null>(null)
 
 onMounted(async () => {
   await loadDrivers()
@@ -86,9 +88,10 @@ async function handleSelectDriver(driver: DataDriver) {
   emit('driver-changed', driver)
 }
 
-async function handleRemoveDriver(driver: DataDriver) {
-  if (confirm(`Remover "${driver.name}" da lista? Os arquivos não serão excluídos.`)) {
-    await removeDriver(driver.id)
+async function confirmRemoveDriver() {
+  if (driverToRemove.value) {
+    await removeDriver(driverToRemove.value.id)
+    driverToRemove.value = null
   }
 }
 
@@ -162,7 +165,7 @@ function formatDate(timestamp?: number): string {
                 </div>
                 <div class="driver-actions">
                   <span v-if="activeDriver?.id === driver.id" class="active-badge">Ativo</span>
-                  <button class="remove-btn" @click.stop="handleRemoveDriver(driver)" title="Remover">
+                  <button class="remove-btn" @click.stop="driverToRemove = driver" title="Remover">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M18 6L6 18M6 6l12 12" />
                     </svg>
@@ -194,7 +197,7 @@ function formatDate(timestamp?: number): string {
                 </div>
                 <div class="driver-actions">
                   <span v-if="activeDriver?.id === driver.id" class="active-badge">Ativo</span>
-                  <button class="remove-btn" @click.stop="handleRemoveDriver(driver)" title="Remover">
+                  <button class="remove-btn" @click.stop="driverToRemove = driver" title="Remover">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M18 6L6 18M6 6l12 12" />
                     </svg>
@@ -274,6 +277,17 @@ function formatDate(timestamp?: number): string {
         </div>
       </div>
     </div>
+
+    <!-- Confirm Remove Dialog -->
+    <ConfirmDialog
+      v-if="driverToRemove"
+      :title="`Remover ${driverToRemove.name}?`"
+      message="Os arquivos não serão excluídos, apenas a fonte será removida da lista."
+      confirm-text="Remover"
+      variant="danger"
+      @confirm="confirmRemoveDriver"
+      @cancel="driverToRemove = null"
+    />
   </div>
 </template>
 

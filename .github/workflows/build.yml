@@ -14,8 +14,6 @@ jobs:
   build-ios-unsigned:
     runs-on: macos-latest
     timeout-minutes: 60
-    env:
-      CARGO_INCREMENTAL: 1
     steps:
       - uses: actions/checkout@v4
 
@@ -25,7 +23,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '20' # Unified to 20 for stability
           cache: 'pnpm'
 
       - uses: dtolnay/rust-toolchain@stable
@@ -35,7 +33,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: "./src-tauri -> target"
+          workspaces: "src-tauri" # Points to Cargo.toml dir
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -46,15 +44,52 @@ jobs:
       - name: Initialize iOS project
         run: pnpm tauri ios init
 
-      - name: Patch iOS Project (Unsigned)
+      - name: Patch iOS Project (The "Deep" Reddit Fix)
         run: |
-          mkdir -p .github/scripts
-          python3 .github/scripts/patch_ios_project.py
+          # Create the patch script dynamically
+          cat > .github/scripts/patch_ios_project.py << 'EOF'
+          import os
+          import sys
+          import glob
 
-      - name: Build Rust library for iOS
-        run: |
-          cd src-tauri
-          cargo build --target aarch64-apple-ios
+          def find_xcode_project():
+              matches = glob.glob("src-tauri/gen/apple/*.xcodeproj/project.pbxproj")
+              if not matches:
+                  print("Error: project.pbxproj not found")
+                  sys.exit(1)
+              return matches[0]
+
+          def patch_project(file_path):
+              with open(file_path, 'r') as f:
+                  content = f.read()
+              
+              replacements = {
+                  'CODE_SIGN_IDENTITY = "Apple Development";': 'CODE_SIGN_IDENTITY = "";',
+                  'CODE_SIGN_IDENTITY = "iPhone Developer";': 'CODE_SIGN_IDENTITY = "";',
+                  'CODE_SIGNING_REQUIRED = YES;': 'CODE_SIGNING_REQUIRED = NO;',
+                  'CODE_SIGNING_ALLOWED = YES;': 'CODE_SIGNING_ALLOWED = NO;',
+                  'DEVELOPMENT_TEAM = '';': 'DEVELOPMENT_TEAM = "";',
+              }
+              
+              new_content = content
+              for old, new in replacements.items():
+                  if old in new_content:
+                      new_content = new_content.replace(old, new)
+              
+              import re
+              # Fallback regex to ensure NO signing
+              new_content = re.sub(r'CODE_SIGNING_ALLOWED = YES;', 'CODE_SIGNING_ALLOWED = NO;', new_content)
+              
+              with open(file_path, 'w') as f:
+                  f.write(new_content)
+              print("Patched successfully")
+
+          if __name__ == "__main__":
+              os.chdir(os.getcwd()) 
+              patch_project(find_xcode_project())
+          EOF
+          
+          python3 .github/scripts/patch_ios_project.py
 
       - name: Build iOS App (Unsigned)
         run: |
@@ -66,70 +101,59 @@ jobs:
             echo "ERROR: No Xcode project found"
             exit 1
           fi
-          
-          echo "Project: $XCODEPROJ"
-          
-          # Get scheme
-          SCHEME=$(xcodebuild -project "$XCODEPROJ" -list 2>/dev/null | grep -A 100 "Schemes:" | grep -v "Schemes:" | sed 's/^[[:space:]]*//' | grep -v "^$" | head -1)
-          echo "Scheme: $SCHEME"
 
-          # Debug Build Settings
-          echo "Build Settings:"
-          xcodebuild -project "$XCODEPROJ" -scheme "$SCHEME" -showBuildSettings
+          # Get scheme (usually matches APP_NAME or defined in tauri.conf.json)
+          SCHEME=$(xcodebuild -project "$XCODEPROJ" -list 2>/dev/null | grep -A 100 "Schemes:" | grep -v "Schemes:" | sed 's/^[[:space:]]*//' | grep -v "^$" | head -1)
           
+          echo "Building Scheme: $SCHEME"
+
           # Build
+          # Note: We removed the manual 'cargo build' step. Xcode handles it.
           xcodebuild build \
-            -project "$XCODEPROJ" \
-            -scheme "$SCHEME" \
-            -configuration Debug \
-            -sdk iphoneos \
-            -destination "generic/platform=iOS" \
-            -derivedDataPath ./build \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            DEVELOPMENT_TEAM="" \
-            AD_HOC_CODE_SIGNING_ALLOWED=YES \
-            ONLY_ACTIVE_ARCH=NO
+          -project "$XCODEPROJ" \
+          -scheme "$SCHEME" \
+          -configuration Debug \
+          -sdk iphoneos \
+          -destination "generic/platform=iOS" \
+          -derivedDataPath ./build \
+          CODE_SIGN_IDENTITY="-" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
+          DEVELOPMENT_TEAM="" \
+          ONLY_ACTIVE_ARCH=NO
 
       - name: Package IPA
         run: |
           set -e
           
-          # Try finding in Debug folder first (since we removed --release)
+          # Find the .app
           APP_PATH=$(find ./build/Build/Products/Debug-iphoneos -name "*.app" -type d | head -1)
           
           if [ -z "$APP_PATH" ]; then
-             echo "Trying Release folder..."
-             APP_PATH=$(find ./build/Build/Products/Release-iphoneos -name "*.app" -type d | head -1)
-          fi
-          
-          if [ -z "$APP_PATH" ]; then
-             echo "Trying broad search..."
-             APP_PATH=$(find ./build -name "*.app" -type d | grep -v "Simulator" | head -1)
-          fi
-
-          if [ -z "$APP_PATH" ]; then
-            echo "ERROR: No .app bundle found"
-            find ./build -name "*.app"
+            echo "ERROR: No .app bundle found in Debug-iphoneos"
+            echo "Available artifacts:"
+            find ./build -name "*.app" -type d
             exit 1
           fi
-          
+
           echo "Found app: $APP_PATH"
           
           mkdir -p Payload
           cp -R "$APP_PATH" Payload/
           
-          zip -r iMAGE-unsigned.ipa Payload
+          # Verify the binary inside is actually unsigned (optional but good for debugging)
+          # codesign -dv Payload/*.app 2>&1 || true
+          
+          zip -r "${APP_NAME}-unsigned.ipa" Payload
           rm -rf Payload
           
-          echo "✅ Created iMAGE-unsigned.ipa"
+          echo "✅ Created ${APP_NAME}-unsigned.ipa"
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
           name: ios-unsigned-ipa
-          path: iMAGE-unsigned.ipa
+          path: ${{ env.APP_NAME }}-unsigned.ipa
           retention-days: 30
 
   build-android:
@@ -137,50 +161,38 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v4
         with:
           version: 9
-
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '20' # Unified
           cache: 'pnpm'
-
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
-
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: "./src-tauri -> target"
-
+          workspaces: "src-tauri"
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-
       - name: Install NDK
         run: sdkmanager "ndk;27.0.12077973"
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
       - name: Build frontend
         run: pnpm run build
-
       - name: Initialize Android project
         run: pnpm tauri android init
-
       - name: Build Android APK
         run: pnpm tauri android build
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
-
       - uses: actions/upload-artifact@v4
         with:
           name: android-apk
@@ -202,38 +214,29 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v4
         with:
           version: 9
-
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '20' # Unified
           cache: 'pnpm'
-
       - uses: dtolnay/rust-toolchain@stable
-
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: "./src-tauri -> target"
-
+          workspaces: "src-tauri"
       - name: Install Linux dependencies
         if: matrix.os == 'ubuntu-22.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
       - name: Build frontend
         run: pnpm run build
-
       - name: Build desktop app
         run: pnpm tauri build
-
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-${{ matrix.target }}

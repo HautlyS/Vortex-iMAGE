@@ -33,21 +33,19 @@ export interface Photo {
   size?: number
 }
 
-// Mock photos for dev mode
-const MOCK_PHOTOS: Photo[] = [
-  { name: 'sunset-beach.jpg', url: 'https://picsum.photos/seed/1/800/600', sha: 'mock-sha-1', size: 245000 },
-  { name: 'mountain-view.jpg', url: 'https://picsum.photos/seed/2/800/600', sha: 'mock-sha-2', size: 312000 },
-  { name: 'city-lights.jpg', url: 'https://picsum.photos/seed/3/800/600', sha: 'mock-sha-3', size: 198000 },
-  { name: 'forest-path.jpg', url: 'https://picsum.photos/seed/4/800/600', sha: 'mock-sha-4', size: 276000 },
-  { name: 'ocean-waves.jpg', url: 'https://picsum.photos/seed/5/800/600', sha: 'mock-sha-5', size: 289000 },
-  { name: 'desert-dunes.jpg', url: 'https://picsum.photos/seed/6/800/600', sha: 'mock-sha-6', size: 234000 },
-  { name: 'autumn-leaves.jpg', url: 'https://picsum.photos/seed/7/800/600', sha: 'mock-sha-7', size: 267000 },
-  { name: 'snowy-peaks.jpg', url: 'https://picsum.photos/seed/8/800/600', sha: 'mock-sha-8', size: 301000 },
-  { name: 'tropical-beach.jpg', url: 'https://picsum.photos/seed/9/800/600', sha: 'mock-sha-9', size: 256000 },
-  { name: 'night-sky.jpg', url: 'https://picsum.photos/seed/10/800/600', sha: 'mock-sha-10', size: 223000 },
-  { name: 'waterfall.jpg', url: 'https://picsum.photos/seed/11/800/600', sha: 'mock-sha-11', size: 278000 },
-  { name: 'flower-garden.jpg', url: 'https://picsum.photos/seed/12/800/600', sha: 'mock-sha-12', size: 245000 },
-]
+// Mock photos for dev mode - generate 50 varied images
+const MOCK_PHOTOS: Photo[] = Array.from({ length: 50 }, (_, i) => {
+  const heights = [400, 500, 600, 700, 800]
+  const h = heights[i % heights.length]
+  const names = ['sunset', 'mountain', 'city', 'forest', 'ocean', 'desert', 'autumn', 'snow', 'beach', 'night', 'waterfall', 'flower', 'lake', 'canyon', 'aurora', 'wildlife', 'architecture', 'portrait', 'street', 'abstract']
+  return {
+    name: `${names[i % names.length]}-${i + 1}.jpg`,
+    url: `https://picsum.photos/seed/photo${i}/800/${h}`,
+    sha: `mock-sha-${i + 1}`,
+    size: 150000 + Math.floor(Math.random() * 200000),
+    path: i < 10 ? 'viagens' : i < 20 ? 'viagens/2024' : i < 30 ? 'familia' : undefined
+  }
+})
 
 // Global shared state
 const queue = ref<UploadItem[]>([])
@@ -57,8 +55,8 @@ const loadingPhotos = ref(false)
 let initialized = false
 
 export function usePhotoUpload() {
-  const { token, repo } = useGitHubAuth()
-  
+  const { token, repo, publicBundle } = useGitHubAuth()
+
   let unlisten: (() => void) | null = null
   let isProcessing = false
 
@@ -83,8 +81,8 @@ export function usePhotoUpload() {
         const item = queue.value.find(i => i.id === event.payload.id)
         if (item) item.progress = event.payload.percent
       })
-    } catch {}
-    
+    } catch { }
+
     if (!initialized && token.value && repo.value) {
       initialized = true
       loadPhotos()
@@ -116,7 +114,7 @@ export function usePhotoUpload() {
         filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }]
       })
       if (files) addToQueue(files as string[])
-    } catch {}
+    } catch { }
   }
 
   function addToQueue(paths: string[]) {
@@ -135,10 +133,10 @@ export function usePhotoUpload() {
 
   async function processQueue() {
     if (!token.value || !repo.value || isProcessing) return
-    
+
     isProcessing = true
     isUploading.value = true
-    
+
     try {
       while (true) {
         const next = queue.value.find(i => i.status === 'pending')
@@ -155,12 +153,12 @@ export function usePhotoUpload() {
           }
           next.status = 'success'
           next.progress = 100
-          
+
           // Add mock photo
           const seed = Math.floor(Math.random() * 1000)
           photos.value.unshift({
             name: next.name,
-            url: `https://picsum.photos/seed/${seed}/800/600`,
+            url: `https://picsum.photos/seed/img${seed}/800/600`,
             sha: `mock-sha-${seed}`,
             size: Math.floor(Math.random() * 200000) + 150000
           })
@@ -170,18 +168,22 @@ export function usePhotoUpload() {
         try {
           const { invoke } = await import('@tauri-apps/api/core')
           const filename = `${Date.now()}-${next.name}`
+
+          if (!publicBundle.value) throw new Error("Encryption keys not available")
+
           const result = await invoke<UploadResult>('upload_photo', {
             path: next.path,
             repo: repo.value,
             token: token.value,
             filename,
-            uploadId: next.id
+            uploadId: next.id,
+            publicBundle: publicBundle.value
           })
-          
+
           next.status = 'success'
           next.progress = 100
           next.url = result.url
-          
+
           photos.value.unshift({
             name: filename,
             url: `https://raw.githubusercontent.com/${repo.value}/main/photos/${filename}`,
@@ -198,7 +200,7 @@ export function usePhotoUpload() {
       isUploading.value = false
       isProcessing = false
     }
-    
+
     if (!isDevMode) await loadPhotos()
   }
 
@@ -230,7 +232,7 @@ export function usePhotoUpload() {
     }
   }
 
-  async function loadPhotos() {
+  async function loadPhotos(folder?: string) {
     if (isDevMode) {
       // Already have mock photos
       loadingPhotos.value = true
@@ -240,15 +242,16 @@ export function usePhotoUpload() {
     }
 
     if (!token.value || !repo.value || loadingPhotos.value) return
-    
+
     loadingPhotos.value = true
     try {
       const { invoke } = await import('@tauri-apps/api/core')
       const photoUrls = await invoke<string[]>('list_photos', {
         repo: repo.value,
-        token: token.value
+        token: token.value,
+        folder: folder || undefined
       })
-      
+
       photos.value = photoUrls.map(url => {
         const filename = url.split('/').pop() || 'photo'
         return {
@@ -258,7 +261,7 @@ export function usePhotoUpload() {
           path: url
         }
       })
-    } catch {} finally {
+    } catch { } finally {
       loadingPhotos.value = false
     }
   }

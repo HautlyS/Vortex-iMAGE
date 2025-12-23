@@ -4,11 +4,11 @@ import { useTheme } from '../composables/useTheme'
 import { TOUCH } from '../config'
 
 defineProps<{
-  currentView: 'photos' | 'favorites' | 'albums' | 'tags'
+  currentView: 'photos' | 'favorites' | 'albums' | 'tags' | 'trash'
 }>()
 
 const emit = defineEmits<{
-  navigate: [view: 'photos' | 'favorites' | 'albums' | 'tags']
+  navigate: [view: 'photos' | 'favorites' | 'albums' | 'tags' | 'trash']
   settings: []
 }>()
 
@@ -25,49 +25,68 @@ const navItems = computed(() => [
   {
     id: 'photos' as const,
     label: 'Fotos',
-    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <rect x="3" y="3" width="7" height="7" rx="1"/>
-      <rect x="14" y="3" width="7" height="7" rx="1"/>
-      <rect x="14" y="14" width="7" height="7" rx="1"/>
-      <rect x="3" y="14" width="7" height="7" rx="1"/>
+    icon: `<svg viewBox="0 0 24 24" fill="none">
+      <rect x="2" y="4" width="20" height="16" rx="4" fill="#333" stroke="#555" stroke-width="1"/>
+      <circle cx="8" cy="9" r="1.5" fill="#666"/>
+      <path d="M18 15l-3-3-4 4-2-2-5 5h14z" fill="#555"/>
     </svg>`,
-    iconFilled: `<svg viewBox="0 0 24 24" fill="currentColor">
-      <rect x="3" y="3" width="7" height="7" rx="1"/>
-      <rect x="14" y="3" width="7" height="7" rx="1"/>
-      <rect x="14" y="14" width="7" height="7" rx="1"/>
-      <rect x="3" y="14" width="7" height="7" rx="1"/>
+    iconFilled: `<svg viewBox="0 0 24 24" fill="none">
+      <defs><linearGradient id="photoGradMobile" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#ef4444"/><stop offset="100%" style="stop-color:#dc2626"/></linearGradient></defs>
+      <rect x="2" y="4" width="20" height="16" rx="4" fill="url(#photoGradMobile)"/>
+      <circle cx="8" cy="9" r="1.5" fill="#fff" opacity="0.9"/>
+      <path d="M18 15l-3-3-4 4-2-2-5 5h14z" fill="#000" opacity="0.2"/>
     </svg>`
   },
   {
     id: 'favorites' as const,
     label: 'Favoritos',
-    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+    icon: `<svg viewBox="0 0 24 24" fill="none">
+      <path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z" fill="#333" stroke="#555" stroke-width="1"/>
     </svg>`,
-    iconFilled: `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+    iconFilled: `<svg viewBox="0 0 24 24" fill="none">
+      <defs><linearGradient id="starGradMobile" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#ef4444"/><stop offset="100%" style="stop-color:#dc2626"/></linearGradient></defs>
+      <path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z" fill="url(#starGradMobile)"/>
     </svg>`
   },
   {
     id: 'albums' as const,
     label: 'Álbuns',
-    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+    icon: `<svg viewBox="0 0 24 24" fill="none">
+      <path d="M3 6a3 3 0 0 1 3-3h4l2 2h7a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6z" fill="#333" stroke="#555" stroke-width="1"/>
     </svg>`,
-    iconFilled: `<svg viewBox="0 0 24 24" fill="currentColor">
-      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+    iconFilled: `<svg viewBox="0 0 24 24" fill="none">
+      <defs><linearGradient id="folderGradMobile" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#ef4444"/><stop offset="100%" style="stop-color:#dc2626"/></linearGradient></defs>
+      <path d="M3 6a3 3 0 0 1 3-3h4l2 2h7a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6z" fill="url(#folderGradMobile)"/>
+    </svg>`
+  },
+  {
+    id: 'trash' as const,
+    label: 'Lixeira',
+    icon: `<svg viewBox="0 0 24 24" fill="none">
+      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="#555" stroke-width="2" fill="none"/>
+      <path d="M6 8h12l-1 12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 8z" fill="#333"/>
+      <line x1="10" y1="12" x2="10" y2="16" stroke="#666" stroke-width="2"/>
+      <line x1="14" y1="12" x2="14" y2="16" stroke="#666" stroke-width="2"/>
+    </svg>`,
+    iconFilled: `<svg viewBox="0 0 24 24" fill="none">
+      <defs><linearGradient id="trashGradMobile" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#ef4444"/><stop offset="100%" style="stop-color:#dc2626"/></linearGradient></defs>
+      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="#666" stroke-width="2" fill="none"/>
+      <path d="M6 8h12l-1 12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 8z" fill="url(#trashGradMobile)"/>
+      <line x1="10" y1="12" x2="10" y2="16" stroke="#fff" stroke-width="2" opacity="0.8"/>
+      <line x1="14" y1="12" x2="14" y2="16" stroke="#fff" stroke-width="2" opacity="0.8"/>
     </svg>`
   },
   {
     id: 'settings' as const,
     label: 'Config',
-    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="12" cy="12" r="3"/>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    icon: `<svg viewBox="0 0 24 24" fill="none">
+      <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" fill="#333"/>
+      <path d="M12 1l1.5 4.5L18 4l-1.5 4.5L21 12l-4.5 1.5L18 20l-4.5-1.5L12 23l-1.5-4.5L6 20l1.5-4.5L3 12l4.5-1.5L6 4l4.5 1.5L12 1z" stroke="#555" stroke-width="1.5" fill="none"/>
     </svg>`,
-    iconFilled: `<svg viewBox="0 0 24 24" fill="currentColor">
-      <circle cx="12" cy="12" r="3"/>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    iconFilled: `<svg viewBox="0 0 24 24" fill="none">
+      <defs><linearGradient id="settingsGradMobile" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#ef4444"/><stop offset="100%" style="stop-color:#dc2626"/></linearGradient></defs>
+      <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" fill="url(#settingsGradMobile)"/>
+      <path d="M12 1l1.5 4.5L18 4l-1.5 4.5L21 12l-4.5 1.5L18 20l-4.5-1.5L12 23l-1.5-4.5L6 20l1.5-4.5L3 12l4.5-1.5L6 4l4.5 1.5L12 1z" stroke="url(#settingsGradMobile)" stroke-width="1.5" fill="none"/>
     </svg>`
   }
 ])
@@ -118,22 +137,19 @@ function handleClick(item: typeof navItems.value[0]) {
   .mobile-nav {
     display: flex;
     position: fixed;
-    bottom: var(--mobile-nav-gap, 12px);
-    left: var(--mobile-nav-gap, 12px);
-    right: var(--mobile-nav-gap, 12px);
-    bottom: calc(var(--mobile-nav-gap, 12px) + env(safe-area-inset-bottom, 0px));
-    height: var(--mobile-nav-height, 64px);
-    background: var(--amoled-surface-2, #121212);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: var(--radius-xl, 20px);
-    z-index: var(--z-mobileNav, 100);
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    height: calc(49px + env(safe-area-inset-bottom, 0px));
+    background: var(--systemStandardThickMaterialSover);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-top: 0.5px solid var(--labelDivider);
+    z-index: 100;
     justify-content: space-around;
-    align-items: center;
-    box-shadow: 
-      0 4px 24px rgba(0, 0, 0, 0.5),
-      0 0 0 1px rgba(255, 255, 255, 0.05) inset;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    align-items: flex-start;
+    padding-top: 6px;
   }
 
   .mobile-nav-item {
@@ -141,31 +157,28 @@ function handleClick(item: typeof navItems.value[0]) {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    min-width: var(--touch-min, 44px);
-    min-height: var(--touch-min, 44px);
-    padding: var(--mobile-gap-sm, 8px) var(--mobile-gap-lg, 16px);
+    gap: 2px;
+    min-width: 64px;
+    padding: 4px 8px;
     background: transparent;
     border: none;
-    color: var(--text-muted, #71717a);
-    font-size: 0.625rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
+    color: var(--systemSecondary);
+    font-size: 10px;
+    font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast, 150ms) var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+    transition: color 0.15s ease;
     -webkit-tap-highlight-color: transparent;
-    border-radius: var(--radius-lg, 14px);
     position: relative;
     touch-action: manipulation;
   }
 
   .nav-icon {
-    width: 1.375rem;
-    height: 1.375rem;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all var(--duration-fast, 150ms) var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+    transition: transform 0.2s ease;
   }
 
   .nav-icon :deep(svg) {
@@ -174,53 +187,30 @@ function handleClick(item: typeof navItems.value[0]) {
   }
 
   .nav-label {
-    transition: all var(--duration-fast, 150ms) ease;
+    transition: color 0.15s ease;
   }
 
   .mobile-nav-item.active {
-    color: var(--nav-accent, var(--accent-color, #00ff41));
+    color: var(--keyColor);
   }
 
   .mobile-nav-item.active .nav-icon {
-    transform: scale(1.15);
-    filter: drop-shadow(0 0 8px var(--nav-accent, var(--accent-color, #00ff41)));
+    transform: scale(1.05);
   }
 
   .active-indicator {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 24px;
-    height: 3px;
-    background: var(--nav-accent, var(--accent-color, #00ff41));
-    border-radius: var(--radius-full, 9999px);
-    box-shadow: 0 0 12px var(--nav-accent, var(--accent-color, #00ff41));
-    animation: indicator-appear 0.3s var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
-  }
-
-  @keyframes indicator-appear {
-    from {
-      transform: translateX(-50%) scaleX(0);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(-50%) scaleX(1);
-      opacity: 1;
-    }
+    display: none;
   }
 
   .mobile-nav-item:active {
-    transform: scale(0.92);
+    opacity: 0.7;
   }
 
   /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
     .mobile-nav-item,
-    .nav-icon,
-    .active-indicator {
+    .nav-icon {
       transition: none;
-      animation: none;
     }
   }
 }

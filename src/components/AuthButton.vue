@@ -51,108 +51,141 @@ const { user, loading, userCode, error, startLogin, logout } = useGitHubAuth()
 <style scoped>
 .auth { width: 100%; }
 
-/* User Card */
+/* User Card - iOS Style */
 .user-card {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 0.5rem;
+  gap: 12px;
+  padding: 12px;
+  background: var(--pageBG);
+  border-radius: var(--global-border-radius-medium);
+  box-shadow: var(--shadow-small);
 }
+
 .avatar {
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.1);
+  box-shadow: 0 0 0 2px var(--pageBG), 0 0 0 3px var(--systemGray4);
 }
+
 .user-info { flex: 1; min-width: 0; }
+
 .user-name {
   display: block;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #fafafa;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--systemPrimary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.user-status { font-size: 0.75rem; color: #22c55e; }
+
+.user-status {
+  font-size: 13px;
+  color: var(--systemGreen);
+}
+
 .btn-logout {
-  width: 2rem;
-  height: 2rem;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
+  background: var(--systemGray6);
   border: none;
-  color: #71717a;
-  border-radius: 0.375rem;
+  color: var(--systemSecondary);
+  border-radius: 50%;
   cursor: pointer;
+  transition: all 0.2s;
 }
-.btn-logout:hover { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-.btn-logout svg { width: 1.125rem; height: 1.125rem; }
 
-/* Code Card */
+.btn-logout:hover {
+  background: rgba(255, 59, 48, 0.12);
+  color: var(--systemRed);
+}
+
+.btn-logout svg { width: 18px; height: 18px; }
+
+/* Code Card - iOS Style */
 .code-card {
-  padding: 1rem;
-  background: rgba(99, 102, 241, 0.1);
-  border: 1px solid rgba(99, 102, 241, 0.2);
-  border-radius: 0.5rem;
+  padding: 20px;
+  background: var(--pageBG);
+  border-radius: var(--global-border-radius-large);
+  box-shadow: var(--shadow-medium);
   text-align: center;
 }
+
 .code-header {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-  color: #818cf8;
-  font-size: 0.75rem;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: var(--systemSecondary);
+  font-size: 13px;
   font-weight: 500;
 }
-.code-header svg { width: 1rem; height: 1rem; }
+
+.code-header svg { width: 16px; height: 16px; }
+
 .code-value {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 1.5rem;
+  font-family: 'SF Mono', ui-monospace, monospace;
+  font-size: 28px;
   font-weight: 700;
   letter-spacing: 0.15em;
-  color: #fafafa;
+  color: var(--systemPrimary);
   user-select: all;
-  margin-bottom: 0.5rem;
+  margin-bottom: 8px;
 }
-.code-hint { font-size: 0.75rem; color: #71717a; }
 
-/* Login Button */
+.code-hint {
+  font-size: 13px;
+  color: var(--systemTertiary);
+}
+
+/* Login Button - iOS Get Button Style */
 .btn-login {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.625rem;
-  padding: 0.75rem;
-  background: #fafafa;
+  gap: 10px;
+  padding: 14px 20px;
+  background: var(--keyColor);
   border: none;
-  color: #18181b;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border-radius: 0.5rem;
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 600;
+  border-radius: 1000px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background-color 0.14s ease-out;
 }
-.btn-login:hover { background: #e4e4e7; }
-.btn-login:disabled { opacity: 0.7; cursor: not-allowed; }
-.btn-login svg { width: 1.25rem; height: 1.25rem; }
-.spinner { animation: spin 1s linear infinite; }
+
+.btn-login:hover {
+  background: color-mix(in srgb, var(--keyColor), #000 8%);
+}
+
+.btn-login:active {
+  background: color-mix(in srgb, var(--keyColor), #000 15%);
+}
+
+.btn-login:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-login svg { width: 20px; height: 20px; }
+
+.spinner { animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .error {
-  margin-top: 0.75rem;
-  padding: 0.625rem;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: 0.375rem;
-  font-size: 0.75rem;
-  color: #fca5a5;
+  margin-top: 12px;
+  padding: 12px;
+  background: rgba(255, 59, 48, 0.12);
+  border-radius: var(--global-border-radius-small);
+  font-size: 13px;
+  color: var(--systemRed);
 }
 </style>

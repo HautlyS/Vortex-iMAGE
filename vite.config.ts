@@ -35,6 +35,11 @@ export default defineConfig(async () => ({
       }
     }
   ].filter(Boolean),
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src')
+    }
+  },
   build: isGitHubPages ? {
     rollupOptions: { input: resolve(__dirname, 'landing/index.html') },
     outDir: 'dist',

@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import HoverCard from './HoverCard.vue'
-import AmbientBackground from './AmbientBackground.vue'
+import { ref } from 'vue'
+import SecureImage from './SecureImage.vue'
 
-const props = defineProps<{
+defineProps<{
   imageUrl: string
   title?: string
   subtitle?: string
@@ -19,38 +18,29 @@ const emit = defineEmits<{
 
 const isHovered = ref(false)
 const imageLoaded = ref(false)
-
-const cardStyle = computed(() => ({
-  '--card-image': `url(${props.imageUrl})`
-}))
 </script>
 
 <template>
-  <HoverCard 
+  <div 
     class="photo-card" 
     :class="{ selected, favorited }"
-    :style="cardStyle"
     @mouseenter="isHovered = true"
     @mouseleave="isHovered = false"
     @click="emit('click')"
   >
-    <!-- Ambient background on hover -->
-    <AmbientBackground 
-      :image-url="imageUrl" 
-      :active="isHovered"
-      class="card-ambient"
-    />
-    
-    <!-- Image -->
-    <div class="card-image">
-      <img 
+    <!-- Artwork container (iOS style) -->
+    <div class="artwork">
+      <SecureImage 
         :src="imageUrl" 
         :alt="title || 'Photo'"
-        loading="lazy"
+        :class-name="imageLoaded ? 'loaded' : ''"
         @load="imageLoaded = true"
-        :class="{ loaded: imageLoaded }"
       />
+      <!-- Skeleton loading is handled inside SecureImage too, but we keep outer structure -->
       <div v-if="!imageLoaded" class="skeleton" />
+      
+      <!-- Inner border (iOS artwork style) -->
+      <div class="artwork-border" />
     </div>
     
     <!-- Badge -->
@@ -68,11 +58,8 @@ const cardStyle = computed(() => ({
       </svg>
     </button>
     
-    <!-- Gradient overlay -->
-    <div class="card-gradient" />
-    
-    <!-- Metadata chin -->
-    <div v-if="title || subtitle" class="card-chin">
+    <!-- Metadata (iOS lockup style) -->
+    <div v-if="title || subtitle" class="card-meta">
       <h3 v-if="title" class="card-title">{{ title }}</h3>
       <p v-if="subtitle" class="card-subtitle">{{ subtitle }}</p>
     </div>
@@ -83,92 +70,112 @@ const cardStyle = computed(() => ({
         <path d="M5 13l4 4L19 7"/>
       </svg>
     </div>
-  </HoverCard>
+  </div>
 </template>
 
 <style scoped>
 .photo-card {
   position: relative;
-  aspect-ratio: 1;
-  background: var(--surface-1);
+  display: flex;
   flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
 }
 
-.card-ambient {
-  position: absolute;
-  inset: -20%;
-  z-index: -1;
-}
-
-.card-image {
+/* iOS Artwork Component */
+.artwork {
   position: relative;
-  width: 100%;
-  height: 100%;
+  aspect-ratio: 1;
+  background: var(--genericJoeColor);
+  border-radius: var(--global-border-radius-medium);
   overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.card-image img {
+.photo-card:hover .artwork {
+  transform: scale(1.02);
+  box-shadow: var(--shadow-medium);
+}
+
+.photo-card:active .artwork {
+  transform: scale(0.98);
+}
+
+.artwork img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   opacity: 0;
-  transition: opacity 0.3s ease, transform 0.4s ease;
+  transition: opacity 0.3s ease;
 }
 
-.card-image img.loaded {
+.artwork img.loaded {
   opacity: 1;
 }
 
-.photo-card:hover .card-image img {
-  transform: scale(1.05);
+.artwork-border {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 0.5px rgba(128, 128, 128, 0.2);
+  pointer-events: none;
 }
 
+/* Skeleton loading (iOS style) */
 .skeleton {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
-  background-size: 200% 100%;
+  background: var(--genericJoeColor);
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
   animation: shimmer 1.5s infinite;
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
+/* Badge (iOS pill style) */
 .card-badge {
   position: absolute;
-  top: 0.75rem;
-  left: 0.75rem;
-  padding: 0.25rem 0.625rem;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
-  border-radius: var(--radius-full);
-  font-size: 0.6875rem;
+  top: 8px;
+  left: 8px;
+  padding: 4px 10px;
+  background: var(--systemStandardThickMaterialSover);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 1000px;
+  font-size: 11px;
   font-weight: 600;
-  color: var(--text-primary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  color: var(--systemPrimary);
   z-index: 2;
 }
 
+/* Favorite button (iOS style) */
 .card-fav {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  width: 2rem;
-  height: 2rem;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px);
+  background: var(--systemStandardThickMaterialSover);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: none;
   border-radius: 50%;
-  color: var(--text-secondary);
+  color: var(--systemSecondary);
   cursor: pointer;
   opacity: 0;
-  transform: scale(0.8);
+  transform: scale(0.9);
   transition: all 0.2s ease;
   z-index: 2;
 }
@@ -180,91 +187,68 @@ const cardStyle = computed(() => ({
 }
 
 .card-fav:hover {
-  background: rgba(0, 0, 0, 0.7);
-  color: var(--text-primary);
+  background: var(--systemStandardUltrathickMaterialSover);
 }
 
 .card-fav.active {
-  color: var(--cyber-pink);
+  color: var(--systemPink);
 }
 
 .card-fav svg {
-  width: 1rem;
-  height: 1rem;
+  width: 16px;
+  height: 16px;
 }
 
-.card-gradient {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 50%;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.photo-card:hover .card-gradient {
-  opacity: 1;
-}
-
-.card-chin {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 1rem;
-  transform: translateY(100%);
-  transition: transform 0.3s ease;
-  z-index: 1;
-}
-
-.photo-card:hover .card-chin {
-  transform: translateY(0);
+/* Metadata (iOS lockup style) */
+.card-meta {
+  padding: 0 2px;
 }
 
 .card-title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--systemPrimary);
   margin: 0;
-  white-space: nowrap;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .card-subtitle {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  margin: 0.25rem 0 0;
+  font-size: 13px;
+  color: var(--systemSecondary);
+  margin: 2px 0 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+/* Selection indicator */
 .card-selected {
   position: absolute;
-  top: 0.75rem;
-  left: 0.75rem;
-  width: 1.5rem;
-  height: 1.5rem;
+  top: 8px;
+  left: 8px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent-color);
+  background: var(--keyColor);
   border-radius: 50%;
+  color: #fff;
   z-index: 3;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.4);
 }
 
 .card-selected svg {
-  width: 0.875rem;
-  height: 0.875rem;
-  color: #000;
+  width: 14px;
+  height: 14px;
 }
 
-.photo-card.selected {
-  outline: 2px solid var(--accent-color);
-  outline-offset: 2px;
+/* Selected state */
+.photo-card.selected .artwork {
+  box-shadow: 0 0 0 3px var(--keyColor);
 }
 </style>

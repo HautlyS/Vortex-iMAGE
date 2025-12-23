@@ -11,6 +11,9 @@ use thiserror::Error;
 use tokio::fs;
 use tokio::time::sleep;
 
+use crate::compress::{compress_file_data, ItemCompressionSettings, Algorithm};
+use crate::crypto::{encrypt_hybrid, decrypt_hybrid, PublicBundle, EncryptedFileData, EncryptionSettings, encrypt_file_data};
+
 // Centralized constants
 const CLIENT_ID: &str = "Ov23lijNSMM1i93CQdfQ";
 const MAX_RETRIES: u32 = 3;
@@ -244,6 +247,7 @@ pub async fn upload_photo(
     token: String,
     filename: String,
     upload_id: String,
+    public_bundle: PublicBundle,
 ) -> Result<UploadResult, AppError> {
     validate_repo(&repo)?;
     let safe_filename = sanitize_filename(&filename);
@@ -252,7 +256,6 @@ pub async fn upload_photo(
         return Err(AppError::Validation("Invalid filename".into()));
     }
 
-    // Async file read - doesn't block tokio runtime
     let content = fs::read(&path).await?;
     let total_bytes = content.len() as u64;
 
@@ -264,132 +267,74 @@ pub async fn upload_photo(
         percent: 0,
     });
 
-    if total_bytes > LFS_THRESHOLD_BYTES {
-        return upload_lfs_internal(&app, &client.0, content, &repo, &token, &safe_filename, &upload_id).await;
-    }
-
-    // Emit encoding progress (50%)
-    let _ = app.emit("upload-progress", UploadProgress {
-        id: upload_id.clone(),
-        bytes_sent: total_bytes / 2,
-        total_bytes,
-        percent: 50,
-    });
-
-    let encoded = STANDARD.encode(&content);
-    drop(content);
-
-    let upload_path = format!("photos/{}", safe_filename);
-    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, upload_path);
-
-    let body = serde_json::json!({
-        "message": format!("Upload {}", safe_filename),
-        "content": encoded
-    });
-
-    let res = client
-        .0
-        .put(&url)
-        .timeout(Duration::from_secs(UPLOAD_TIMEOUT_SECS))
-        .header("Authorization", format!("Bearer {}", token))
-        .header("User-Agent", "vortex-image")
-        .header("Accept", "application/vnd.github+json")
-        .json(&body)
-        .send()
-        .await?;
-
-    // Emit complete
-    let _ = app.emit("upload-progress", UploadProgress {
-        id: upload_id.clone(),
-        bytes_sent: total_bytes,
-        total_bytes,
-        percent: 100,
-    });
-
-    if !res.status().is_success() {
-        let status = res.status();
-        let err = res.text().await.unwrap_or_default();
-        return Err(AppError::Api(format!("Upload failed ({}): {}", status, err)));
-    }
-
-    let json: serde_json::Value = res.json().await?;
-
-    Ok(UploadResult {
-        url: json["content"]["html_url"].as_str().unwrap_or("").to_string(),
-        sha: json["content"]["sha"].as_str().unwrap_or("").to_string(),
-    })
-}
-
-/// Upload photo with optional image processing (EXIF stripping, compression)
-#[tauri::command]
-pub async fn upload_photo_processed(
-    app: AppHandle,
-    client: State<'_, HttpClient>,
-    path: String,
-    repo: String,
-    token: String,
-    filename: String,
-    upload_id: String,
-    strip_exif: bool,
-    compress: bool,
-    quality: Option<u8>,
-) -> Result<UploadResult, AppError> {
-    validate_repo(&repo)?;
-    let safe_filename = sanitize_filename(&filename);
-
-    if safe_filename.is_empty() {
-        return Err(AppError::Validation("Invalid filename".into()));
-    }
-
-    // Read file
-    let content = fs::read(&path).await?;
-    let total_bytes = content.len() as u64;
-
-    // Emit initial progress
-    let _ = app.emit("upload-progress", UploadProgress {
-        id: upload_id.clone(),
-        bytes_sent: 0,
-        total_bytes,
-        percent: 0,
-    });
-
-    // Process image if needed
-    let processed_content = if strip_exif || compress {
-        process_image(&content, strip_exif, compress, quality.unwrap_or(85))?
-    } else {
-        content
+    // 1. Mandatory Compression
+    // We use aggressive compression for photos by default
+    let compression_settings = ItemCompressionSettings {
+        enabled: true,
+        algorithm: Algorithm::Zstd,
+        level: 3,
+        prefer_speed: false,
+        min_size_threshold: 128,
+        skip_already_compressed: false, // Force re-compression attempt or wrapping
     };
 
-    let processed_bytes = processed_content.len() as u64;
-
-    // Emit processing complete (30%)
+    let compressed_data = compress_file_data(&content, &filename, &compression_settings)
+        .map_err(|e| AppError::Validation(format!("Compression failed: {}", e)))?;
+    
+    // Emit progress (30%)
     let _ = app.emit("upload-progress", UploadProgress {
         id: upload_id.clone(),
         bytes_sent: 0,
-        total_bytes: processed_bytes,
+        total_bytes,
         percent: 30,
     });
 
-    if processed_bytes > 50 * 1024 * 1024 {
-        return upload_lfs_internal(&app, &client.0, processed_content, &repo, &token, &safe_filename, &upload_id).await;
-    }
+    // 2. Mandatory Encryption
+    // We serialize the compressed data structure to preserve metadata (original size, algo)
+    let compressed_bytes = serde_json::to_vec(&compressed_data)
+        .map_err(|e| AppError::Validation(format!("Serialization failed: {}", e)))?;
 
-    // Emit encoding progress (50%)
+    let encryption_settings = EncryptionSettings {
+        enabled: true,
+        use_password: false,
+        use_keypair: true,
+        recipient_bundle: Some(public_bundle),
+    };
+
+    // Encrypt using hybrid scheme
+    let encrypted_file = encrypt_file_data(&compressed_bytes, &encryption_settings, None, None)
+        .map_err(|e| AppError::Validation(format!("Encryption failed: {}", e)))?;
+        
+    // Serialize final encrypted package
+    let final_payload = serde_json::to_vec(&encrypted_file)
+        .map_err(|e| AppError::Validation(format!("Final serialization failed: {}", e)))?;
+
+    let final_size = final_payload.len() as u64;
+
+    // Emit progress (60%)
     let _ = app.emit("upload-progress", UploadProgress {
         id: upload_id.clone(),
-        bytes_sent: processed_bytes / 2,
-        total_bytes: processed_bytes,
-        percent: 50,
+        bytes_sent: 0,
+        total_bytes: final_size,
+        percent: 60,
     });
 
-    let encoded = STANDARD.encode(&processed_content);
-    drop(processed_content);
+    if final_size > LFS_THRESHOLD_BYTES {
+        return upload_lfs_internal(&app, &client.0, final_payload, &repo, &token, &safe_filename, &upload_id).await;
+    }
+
+    let encoded = STANDARD.encode(&final_payload);
+    drop(content);
+    drop(compressed_data);
+    drop(compressed_bytes);
+    drop(encrypted_file);
+    drop(final_payload);
 
     let upload_path = format!("photos/{}", safe_filename);
     let url = format!("https://api.github.com/repos/{}/contents/{}", repo, upload_path);
 
     let body = serde_json::json!({
-        "message": format!("Upload {}", safe_filename),
+        "message": format!("Upload {} (secure)", safe_filename),
         "content": encoded
     });
 
@@ -407,8 +352,8 @@ pub async fn upload_photo_processed(
     // Emit complete
     let _ = app.emit("upload-progress", UploadProgress {
         id: upload_id.clone(),
-        bytes_sent: processed_bytes,
-        total_bytes: processed_bytes,
+        bytes_sent: final_size,
+        total_bytes: final_size,
         percent: 100,
     });
 
@@ -426,7 +371,8 @@ pub async fn upload_photo_processed(
     })
 }
 
-/// Process image: strip EXIF and/or compress
+// Removed deprecated upload_photo_processed
+#[allow(dead_code)]
 fn process_image(content: &[u8], strip_exif: bool, compress: bool, quality: u8) -> Result<Vec<u8>, AppError> {
     // Try to decode the image
     let img = image::load_from_memory(content)
@@ -755,10 +701,12 @@ pub async fn list_photos(
     client: State<'_, HttpClient>,
     repo: String,
     token: String,
+    folder: Option<String>,
 ) -> Result<Vec<PhotoItem>, AppError> {
     validate_repo(&repo)?;
-
-    let url = format!("https://api.github.com/repos/{}/contents/photos", repo);
+    
+    let folder_path = folder.unwrap_or_else(|| "photos".to_string());
+    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, folder_path);
 
     let res = client
         .0
@@ -1704,4 +1652,193 @@ pub async fn rename_album(
     }
 
     Ok(moved_count)
+}
+
+/// Downloads and decrypts a secure photo
+#[tauri::command]
+pub async fn download_secure_photo(
+    client: State<'_, HttpClient>,
+    remote_path: String,
+    repo: String,
+    token: String,
+    keypair_bytes: Vec<u8>,
+) -> Result<Vec<u8>, AppError> {
+    validate_repo(&repo)?;
+
+    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, remote_path);
+    
+    // 1. Get download URL (or content directly if small enough? No, better use download_url)
+    let res = client
+        .0
+        .get(&url)
+        .header("Authorization", format!("Bearer {}", token))
+        .header("User-Agent", "vortex-image")
+        .header("Accept", "application/vnd.github+json")
+        .send()
+        .await?;
+
+    if !res.status().is_success() {
+        return Err(AppError::Api(format!("Failed to get file info: {}", res.status())));
+    }
+
+    let json: serde_json::Value = res.json().await?;
+    let download_url = json["download_url"]
+        .as_str()
+        .ok_or_else(|| AppError::Api("No download URL found".into()))?;
+
+    // 2. Download encrypted content
+    let content_res = client
+        .0
+        .get(download_url)
+        .header("User-Agent", "vortex-image")
+        .send()
+        .await?;
+
+    if !content_res.status().is_success() {
+        return Err(AppError::Api(format!("Failed to download file: {}", content_res.status())));
+    }
+
+    let encrypted_bytes = content_res.bytes().await?;
+
+    // 3. Deserialize EncryptedFileData
+    // Try to deserialize as JSON first. If it fails, maybe it's legacy unencrypted or different format.
+    // For "mandatory" system, we assume it's encrypted. If not, we could fail or fallback?
+    // User requested "mandatory", so we expect encrypted.
+    let encrypted_data: EncryptedFileData = serde_json::from_slice(&encrypted_bytes)
+        .map_err(|e| AppError::Validation(format!("Invalid encrypted file format: {}", e)))?;
+
+    // 4. Decrypt
+    // We get the compressed bytes (which is serialized CompressedFileData)
+    let compressed_bytes = crate::crypto::decrypt_file_data(
+        &encrypted_data, 
+        None, 
+        Some(&keypair_bytes)
+    ).map_err(|e| AppError::Validation(format!("Decryption failed: {}", e)))?;
+
+    // 5. Deserialize CompressedFileData
+    let compressed_file: crate::compress::CompressedFileData = serde_json::from_slice(&compressed_bytes)
+        .map_err(|e| AppError::Validation(format!("Invalid compressed file format: {}", e)))?;
+
+    // 6. Decompress
+    let final_image = crate::compress::decompress_file_data(&compressed_file)
+        .map_err(|e| AppError::Validation(format!("Decompression failed: {}", e)))?;
+
+    Ok(final_image)
+}
+
+// ============================================================================
+// Secure Messaging
+// ============================================================================
+
+/// Uploads a secure text message (note/log)
+#[tauri::command]
+pub async fn upload_secure_message(
+    client: State<'_, HttpClient>,
+    content: String,
+    repo: String,
+    token: String,
+    filename: String,
+    public_bundle: PublicBundle,
+) -> Result<UploadResult, AppError> {
+    validate_repo(&repo)?;
+    let safe_filename = sanitize_filename(&filename);
+
+    if safe_filename.is_empty() {
+        return Err(AppError::Validation("Invalid filename".into()));
+    }
+
+    // Use the hybrid encryption function directly
+    let encrypted_bytes = encrypt_hybrid(content.into_bytes(), public_bundle)
+        .await
+        .map_err(|e| AppError::Validation(format!("Encryption failed: {}", e)))?;
+
+    let encoded = STANDARD.encode(&encrypted_bytes);
+    
+    let upload_path = format!("messages/{}.msg", safe_filename);
+    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, upload_path);
+
+    let body = serde_json::json!({
+        "message": format!("Upload secure message {}", safe_filename),
+        "content": encoded
+    });
+
+    let res = client
+        .0
+        .put(&url)
+        .header("Authorization", format!("Bearer {}", token))
+        .header("User-Agent", "vortex-image")
+        .header("Accept", "application/vnd.github+json")
+        .json(&body)
+        .send()
+        .await?;
+
+    if !res.status().is_success() {
+        let status = res.status();
+        let err = res.text().await.unwrap_or_default();
+        return Err(AppError::Api(format!("Upload failed ({}): {}", status, err)));
+    }
+
+    let json: serde_json::Value = res.json().await?;
+
+    Ok(UploadResult {
+        url: json["content"]["html_url"].as_str().unwrap_or("").to_string(),
+        sha: json["content"]["sha"].as_str().unwrap_or("").to_string(),
+    })
+}
+
+/// Downloads and decrypts a secure message
+#[tauri::command]
+pub async fn download_secure_message(
+    client: State<'_, HttpClient>,
+    filename: String,
+    repo: String,
+    token: String,
+    keypair_bytes: Vec<u8>,
+) -> Result<String, AppError> {
+    validate_repo(&repo)?;
+    let safe_filename = sanitize_filename(&filename);
+    
+    // Support both with and without .msg extension in input
+    let remote_path = if safe_filename.ends_with(".msg") {
+        format!("messages/{}", safe_filename)
+    } else {
+        format!("messages/{}.msg", safe_filename)
+    };
+
+    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, remote_path);
+    
+    // 1. Get file content (assuming small enough for direct content API)
+    let res = client
+        .0
+        .get(&url)
+        .header("Authorization", format!("Bearer {}", token))
+        .header("User-Agent", "vortex-image")
+        .header("Accept", "application/vnd.github+json")
+        .send()
+        .await?;
+
+    if !res.status().is_success() {
+        return Err(AppError::Api(format!("Failed to get message: {}", res.status())));
+    }
+
+    let json: serde_json::Value = res.json().await?;
+    
+    // GitHub API returns content base64 encoded with newlines
+    let content_b64 = json["content"]
+        .as_str()
+        .ok_or_else(|| AppError::Api("No content found".into()))?
+        .replace('\n', "");
+
+    let encrypted_bytes = STANDARD.decode(&content_b64)
+        .map_err(|e| AppError::Validation(format!("Base64 decode failed: {}", e)))?;
+
+    // 2. Decrypt using the hybrid decryption function
+    let decrypted_bytes = decrypt_hybrid(encrypted_bytes, keypair_bytes)
+        .await
+        .map_err(|e| AppError::Validation(format!("Decryption failed: {}", e)))?;
+
+    let message = String::from_utf8(decrypted_bytes)
+        .map_err(|e| AppError::Validation(format!("Invalid UTF-8 message: {}", e)))?;
+
+    Ok(message)
 }

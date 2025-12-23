@@ -1,0 +1,215 @@
+<template>
+  <div 
+    v-if="tags.length > 0" 
+
+    class="floating-tag-panel card-glass"
+    :style="{ left: `${pos.x}px`, top: `${pos.y}px` }"
+  >
+    <div 
+      class="panel-header"
+      @mousedown="startDrag"
+    >
+      <span class="headline">Etiquetas</span>
+      <div class="drag-handle">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+      </div>
+    </div>
+    
+    <div class="tags-list">
+      <div v-for="tag in tags" :key="tag.id" class="tag-item">
+        <div class="tag-color" :style="{ backgroundColor: tag.color, boxShadow: `0 0 8px ${tag.color}` }"></div>
+        
+        <div v-if="editingId === tag.id" class="tag-edit">
+          <input 
+            ref="editInput"
+            v-model="editName"
+            @blur="saveEdit(tag)"
+            @keydown.enter="saveEdit(tag)"
+            class="edit-input"
+          />
+        </div>
+        <div v-else class="tag-name" @dblclick="startEdit(tag)">
+          {{ tag.name }}
+        </div>
+        
+        <button class="edit-btn" @click="startEdit(tag)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, nextTick } from 'vue'
+import type { Tag } from '../composables/useTags'
+
+defineProps<{
+  tags: Tag[]
+}>()
+
+const emit = defineEmits<{
+  updateTag: [id: string, name: string]
+}>()
+
+
+const editingId = ref<string | null>(null)
+const editName = ref('')
+const editInput = ref<HTMLInputElement[] | null>(null)
+
+// Dragging State
+const pos = ref({ x: window.innerWidth / 2 - 160, y: window.innerHeight / 2 - 200 })
+const isDragging = ref(false)
+const dragStart = ref({ x: 0, y: 0 })
+const initialPos = ref({ x: 0, y: 0 })
+
+function startDrag(e: MouseEvent) {
+  // Only drag from header
+  isDragging.value = true
+  dragStart.value = { x: e.clientX, y: e.clientY }
+  initialPos.value = { x: pos.value.x, y: pos.value.y }
+  
+  window.addEventListener('mousemove', onDrag)
+  window.addEventListener('mouseup', stopDrag)
+}
+
+function onDrag(e: MouseEvent) {
+  if (!isDragging.value) return
+  const dx = e.clientX - dragStart.value.x
+  const dy = e.clientY - dragStart.value.y
+  pos.value = {
+    x: initialPos.value.x + dx,
+    y: initialPos.value.y + dy
+  }
+}
+
+function stopDrag() {
+  isDragging.value = false
+  window.removeEventListener('mousemove', onDrag)
+  window.removeEventListener('mouseup', stopDrag)
+}
+
+function startEdit(tag: Tag) {
+  editingId.value = tag.id
+  editName.value = tag.name
+  nextTick(() => {
+    if (editInput.value && editInput.value[0]) {
+      editInput.value[0].focus()
+    }
+  })
+}
+
+function saveEdit(tag: Tag) {
+  if (editingId.value === tag.id && editName.value.trim()) {
+    emit('updateTag', tag.id, editName.value)
+  }
+  editingId.value = null
+}
+
+// onMounted hook removed as not needed
+</script>
+
+<style scoped>
+.floating-tag-panel {
+  position: fixed;
+  width: 320px;
+  max-height: 400px;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  padding: 16px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.1);
+  transition: opacity 0.2s;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  cursor: grab;
+}
+
+.panel-header:active {
+  cursor: grabbing;
+}
+
+.drag-handle {
+  opacity: 0.5;
+}
+
+/* ... existing list styles ... */
+
+.drag-handle {
+  cursor: grab;
+  opacity: 0.5;
+}
+
+.tags-list {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tag-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.tag-item:hover {
+  background-color: rgba(255,255,255,0.05);
+}
+
+.tag-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.2);
+}
+
+.tag-name {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: text;
+}
+
+.tag-edit {
+  flex: 1;
+}
+
+.edit-input {
+  width: 100%;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 4px;
+  padding: 2px 6px;
+  color: white;
+  font-size: 15px;
+}
+
+.edit-btn {
+  padding: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+}
+
+.tag-item:hover .edit-btn {
+  opacity: 1;
+}
+
+.edit-btn:hover {
+  color: white;
+}
+</style>

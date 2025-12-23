@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { load } from '@tauri-apps/plugin-store'
 import { useRepoManager } from '../composables/useRepoManager'
 import { useGitHubAuth } from '../composables/useGitHubAuth'
+import ConfirmDialog from './ui/ConfirmDialog.vue'
 
 const emit = defineEmits<{ close: [] }>()
 
@@ -241,27 +242,15 @@ onMounted(loadSettings)
     </div>
 
     <!-- Confirm Public Dialog -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="showConfirmPublic" class="confirm-overlay" @click.self="cancelPublicChange">
-          <div class="confirm-dialog">
-            <div class="confirm-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                <line x1="12" y1="9" x2="12" y2="13"/>
-                <line x1="12" y1="17" x2="12.01" y2="17"/>
-              </svg>
-            </div>
-            <h3>Tornar repositório público?</h3>
-            <p>Suas fotos ficarão visíveis para qualquer pessoa na internet. Esta ação pode ser revertida.</p>
-            <div class="confirm-actions">
-              <button class="btn-cancel" @click="cancelPublicChange">Cancelar</button>
-              <button class="btn-danger" @click="confirmPublicChange">Tornar Público</button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
+    <ConfirmDialog
+      v-if="showConfirmPublic"
+      title="Tornar repositório público?"
+      message="Suas fotos ficarão visíveis para qualquer pessoa na internet. Esta ação pode ser revertida."
+      confirm-text="Tornar Público"
+      variant="warning"
+      @confirm="confirmPublicChange"
+      @cancel="cancelPublicChange"
+    />
   </div>
 </template>
 
@@ -508,48 +497,6 @@ onMounted(loadSettings)
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
-
-/* Confirm Dialog */
-.confirm-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 300;
-}
-.confirm-dialog {
-  width: 100%;
-  max-width: 400px;
-  background: #1a1a1c;
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 1rem;
-  padding: 1.5rem;
-  text-align: center;
-}
-.confirm-icon {
-  width: 3rem;
-  height: 3rem;
-  margin: 0 auto 1rem;
-  color: #f59e0b;
-}
-.confirm-icon svg { width: 100%; height: 100%; }
-.confirm-dialog h3 { font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; }
-.confirm-dialog p { font-size: 0.875rem; color: #71717a; margin-bottom: 1.5rem; }
-.confirm-actions { display: flex; gap: 0.75rem; justify-content: center; }
-.btn-danger {
-  padding: 0.625rem 1.25rem;
-  background: #ef4444;
-  border: none;
-  color: white;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border-radius: 0.5rem;
-  cursor: pointer;
-}
-.btn-danger:hover { background: #dc2626; }
 
 /* Transitions */
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s; }

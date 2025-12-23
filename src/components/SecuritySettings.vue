@@ -4,6 +4,7 @@ import { useCrypto } from '../composables/useCrypto'
 import { useCompression } from '../composables/useCompression'
 import { usePipeline } from '../composables/usePipeline'
 import PipelineEditor from './PipelineEditor.vue'
+import ConfirmDialog from './ui/ConfirmDialog.vue'
 
 const emit = defineEmits<{
   (e: 'close'): void
@@ -36,6 +37,7 @@ const {
 
 const activeTab = ref<'keypair' | 'compression' | 'pipeline'>('keypair')
 const showPipelineEditor = ref(false)
+const showDeleteConfirm = ref(false)
 
 // Keypair management
 const keypairPassword = ref('')
@@ -109,11 +111,8 @@ function handleLockKeypair() {
   success.value = 'Keypair locked'
 }
 
-async function handleDeleteKeypair() {
-  if (!confirm('Are you sure you want to delete your keypair? This cannot be undone!')) {
-    return
-  }
-  
+async function confirmDeleteKeypair() {
+  showDeleteConfirm.value = false
   await deleteKeypair()
   success.value = 'Keypair deleted'
 }
@@ -131,11 +130,16 @@ function formatBytes(arr: number[]): string {
 </script>
 
 <template>
-  <div class="security-settings">
-    <div class="settings-header">
-      <h2>🔐 Security & Processing</h2>
-      <button class="close-btn" @click="emit('close')">✕</button>
-    </div>
+  <div class="security-overlay" @click.self="emit('close')">
+    <div class="security-settings">
+      <div class="settings-header">
+        <h2>🔐 Security & Processing</h2>
+        <button class="close-btn" @click="emit('close')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
 
     <div class="settings-tabs">
       <button 
@@ -241,7 +245,7 @@ function formatBytes(arr: number[]): string {
               </button>
               <button 
                 class="danger-btn"
-                @click="handleDeleteKeypair"
+                @click="showDeleteConfirm = true"
               >
                 🗑️ Delete Keypair
               </button>
@@ -280,7 +284,7 @@ function formatBytes(arr: number[]): string {
               <button class="secondary-btn" @click="handleLockKeypair">
                 🔒 Lock Keypair
               </button>
-              <button class="danger-btn" @click="handleDeleteKeypair">
+              <button class="danger-btn" @click="showDeleteConfirm = true">
                 🗑️ Delete Keypair
               </button>
             </div>
@@ -361,12 +365,39 @@ function formatBytes(arr: number[]): string {
         @select="showPipelineEditor = false"
       />
     </div>
+
+    <!-- Delete Keypair Confirm -->
+    <ConfirmDialog
+      v-if="showDeleteConfirm"
+      title="Delete Keypair?"
+      message="This action cannot be undone. Your encrypted data will become inaccessible."
+      confirm-text="Delete"
+      variant="danger"
+      @confirm="confirmDeleteKeypair"
+      @cancel="showDeleteConfirm = false"
+    />
+    </div>
   </div>
 </template>
 
 <style scoped>
+.security-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+}
+
 .security-settings {
+  width: 100%;
+  max-width: 600px;
   background: var(--bg-secondary, #1a1a2e);
+  border: 1px solid var(--border-color, #333);
   border-radius: 12px;
   overflow: hidden;
   max-height: 85vh;
@@ -388,15 +419,27 @@ function formatBytes(arr: number[]): string {
 }
 
 .close-btn {
-  background: none;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
   border: none;
-  font-size: 1.2rem;
+  color: var(--text-secondary, #a1a1aa);
   cursor: pointer;
-  opacity: 0.7;
+  border-radius: 6px;
+  transition: all 0.2s;
 }
 
 .close-btn:hover {
-  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary, #fafafa);
+}
+
+.close-btn svg {
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 .settings-tabs {

@@ -1,195 +1,93 @@
-import { ref, computed } from 'vue'
-import { load } from '@tauri-apps/plugin-store'
+import { ref, computed, watch } from 'vue'
 
-export interface ColorTagDefinition {
+export interface ColorTag {
   id: string
-  color: string
   name: string
+  color: string
 }
 
-export interface TaggedItem {
-  itemId: string
-  tagId: string
-}
+export type ColorTagDefinition = ColorTag
 
-// Predefined colors (8+ as per requirements)
-export const PREDEFINED_COLORS: ColorTagDefinition[] = [
-  { id: 'red', color: '#ef4444', name: 'Vermelho' },
-  { id: 'orange', color: '#f97316', name: 'Laranja' },
-  { id: 'yellow', color: '#eab308', name: 'Amarelo' },
-  { id: 'green', color: '#22c55e', name: 'Verde' },
-  { id: 'blue', color: '#3b82f6', name: 'Azul' },
-  { id: 'purple', color: '#a855f7', name: 'Roxo' },
-  { id: 'pink', color: '#ec4899', name: 'Rosa' },
-  { id: 'gray', color: '#6b7280', name: 'Cinza' },
-  { id: 'cyan', color: '#06b6d4', name: 'Ciano' },
-  { id: 'lime', color: '#84cc16', name: 'Lima' },
+export const PREDEFINED_COLORS: ColorTag[] = [
+  { id: 'red', name: 'Vermelho', color: '#ef4444' },
+  { id: 'orange', name: 'Laranja', color: '#f97316' },
+  { id: 'yellow', name: 'Amarelo', color: '#eab308' },
+  { id: 'green', name: 'Verde', color: '#22c55e' },
+  { id: 'blue', name: 'Azul', color: '#3b82f6' },
+  { id: 'purple', name: 'Roxo', color: '#a855f7' },
+  { id: 'pink', name: 'Rosa', color: '#ec4899' },
+  { id: 'gray', name: 'Cinza', color: '#6b7280' },
 ]
 
-const tags = ref<ColorTagDefinition[]>([...PREDEFINED_COLORS])
-const taggedItems = ref<TaggedItem[]>([])
-const customTagNames = ref<Record<string, string>>({})
-let initialized = false
+export const COLORS = PREDEFINED_COLORS
 
-/**
- * Applies a tag to multiple items
- */
-export function applyTagToItems(
-  itemIds: string[],
-  tagId: string,
-  currentTaggedItems: TaggedItem[]
-): TaggedItem[] {
-  const result = [...currentTaggedItems]
+// Global state
+const photoTags = ref<Record<string, string>>({})
+const isLoaded = ref(false)
+let store: any = null
 
-  for (const itemId of itemIds) {
-    // Check if item already has this tag
-    const existingIndex = result.findIndex((t) => t.itemId === itemId && t.tagId === tagId)
-    if (existingIndex === -1) {
-      result.push({ itemId, tagId })
+export function useColorTagStore() {
+  const tagCounts = computed(() => {
+    const counts: Record<string, number> = {}
+    for (const colorId of Object.values(photoTags.value)) {
+      counts[colorId] = (counts[colorId] || 0) + 1
     }
-  }
+    return counts
+  })
 
-  return result
-}
+  const usedTags = computed(() => {
+    const usedIds = new Set(Object.values(photoTags.value))
+    return COLORS.filter(c => usedIds.has(c.id))
+  })
 
-/**
- * Removes a tag from an item
- */
-export function removeTagFromItem(
-  itemId: string,
-  tagId: string,
-  currentTaggedItems: TaggedItem[]
-): TaggedItem[] {
-  return currentTaggedItems.filter((t) => !(t.itemId === itemId && t.tagId === tagId))
-}
-
-/**
- * Gets all items with a specific tag
- */
-export function getItemsWithTag(tagId: string, taggedItemsList: TaggedItem[]): string[] {
-  return taggedItemsList.filter((t) => t.tagId === tagId).map((t) => t.itemId)
-}
-
-/**
- * Gets all tags for a specific item
- */
-export function getTagsForItem(itemId: string, taggedItemsList: TaggedItem[]): string[] {
-  return taggedItemsList.filter((t) => t.itemId === itemId).map((t) => t.tagId)
-}
-
-/**
- * Counts items per tag
- */
-export function countItemsPerTag(taggedItemsList: TaggedItem[]): Record<string, number> {
-  const counts: Record<string, number> = {}
-  for (const item of taggedItemsList) {
-    counts[item.tagId] = (counts[item.tagId] || 0) + 1
-  }
-  return counts
-}
-
-/**
- * Gets tags that are actually in use (have items)
- */
-export function getUsedTags(
-  allTags: ColorTagDefinition[],
-  taggedItemsList: TaggedItem[]
-): ColorTagDefinition[] {
-  const usedTagIds = new Set(taggedItemsList.map((t) => t.tagId))
-  return allTags.filter((tag) => usedTagIds.has(tag.id))
-}
-
-export function useColorTags() {
-  const usedTags = computed(() => getUsedTags(tags.value, taggedItems.value))
-  const tagCounts = computed(() => countItemsPerTag(taggedItems.value))
-
-  async function loadTags(): Promise<void> {
-    if (initialized) return
-    try {
-      const store = await load('settings.json')
-      const savedTaggedItems = await store.get<TaggedItem[]>('taggedItems')
-      const savedCustomNames = await store.get<Record<string, string>>('customTagNames')
-
-      if (savedTaggedItems && Array.isArray(savedTaggedItems)) {
-        taggedItems.value = savedTaggedItems
-      }
-      if (savedCustomNames && typeof savedCustomNames === 'object') {
-        customTagNames.value = savedCustomNames
-        // Apply custom names to tags
-        for (const tag of tags.value) {
-          if (savedCustomNames[tag.id]) {
-            tag.name = savedCustomNames[tag.id]
-          }
-        }
-      }
-      initialized = true
-    } catch {
-      // Use defaults on error
-    }
-  }
-
-  async function saveTags(): Promise<void> {
-    try {
-      const store = await load('settings.json')
-      await store.set('taggedItems', taggedItems.value)
-      await store.set('customTagNames', customTagNames.value)
+  watch(photoTags, async () => {
+    if (isLoaded.value && store) {
+      await store.set('photoTags', photoTags.value)
       await store.save()
-    } catch {
-      // Silent fail
     }
-  }
+  }, { deep: true })
 
-  function tagItems(itemIds: string[], tagId: string): void {
-    taggedItems.value = applyTagToItems(itemIds, tagId, taggedItems.value)
-    saveTags()
-  }
-
-  function removeTag(itemId: string, tagId: string): void {
-    taggedItems.value = removeTagFromItem(itemId, tagId, taggedItems.value)
-    saveTags()
-  }
-
-  function getItemTags(itemId: string): ColorTagDefinition[] {
-    const tagIds = getTagsForItem(itemId, taggedItems.value)
-    return tags.value.filter((t) => tagIds.includes(t.id))
-  }
-
-  function getItemsByTag(tagId: string): string[] {
-    return getItemsWithTag(tagId, taggedItems.value)
-  }
-
-  function renameTag(tagId: string, newName: string): void {
-    const tag = tags.value.find((t) => t.id === tagId)
-    if (tag) {
-      tag.name = newName
-      customTagNames.value[tagId] = newName
-      saveTags()
+  async function init() {
+    if (isLoaded.value) return
+    
+    try {
+      const { Store } = await import('@tauri-apps/plugin-store')
+      store = await Store.load('color-tags.json')
+      const saved = await store.get('photoTags') as Record<string, string> | null
+      if (saved) photoTags.value = saved
+    } catch (e) {
+      console.error('Failed to load color tags store:', e)
     }
+    isLoaded.value = true
   }
 
-  function getTagById(tagId: string): ColorTagDefinition | undefined {
-    return tags.value.find((t) => t.id === tagId)
-  }
-
-  function clearAllTags(): void {
-    taggedItems.value = []
-    saveTags()
-  }
+  const tagPhoto = (photoId: string, colorId: string) => { photoTags.value[photoId] = colorId }
+  const removeTag = (photoId: string) => { delete photoTags.value[photoId] }
+  const getPhotoTag = (photoId: string) => COLORS.find(c => c.id === photoTags.value[photoId]) || null
+  const getPhotosByTag = (tagId: string) => Object.entries(photoTags.value).filter(([, c]) => c === tagId).map(([id]) => id)
+  const clearAllTags = () => { photoTags.value = {} }
+  const renameTag = () => {} // No-op for predefined tags
+  const tagItems = (ids: string[], colorId: string) => ids.forEach(id => { photoTags.value[id] = colorId })
+  const getItemsByTag = getPhotosByTag
+  const loadTags = init
 
   return {
-    tags,
-    taggedItems,
-    usedTags,
+    photoTags,
+    isLoaded,
     tagCounts,
+    usedTags,
+    init,
+    loadTags,
+    tagPhoto,
     tagItems,
     removeTag,
-    getItemTags,
+    getPhotoTag,
+    getPhotosByTag,
     getItemsByTag,
-    renameTag,
-    getTagById,
-    loadTags,
-    saveTags,
     clearAllTags,
-    PREDEFINED_COLORS,
+    renameTag,
+    COLORS
   }
 }
+
+export const useColorTags = useColorTagStore

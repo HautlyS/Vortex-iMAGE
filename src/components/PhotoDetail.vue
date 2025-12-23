@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import SecureImage from './SecureImage.vue'
 import { useImageMetadata, type ImageMetadata } from '../composables/useImageMetadata'
 import { useFavorites } from '../composables/useFavorites'
 import { useColorTags, PREDEFINED_COLORS } from '../composables/useColorTags'
@@ -24,7 +25,7 @@ const emit = defineEmits<{
 
 const { extractMetadata, formatFileSize, formatDate, formatCoordinates, loading } = useImageMetadata()
 const { isFavorite, toggleFavorite } = useFavorites()
-const { getItemTags, tagItems } = useColorTags()
+const { getPhotoTag, tagItems } = useColorTags()
 
 const metadata = ref<ImageMetadata | null>(null)
 const showMetadata = ref(false)
@@ -33,7 +34,10 @@ const showColorPicker = ref(false)
 const currentIndex = computed(() => props.photos.findIndex(p => p.sha === props.photo.sha))
 const hasPrev = computed(() => currentIndex.value > 0)
 const hasNext = computed(() => currentIndex.value < props.photos.length - 1)
-const photoTags = computed(() => getItemTags(props.photo.sha))
+const photoTags = computed(() => {
+  const tag = getPhotoTag(props.photo.sha)
+  return tag ? [tag] : []
+})
 
 
 // Load metadata when photo changes
@@ -95,7 +99,10 @@ function handleKeydown(e: KeyboardEvent) {
 
 onMounted(() => {
   document.addEventListener('keydown', handleKeydown)
-  return () => document.removeEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeydown)
 })
 </script>
 
@@ -127,7 +134,7 @@ onMounted(() => {
 
     <!-- Image -->
     <div class="image-container">
-      <img :src="photo.url" :alt="photo.name" />
+      <SecureImage :src="photo.url" :alt="photo.name" />
     </div>
 
     <!-- Bottom Info Bar -->

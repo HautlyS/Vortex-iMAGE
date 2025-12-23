@@ -1,70 +1,84 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
 @import './mobile.css';
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   iMAGE 2026 - LIQUID GLASS DESIGN SYSTEM
-   Transparent, fluid, dynamic theming
+   iMAGE - iOS DESIGN SYSTEM (Apple App Store Style)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* ─── Surface RGB values for transparency ─── */
-  --surface-0-rgb: 8, 8, 12;
-  --surface-1-rgb: 14, 14, 20;
-  --surface-2-rgb: 22, 22, 32;
-  --surface-3-rgb: 32, 32, 44;
-  --surface-4-rgb: 44, 44, 58;
+  /* ─── iOS System Colors ─── */
+  --systemRed: #ff3b30;
+  --systemOrange: #ff9500;
+  --systemYellow: #ffcc00;
+  --systemGreen: #28cd41;
+  --systemMint: #00c7be;
+  --systemTeal: #59adc4;
+  --systemCyan: #55bef0;
+  --systemBlue: #007aff;
+  --systemIndigo: #5856d6;
+  --systemPurple: #af52de;
+  --systemPink: #ff2d55;
+  --systemBrown: #a2845e;
+  --systemGray: #8e8e93;
   
-  /* ─── Core Surfaces (with transparency) ─── */
-  --void: #000000;
-  --surface-0: rgba(var(--surface-0-rgb), var(--glass-opacity, 0.7));
-  --surface-1: rgba(var(--surface-1-rgb), var(--glass-opacity, 0.7));
-  --surface-2: rgba(var(--surface-2-rgb), var(--glass-opacity, 0.75));
-  --surface-3: rgba(var(--surface-3-rgb), var(--glass-opacity, 0.8));
-  --surface-4: rgba(var(--surface-4-rgb), var(--glass-opacity, 0.85));
+  /* ─── Primary Colors (Light Mode Base) ─── */
+  --systemPrimary: rgba(0, 0, 0, 0.85);
+  --systemPrimary-onLight: rgba(0, 0, 0, 0.85);
+  --systemPrimary-onDark: rgba(255, 255, 255, 0.85);
+  --systemSecondary: rgba(0, 0, 0, 0.5);
+  --systemSecondary-onLight: rgba(0, 0, 0, 0.5);
+  --systemSecondary-onDark: rgba(255, 255, 255, 0.55);
+  --systemTertiary: rgba(0, 0, 0, 0.25);
+  --systemQuaternary: rgba(0, 0, 0, 0.1);
+  --systemQuinary: rgba(0, 0, 0, 0.05);
   
-  /* ─── Text ─── */
-  --text-primary: #ffffff;
-  --text-secondary: #b0b0c0;
-  --text-tertiary: #808090;
-  --text-muted: #606070;
-  --text-ghost: #404050;
+  /* ─── Gray Scale ─── */
+  --systemGray2: #aeaeb2;
+  --systemGray3: #c7c7cc;
+  --systemGray4: #d1d1d6;
+  --systemGray5: #e5e5ea;
+  --systemGray6: #f2f2f7;
   
-  /* ─── Dynamic Accent (set by theme) ─── */
-  --accent-color: #00f0ff;
-  --accent-secondary: #b026ff;
-  --accent-rgb: 0, 240, 255;
-  --accent-secondary-rgb: 176, 38, 255;
-  --accent-glow: rgba(var(--accent-rgb), 0.5);
-  --accent-light: rgba(var(--accent-rgb), 0.1);
-  --accent-medium: rgba(var(--accent-rgb), 0.2);
-  --accent-strong: rgba(var(--accent-rgb), 0.35);
+  /* ─── Key Color (Accent) ─── */
+  --keyColor: #007aff;
+  --keyColor-rgb: 0, 122, 255;
   
-  /* ─── Semantic ─── */
-  --success: #39ff14;
-  --success-rgb: 57, 255, 20;
-  --warning: #ffd700;
-  --warning-rgb: 255, 215, 0;
-  --error: #ff1744;
-  --error-rgb: 255, 23, 68;
+  /* ─── Backgrounds ─── */
+  --pageBG: #ffffff;
+  --pageBg: #f5f5f7;
+  --pageBg-rgb: 245, 245, 247;
+  --shelfBG: rgba(0, 0, 0, 0.05);
+  --footerBg: #f2f2f2;
+  --genericJoeColor: #ebebeb;
   
-  /* ─── Borders ─── */
-  --border-subtle: rgba(255, 255, 255, 0.04);
-  --border-default: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.15);
-  --border-accent: rgba(var(--accent-rgb), 0.4);
+  /* ─── Materials ─── */
+  --systemStandardThinMaterialSover: rgba(245, 245, 245, 0.48);
+  --systemStandardMediumMaterialSover: rgba(245, 245, 245, 0.6);
+  --systemStandardThickMaterialSover: rgba(245, 245, 245, 0.72);
+  --systemStandardUltrathickMaterialSover: rgba(245, 245, 245, 0.84);
+  
+  /* ─── Dividers ─── */
+  --labelDivider: rgba(0, 0, 0, 0.15);
+  --defaultLine: var(--systemGray4);
   
   /* ─── Shadows ─── */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
-  --shadow-glow: 0 0 30px var(--accent-glow);
+  --shadow-small: 0 3px 9px rgba(0, 0, 0, 0.08);
+  --shadow-medium: 0 3px 20px rgba(0, 0, 0, 0.08);
+  --dialogShadowColor: rgba(0, 0, 0, 0.25);
   
-  /* ─── Radius (dynamic) ─── */
-  --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
-  --radius-xl: 32px;
-  --radius-full: 9999px;
+  /* ─── Border Radius (iOS Style) ─── */
+  --global-border-radius-xsmall: 5px;
+  --global-border-radius-small: 9px;
+  --global-border-radius-medium: 12px;
+  --global-border-radius-large: 17px;
+  --global-border-radius-xlarge: 24px;
+  
+  /* ─── Typography ─── */
+  --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', 'Helvetica Neue', Arial, sans-serif;
+  
+  /* ─── Layout ─── */
+  --bodyGutter: 25px;
+  --moduleGutter: 30px;
   
   /* ─── Animation ─── */
   --duration-fast: 150ms;
@@ -73,28 +87,65 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   
-  /* ─── Glass ─── */
-  --glass-opacity: 0.7;
-  --glass-blur: 24px;
-  --glass-bg: rgba(var(--surface-1-rgb), var(--glass-opacity));
-  
-  /* ─── Typography ─── */
-  --font-family: 'Inter', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
-  --font-size-base: 14px;
-  --font-size-sm: 12px;
-  --font-size-lg: 16px;
-  
-  /* ─── Layout ─── */
-  --sidebar-width: 280px;
-  --header-height: 72px;
-  
-  /* ─── Glow ─── */
-  --glow-intensity: 70%;
+  color-scheme: light dark;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   BASE
+   DARK MODE (iOS Style)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --systemRed: #ff453a;
+    --systemOrange: #ff9f0a;
+    --systemYellow: #ffd60a;
+    --systemGreen: #32d74b;
+    --systemMint: #63e6e2;
+    --systemTeal: #6ac4dc;
+    --systemCyan: #5ac8f5;
+    --systemBlue: #0a84ff;
+    --systemIndigo: #5e5ce6;
+    --systemPurple: #bf5af2;
+    --systemPink: #ff375f;
+    
+    --systemPrimary: rgba(255, 255, 255, 0.85);
+    --systemSecondary: rgba(255, 255, 255, 0.55);
+    --systemTertiary: rgba(255, 255, 255, 0.25);
+    --systemQuaternary: rgba(255, 255, 255, 0.1);
+    --systemQuinary: rgba(255, 255, 255, 0.05);
+    
+    --systemGray2: #636366;
+    --systemGray3: #48484a;
+    --systemGray4: #3a3a3c;
+    --systemGray5: #2c2c2e;
+    --systemGray6: #1c1c1e;
+    
+    --keyColor: #0a84ff;
+    --keyColor-rgb: 10, 132, 255;
+    
+    --pageBG: #0a0a0a;
+    --pageBg: #000000;
+    --pageBg-rgb: 0, 0, 0;
+    --shelfBG: rgba(255, 255, 255, 0.08);
+    --footerBg: #0a0a0a;
+    --genericJoeColor: #1a1a1a;
+    
+    --systemStandardThinMaterialSover: rgba(28, 28, 30, 0.7);
+    --systemStandardMediumMaterialSover: rgba(28, 28, 30, 0.8);
+    --systemStandardThickMaterialSover: rgba(28, 28, 30, 0.88);
+    --systemStandardUltrathickMaterialSover: rgba(28, 28, 30, 0.94);
+    
+    --labelDivider: rgba(255, 255, 255, 0.1);
+    --defaultLine: var(--systemGray4);
+    
+    --shadow-small: 0 3px 9px rgba(0, 0, 0, 0.3);
+    --shadow-medium: 0 3px 20px rgba(0, 0, 0, 0.4);
+    --dialogShadowColor: rgba(0, 0, 0, 0.55);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE RESET
    ═══════════════════════════════════════════════════════════════════════════ */
 
 *, *::before, *::after {
@@ -104,8 +155,9 @@
 }
 
 html {
-  font-size: var(--font-size-base);
+  font-size: 17px;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 html, body, #app {
@@ -115,283 +167,385 @@ html, body, #app {
 }
 
 body {
-  background: var(--void);
-  color: var(--text-primary);
+  background: var(--pageBg);
+  color: var(--systemPrimary);
   font-family: var(--font-family);
-  line-height: 1.6;
+  line-height: 1.47;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   SCROLLBAR
+   SCROLLBAR (iOS Style - Thin)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: var(--radius-full);
+  background: var(--systemGray3);
+  border-radius: 4px;
 }
-::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+::-webkit-scrollbar-thumb:hover { background: var(--systemGray2); }
 
 ::selection {
-  background: rgba(var(--accent-rgb), 0.3);
-  color: var(--text-primary);
+  background: rgba(var(--keyColor-rgb), 0.3);
+  color: var(--systemPrimary);
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent-color);
-  outline-offset: 2px;
+  outline: 4px solid rgba(var(--keyColor-rgb), 0.6);
+  outline-offset: 1px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   AMBIENT GLOW
+   iOS BUTTONS
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.matrix-effects::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9999;
-  background: 
-    radial-gradient(ellipse 100% 60% at 50% -20%, rgba(var(--accent-rgb), 0.15) 0%, transparent 60%),
-    radial-gradient(ellipse 80% 50% at -10% 50%, rgba(var(--accent-secondary-rgb), 0.1) 0%, transparent 50%),
-    radial-gradient(ellipse 80% 50% at 110% 50%, rgba(var(--accent-rgb), 0.08) 0%, transparent 50%);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   GLASS MORPHISM
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-.glass-morphism .glass {
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur)) saturate(150%);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
-  border: 1px solid var(--border-default);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   GLOW EFFECTS
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-.glow-effects .glow-text {
-  text-shadow: 0 0 20px rgba(var(--accent-rgb), 0.6);
-}
-
-.glow-effects .glow-border {
-  box-shadow: 0 0 20px rgba(var(--accent-rgb), 0.3);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   BUTTONS
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-.btn {
+.btn,
+button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.875rem 1.5rem;
-  font-size: var(--font-size-sm);
-  font-weight: 600;
   font-family: inherit;
+  font-weight: 600;
   border: none;
-  border-radius: var(--radius-lg);
   cursor: pointer;
   transition: all var(--duration-normal) var(--ease-out);
+  -webkit-user-select: none;
+  user-select: none;
 }
 
-.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn:disabled,
+button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
 
+/* Get Button (iOS App Store Style) */
+.get-button,
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
-  color: #000;
-  box-shadow: 0 4px 20px rgba(var(--accent-rgb), 0.4);
+  border-radius: 1000px;
+  padding: 7px 16px;
+  font-size: 15px;
+  font-weight: 700;
+  background-color: rgba(var(--keyColor-rgb), 0.12);
+  color: var(--keyColor);
+  transition: background-color 0.14s ease-out;
 }
 
+.get-button:hover:not(:disabled),
 .btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(var(--accent-rgb), 0.5);
+  background-color: rgba(var(--keyColor-rgb), 0.18);
 }
 
+.get-button:active:not(:disabled),
+.btn-primary:active:not(:disabled) {
+  background-color: rgba(var(--keyColor-rgb), 0.08);
+}
+
+/* Blue Filled Button */
+.btn-filled,
+.get-button.blue {
+  background-color: var(--keyColor);
+  color: #ffffff;
+}
+
+.btn-filled:hover:not(:disabled),
+.get-button.blue:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--keyColor), #000 8%);
+}
+
+/* Secondary Button */
 .btn-secondary {
-  background: rgba(var(--surface-2-rgb), 0.8);
-  backdrop-filter: blur(12px);
-  color: var(--text-primary);
-  border: 1px solid var(--border-default);
+  background: var(--systemQuinary);
+  color: var(--systemPrimary);
+  border-radius: var(--global-border-radius-medium);
+  padding: 10px 20px;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: rgba(var(--surface-3-rgb), 0.9);
-  border-color: var(--border-strong);
+  background: var(--systemQuaternary);
 }
 
+/* Ghost Button */
 .btn-ghost {
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--keyColor);
+  padding: 8px 12px;
+  border-radius: var(--global-border-radius-small);
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: rgba(var(--accent-rgb), 0.1);
-  color: var(--accent-color);
+  background: rgba(var(--keyColor-rgb), 0.08);
+}
+
+/* Icon Button */
+.btn-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--systemQuinary);
+  color: var(--systemPrimary);
+  padding: 0;
+}
+
+.btn-icon:hover:not(:disabled) {
+  background: var(--systemQuaternary);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   INPUTS
+   iOS INPUTS
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.input {
+.input,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+textarea {
   width: 100%;
-  padding: 0.875rem 1.25rem;
-  font-size: var(--font-size-sm);
+  padding: 11px 16px;
+  font-size: 17px;
   font-family: inherit;
-  color: var(--text-primary);
-  background: rgba(var(--surface-1-rgb), 0.6);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  backdrop-filter: blur(8px);
+  color: var(--systemPrimary);
+  background: var(--systemGray6);
+  border: 1px solid transparent;
+  border-radius: var(--global-border-radius-medium);
   transition: all var(--duration-normal) var(--ease-out);
 }
 
-.input:hover {
-  border-color: var(--border-strong);
+.input:hover,
+input:hover {
+  background: var(--systemGray5);
 }
 
-.input:focus {
+.input:focus,
+input:focus,
+textarea:focus {
   outline: none;
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 4px rgba(var(--accent-rgb), 0.15);
+  border-color: var(--keyColor);
+  box-shadow: 0 0 0 4px rgba(var(--keyColor-rgb), 0.15);
 }
 
-.input::placeholder { color: var(--text-muted); }
+.input::placeholder,
+input::placeholder {
+  color: var(--systemTertiary);
+}
+
+/* Search Input (iOS Style) */
+.search-input {
+  background: var(--systemGray6);
+  border-radius: var(--global-border-radius-small);
+  padding-left: 36px;
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   CARDS
+   iOS CARDS
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .card {
-  background: rgba(var(--surface-1-rgb), var(--glass-opacity));
-  backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-xl);
+  background: var(--pageBG);
+  border-radius: var(--global-border-radius-large);
+  box-shadow: var(--shadow-small);
   transition: all var(--duration-normal) var(--ease-out);
 }
 
 .card:hover {
-  border-color: var(--border-strong);
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-medium);
+  transform: translateY(-2px);
+}
+
+/* Glass Card */
+.card-glass {
+  background: var(--systemStandardThickMaterialSover);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 0.5px solid var(--labelDivider);
+  border-radius: var(--global-border-radius-large);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   BADGES
+   iOS BADGES
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.375rem 0.875rem;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  border-radius: var(--radius-full);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 1000px;
 }
 
-.badge-accent {
-  background: rgba(var(--accent-rgb), 0.15);
-  color: var(--accent-color);
-  border: 1px solid rgba(var(--accent-rgb), 0.3);
+.badge-primary {
+  background: rgba(var(--keyColor-rgb), 0.12);
+  color: var(--keyColor);
 }
 
 .badge-success {
-  background: rgba(var(--success-rgb), 0.15);
-  color: var(--success);
+  background: rgba(40, 205, 65, 0.12);
+  color: var(--systemGreen);
 }
 
 .badge-error {
-  background: rgba(var(--error-rgb), 0.15);
-  color: var(--error);
+  background: rgba(255, 59, 48, 0.12);
+  color: var(--systemRed);
+}
+
+.badge-warning {
+  background: rgba(255, 149, 0, 0.12);
+  color: var(--systemOrange);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   TRANSITIONS
+   iOS SEGMENTED CONTROL
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.fade-enter-active, .fade-leave-active {
-  transition: opacity var(--duration-normal) var(--ease-out);
+.segmented-control {
+  display: inline-flex;
+  background: var(--systemGray6);
+  border-radius: var(--global-border-radius-small);
+  padding: 2px;
 }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
 
-.slide-enter-active, .slide-leave-active {
-  transition: all var(--duration-normal) var(--ease-out);
+.segmented-control button {
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--systemPrimary);
+  background: transparent;
+  border-radius: calc(var(--global-border-radius-small) - 2px);
+  transition: all 0.2s ease;
 }
-.slide-enter-from { opacity: 0; transform: translateY(-16px); }
-.slide-leave-to { opacity: 0; transform: translateY(8px); }
 
-.scale-enter-active, .scale-leave-active {
-  transition: all var(--duration-normal) var(--ease-spring);
-}
-.scale-enter-from, .scale-leave-to {
-  opacity: 0;
-  transform: scale(0.95);
+.segmented-control button.active {
+  background: var(--pageBG);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   HOVER EFFECTS
+   iOS LIST / TABLE
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.hover-lift {
-  transition: transform var(--duration-normal) var(--ease-out),
-              box-shadow var(--duration-normal) var(--ease-out);
+.list-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--pageBG);
+  border-bottom: 0.5px solid var(--labelDivider);
 }
 
-.hover-lift:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg), 0 0 40px rgba(var(--accent-rgb), 0.1);
+.list-item:last-child {
+  border-bottom: none;
 }
 
-.hover-glow {
-  position: relative;
-  transition: all var(--duration-normal) var(--ease-out);
+.list-group {
+  background: var(--pageBG);
+  border-radius: var(--global-border-radius-medium);
+  overflow: hidden;
 }
 
-.hover-glow::after {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: inherit;
-  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.3), transparent);
+/* ═══════════════════════════════════════════════════════════════════════════
+   iOS MODAL / DIALOG
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.modal-backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.modal {
+  background: var(--pageBG);
+  border-radius: var(--global-border-radius-large);
+  box-shadow: 
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 0 0 0.5px rgba(0, 0, 0, 0.2),
+    0 8px 40px var(--dialogShadowColor);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   iOS NAVIGATION
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.nav-bar {
+  background: var(--systemStandardThickMaterialSover);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 0.5px solid var(--labelDivider);
+}
+
+.nav-item {
+  padding: 8px 16px;
+  color: var(--systemSecondary);
+  font-weight: 500;
+  border-radius: var(--global-border-radius-small);
+  transition: all 0.2s ease;
+}
+
+.nav-item:hover {
+  background: var(--systemQuinary);
+  color: var(--systemPrimary);
+}
+
+.nav-item.active {
+  color: var(--keyColor);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TRANSITIONS (iOS Style)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
   opacity: 0;
-  z-index: -1;
-  filter: blur(16px);
-  transition: opacity var(--duration-normal);
 }
 
-.hover-glow:hover::after { opacity: 1; }
+.slide-enter-active,
+.slide-leave-active {
+  transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.slide-enter-from {
+  opacity: 0;
+  transform: translateY(20px);
+}
+.slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.scale-enter-active,
+.scale-leave-active {
+  transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.scale-enter-from,
+.scale-leave-to {
+  opacity: 0;
+  transform: scale(0.96);
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    UTILITY CLASSES
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.text-accent { color: var(--accent-color); }
-.text-primary { color: var(--text-primary); }
-.text-secondary { color: var(--text-secondary); }
-.text-muted { color: var(--text-muted); }
+.text-primary { color: var(--systemPrimary); }
+.text-secondary { color: var(--systemSecondary); }
+.text-tertiary { color: var(--systemTertiary); }
+.text-accent { color: var(--keyColor); }
 
-.bg-void { background: var(--void); }
-.bg-surface { background: var(--surface-1); }
+.bg-primary { background: var(--pageBG); }
+.bg-secondary { background: var(--pageBg); }
+.bg-tertiary { background: var(--systemGray6); }
 
-.rounded-sm { border-radius: var(--radius-sm); }
-.rounded-md { border-radius: var(--radius-md); }
-.rounded-lg { border-radius: var(--radius-lg); }
-.rounded-xl { border-radius: var(--radius-xl); }
-.rounded-full { border-radius: var(--radius-full); }
+.rounded-sm { border-radius: var(--global-border-radius-small); }
+.rounded-md { border-radius: var(--global-border-radius-medium); }
+.rounded-lg { border-radius: var(--global-border-radius-large); }
+.rounded-xl { border-radius: var(--global-border-radius-xlarge); }
+.rounded-full { border-radius: 1000px; }
 
-.shadow-sm { box-shadow: var(--shadow-sm); }
-.shadow-md { box-shadow: var(--shadow-md); }
-.shadow-lg { box-shadow: var(--shadow-lg); }
-.shadow-glow { box-shadow: var(--shadow-glow); }
+.shadow-sm { box-shadow: var(--shadow-small); }
+.shadow-md { box-shadow: var(--shadow-medium); }
 
 .truncate {
   overflow: hidden;
@@ -400,61 +554,893 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   ANIMATIONS
+   iOS TYPOGRAPHY
    ═══════════════════════════════════════════════════════════════════════════ */
 
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+.large-title {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.37px;
 }
 
-.animate-spin { animation: spin 1s linear infinite; }
-.animate-pulse { animation: pulse 2s ease-in-out infinite; }
+.title-1 {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+}
 
-.animate-shimmer {
-  background: linear-gradient(90deg, 
-    rgba(var(--surface-1-rgb), 0.5) 0%, 
-    rgba(var(--surface-2-rgb), 0.8) 50%, 
-    rgba(var(--surface-1-rgb), 0.5) 100%
+.title-2 {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.27;
+}
+
+.title-3 {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.headline {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.29;
+}
+
+.body {
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.47;
+}
+
+.callout {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.31;
+}
+
+.subhead {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.33;
+}
+
+.footnote {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.38;
+}
+
+.caption-1 {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.33;
+}
+
+.caption-2 {
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.18;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   iOS TOGGLE / SWITCH
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.toggle {
+  display: inline-block;
+  height: 24px;
+  width: 40px;
+  position: relative;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--systemGray3);
+  border-radius: 24px;
+  transition: 0.4s;
+}
+
+.toggle .slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 2px;
+  bottom: 2px;
+  background-color: #fff;
+  border-radius: 50%;
+  transition: 0.4s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.toggle input:checked + .slider {
+  background-color: var(--systemGreen);
+}
+
+.toggle input:checked + .slider:before {
+  transform: translateX(16px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   iOS LOADING SPINNER (Apple Style)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fade-in 0.1s forwards;
+  opacity: 0;
+}
+
+.pulse-spinner {
+  position: relative;
+  width: 20px;
+  height: 20px;
+}
+
+.pulse-spinner__container {
+  position: absolute;
+  width: 0;
+  transform: scale(0.09);
+}
+
+.pulse-spinner__nib {
+  position: absolute;
+  width: 66px;
+  height: 28px;
+  top: -12.5px;
+  background: transparent;
+  border-radius: 25% / 50%;
+  transform-origin: left center;
+}
+
+.pulse-spinner__nib:before {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--systemPrimary);
+  border-radius: 25% / 50%;
+  animation: spinner-line-fade 0.8s linear infinite;
+}
+
+.pulse-spinner__nib--1 { transform: rotate(0deg) translate(40px); }
+.pulse-spinner__nib--1:before { animation-delay: -0.8s; }
+.pulse-spinner__nib--2 { transform: rotate(45deg) translate(40px); }
+.pulse-spinner__nib--2:before { animation-delay: -0.7s; }
+.pulse-spinner__nib--3 { transform: rotate(90deg) translate(40px); }
+.pulse-spinner__nib--3:before { animation-delay: -0.6s; }
+.pulse-spinner__nib--4 { transform: rotate(135deg) translate(40px); }
+.pulse-spinner__nib--4:before { animation-delay: -0.5s; }
+.pulse-spinner__nib--5 { transform: rotate(180deg) translate(40px); }
+.pulse-spinner__nib--5:before { animation-delay: -0.4s; }
+.pulse-spinner__nib--6 { transform: rotate(225deg) translate(40px); }
+.pulse-spinner__nib--6:before { animation-delay: -0.3s; }
+.pulse-spinner__nib--7 { transform: rotate(270deg) translate(40px); }
+.pulse-spinner__nib--7:before { animation-delay: -0.2s; }
+.pulse-spinner__nib--8 { transform: rotate(315deg) translate(40px); }
+.pulse-spinner__nib--8:before { animation-delay: -0.1s; }
+
+@keyframes spinner-line-fade {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.15; }
+}
+
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* Simple circular spinner alternative */
+.spinner-circle {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--systemGray4);
+  border-top-color: var(--keyColor);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   iOS ARTWORK / IMAGE COMPONENT
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.artwork {
+  background-color: var(--genericJoeColor);
+  border-radius: inherit;
+  overflow: hidden;
+  position: relative;
+}
+
+.artwork::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 0.5px rgba(128, 128, 128, 0.2);
+  pointer-events: none;
+}
+
+.artwork img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.artwork--rounded {
+  border-radius: var(--global-border-radius-medium);
+}
+
+.artwork--app-icon {
+  border-radius: 22.5%;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   iOS APP ICON STYLES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.app-icon {
+  aspect-ratio: 1;
+  border-radius: 22.5%;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 0 0 0.5px var(--systemQuaternary);
+}
+
+.app-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.app-icon--small { width: 40px; }
+.app-icon--medium { width: 64px; }
+.app-icon--large { width: 128px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   iOS SHELF / HORIZONTAL SCROLL
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.shelf {
+  position: relative;
+  width: 100%;
+}
+
+.shelf__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--bodyGutter);
+  margin-bottom: 12px;
+}
+
+.shelf__title {
+  font: var(--title-2);
+  font-weight: 700;
+  color: var(--systemPrimary);
+}
+
+.shelf__see-all {
+  color: var(--keyColor);
+  font-weight: 500;
+  font-size: 17px;
+}
+
+.shelf__list {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  padding: 15px var(--bodyGutter);
+  margin: -15px 0;
+}
+
+.shelf__list::-webkit-scrollbar {
+  display: none;
+}
+
+.shelf__item {
+  flex-shrink: 0;
+  scroll-snap-align: start;
+}
+
+/* Shelf navigation arrows */
+.shelf__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 64px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.25s, opacity 0.25s;
+  z-index: 10;
+  opacity: 0;
+}
+
+.shelf:hover .shelf__nav:not(:disabled) {
+  opacity: 1;
+}
+
+.shelf__nav:hover {
+  background: var(--systemQuinary);
+}
+
+.shelf__nav:disabled {
+  opacity: 0;
+  cursor: default;
+}
+
+.shelf__nav--left { left: 6px; }
+.shelf__nav--right { right: 6px; transform: translateY(-50%) scaleX(-1); }
+
+.shelf__nav svg {
+  width: 8.5px;
+  height: 30.5px;
+  fill: var(--systemSecondary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   iOS LOCKUP (Card with Image + Text)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.lockup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lockup__artwork {
+  border-radius: var(--global-border-radius-medium);
+  overflow: hidden;
+  box-shadow: var(--shadow-small);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.lockup:hover .lockup__artwork {
+  transform: scale(1.02);
+  box-shadow: var(--shadow-medium);
+}
+
+.lockup__title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--systemPrimary);
+  line-height: 1.3;
+}
+
+.lockup__subtitle {
+  font-size: 13px;
+  color: var(--systemSecondary);
+  line-height: 1.3;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   iOS PROGRESS BAR
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.progress {
+  height: 4px;
+  background: var(--systemGray5);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress__bar {
+  height: 100%;
+  background: var(--keyColor);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.progress--thick {
+  height: 8px;
+  border-radius: 4px;
+}
+
+.progress--thick .progress__bar {
+  border-radius: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   iOS STAR RATING
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.star-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--systemOrange);
+}
+
+.star-rating svg {
+  width: 12px;
+  height: 12px;
+}
+
+.star-rating__count {
+  margin-left: 4px;
+  font-size: 13px;
+  color: var(--systemSecondary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   iOS SEARCH BAR
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.search-bar {
+  position: relative;
+  width: 100%;
+}
+
+.search-bar__icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--systemTertiary);
+  pointer-events: none;
+}
+
+.search-bar__input {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  font-size: 17px;
+  background: var(--systemGray6);
+  border: none;
+  border-radius: var(--global-border-radius-small);
+  color: var(--systemPrimary);
+  transition: background-color 0.2s;
+}
+
+.search-bar__input:focus {
+  outline: none;
+  background: var(--systemGray5);
+}
+
+.search-bar__input::placeholder {
+  color: var(--systemTertiary);
+}
+
+.search-bar__clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  background: var(--systemGray3);
+  color: var(--pageBG);
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.search-bar__input:not(:placeholder-shown) + .search-bar__clear {
+  display: flex;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   iOS DIVIDER
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.divider {
+  height: 0.5px;
+  background: var(--labelDivider);
+  margin: 0;
+}
+
+.divider--inset {
+  margin-left: 16px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   iOS ACTION SHEET
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.action-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 8px;
+  z-index: 1000;
+}
+
+.action-sheet__group {
+  background: var(--systemStandardUltrathickMaterialSover);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-radius: var(--global-border-radius-large);
+  overflow: hidden;
+}
+
+.action-sheet__group + .action-sheet__group {
+  margin-top: 8px;
+}
+
+.action-sheet__item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  font-size: 20px;
+  color: var(--keyColor);
+  background: transparent;
+  border: none;
+  width: 100%;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.action-sheet__item:not(:last-child) {
+  border-bottom: 0.5px solid var(--labelDivider);
+}
+
+.action-sheet__item:active {
+  background: var(--systemQuaternary);
+}
+
+.action-sheet__item--destructive {
+  color: var(--systemRed);
+}
+
+.action-sheet__item--cancel {
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   iOS TOOLTIP / POPOVER
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.tooltip {
+  position: absolute;
+  padding: 8px 12px;
+  background: var(--systemStandardThickMaterialSover);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: var(--global-border-radius-small);
+  font-size: 13px;
+  color: var(--systemPrimary);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.tooltip--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   iOS SKELETON LOADING
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.skeleton {
+  background: var(--genericJoeColor);
+  border-radius: var(--global-border-radius-small);
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
   );
-  background-size: 200% 100%;
-  animation: shimmer 2s ease-in-out infinite;
+  animation: skeleton-shimmer 1.5s infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   RESPONSIVE
+   iOS CONTEXT MENU
    ═══════════════════════════════════════════════════════════════════════════ */
 
-@media (max-width: 768px) {
-  :root {
-    --sidebar-width: 100%;
-    --header-height: 64px;
-  }
+.context-menu {
+  position: fixed;
+  min-width: 250px;
+  background: var(--systemStandardUltrathickMaterialSover);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-radius: var(--global-border-radius-medium);
+  box-shadow: 
+    0 0 0 0.5px rgba(0, 0, 0, 0.1),
+    0 10px 40px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  z-index: 1000;
+  padding: 6px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
+.context-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  font-size: 15px;
+  color: var(--systemPrimary);
+  background: transparent;
+  border: none;
+  border-radius: var(--global-border-radius-small);
+  width: 100%;
+  cursor: pointer;
+  transition: background-color 0.1s;
+  text-align: left;
 }
 
-.reduce-motion *, .reduce-motion *::before, .reduce-motion *::after {
-  animation-duration: 0.01ms !important;
-  transition-duration: 0.01ms !important;
+.context-menu__item:hover {
+  background: var(--keyColor);
+  color: #fff;
+}
+
+.context-menu__item--destructive {
+  color: var(--systemRed);
+}
+
+.context-menu__item--destructive:hover {
+  background: var(--systemRed);
+  color: #fff;
+}
+
+.context-menu__item svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.context-menu__divider {
+  height: 0.5px;
+  background: var(--labelDivider);
+  margin: 6px 0;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   FONT CLASSES
+   iOS PILL TABS
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.font-inter { --font-family: 'Inter', system-ui, sans-serif; }
-.font-system { --font-family: system-ui, -apple-system, sans-serif; }
-.font-mono { --font-family: 'JetBrains Mono', monospace; }
+.pill-tabs {
+  display: inline-flex;
+  gap: 8px;
+  padding: 4px;
+  background: var(--systemGray6);
+  border-radius: 1000px;
+}
 
-.size-compact { --font-size-base: 13px; --font-size-sm: 11px; }
-.size-normal { --font-size-base: 14px; --font-size-sm: 12px; }
-.size-large { --font-size-base: 16px; --font-size-sm: 14px; }
+.pill-tabs__item {
+  padding: 6px 16px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--systemSecondary);
+  background: transparent;
+  border: none;
+  border-radius: 1000px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pill-tabs__item:hover {
+  color: var(--systemPrimary);
+}
+
+.pill-tabs__item--active {
+  background: var(--pageBG);
+  color: var(--systemPrimary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   iOS CHIP / TAG
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--systemGray6);
+  color: var(--systemPrimary);
+  border-radius: 1000px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.chip:hover {
+  background: var(--systemGray5);
+}
+
+.chip--selected {
+  background: rgba(var(--keyColor-rgb), 0.15);
+  color: var(--keyColor);
+}
+
+.chip__icon {
+  width: 14px;
+  height: 14px;
+}
+
+.chip__remove {
+  width: 16px;
+  height: 16px;
+  margin-left: 2px;
+  margin-right: -4px;
+  border-radius: 50%;
+  background: var(--systemGray3);
+  color: var(--pageBG);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   iOS EMPTY STATE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.empty-state__icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  color: var(--systemTertiary);
+}
+
+.empty-state__title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--systemPrimary);
+  margin-bottom: 8px;
+}
+
+.empty-state__description {
+  font-size: 15px;
+  color: var(--systemSecondary);
+  max-width: 280px;
+  line-height: 1.4;
+}
+
+.empty-state__action {
+  margin-top: 20px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   iOS AVATAR
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.avatar {
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--genericJoeColor);
+  flex-shrink: 0;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar--xs { width: 24px; height: 24px; }
+.avatar--sm { width: 32px; height: 32px; }
+.avatar--md { width: 40px; height: 40px; }
+.avatar--lg { width: 56px; height: 56px; }
+.avatar--xl { width: 80px; height: 80px; }
+
+.avatar--bordered {
+  box-shadow: 0 0 0 2px var(--pageBG), 0 0 0 3px var(--systemGray4);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   iOS GRADIENT BACKGROUNDS (App Store Style)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.gradient-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.gradient-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 3% -50%, var(--gradient-top-left, transparent) 20%, transparent 70%),
+    radial-gradient(circle at -50% 120%, var(--gradient-bottom-left, transparent) 40%, transparent 80%),
+    radial-gradient(circle at 66% -175%, var(--gradient-top-right, transparent) 55%, transparent 80%),
+    radial-gradient(circle at 62% 100%, var(--gradient-bottom-right, transparent) 50%, transparent 100%);
+  animation: gradient-shift 16s infinite alternate-reverse;
+  animation-play-state: paused;
+}
+
+.gradient-bg:hover::before {
+  animation-play-state: running;
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-size: 100% 100%;
+  }
+  100% {
+    background-size: 120% 120%;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LEGACY COMPATIBILITY (for existing components)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Map old variables to new iOS system */
+:root {
+  --accent-color: var(--keyColor);
+  --accent-rgb: var(--keyColor-rgb);
+  --text-primary: var(--systemPrimary);
+  --text-secondary: var(--systemSecondary);
+  --text-tertiary: var(--systemTertiary);
+  --text-muted: var(--systemTertiary);
+  --surface-0: var(--pageBg);
+  --surface-1: var(--pageBG);
+  --surface-2: var(--systemGray6);
+  --surface-3: var(--systemGray5);
+  --border-default: var(--labelDivider);
+  --border-subtle: var(--systemQuinary);
+  --radius-sm: var(--global-border-radius-small);
+  --radius-md: var(--global-border-radius-medium);
+  --radius-lg: var(--global-border-radius-large);
+  --radius-xl: var(--global-border-radius-xlarge);
+  --radius-full: 1000px;
+  --void: var(--pageBg);
+  --glass-bg: var(--systemStandardThickMaterialSover);
+  --glass-blur: 20px;
+}

@@ -132,42 +132,47 @@ function getStatusClass(transfer: FileTransfer): string {
 </template>
 
 <style scoped>
+/* iOS-style Upload Toast */
 .upload-toast {
   position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  width: 320px;
-  background: rgba(17, 17, 19, 0.95);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.75rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  bottom: 24px;
+  right: 24px;
+  width: 340px;
+  background: var(--systemStandardUltrathickMaterialSover);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-radius: var(--global-border-radius-large);
+  box-shadow: 
+    0 0 0 0.5px rgba(0, 0, 0, 0.1),
+    0 10px 40px rgba(0, 0, 0, 0.25);
   z-index: 1000;
   overflow: hidden;
 }
 
 .upload-toast.has-failures {
-  border-color: rgba(239, 68, 68, 0.3);
+  box-shadow: 
+    0 0 0 0.5px rgba(255, 59, 48, 0.3),
+    0 10px 40px rgba(0, 0, 0, 0.25);
 }
 
 /* Header */
 .toast-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.875rem 1rem;
+  gap: 12px;
+  padding: 14px 16px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.15s;
 }
 
 .toast-header:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--systemQuinary);
 }
 
 .toast-icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  color: var(--accent-color, #6366f1);
+  width: 24px;
+  height: 24px;
+  color: var(--keyColor);
   flex-shrink: 0;
 }
 
@@ -177,7 +182,7 @@ function getStatusClass(transfer: FileTransfer): string {
 }
 
 .toast-icon .spinner {
-  animation: spin 1s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
@@ -186,7 +191,7 @@ function getStatusClass(transfer: FileTransfer): string {
 }
 
 .has-failures .toast-icon {
-  color: #ef4444;
+  color: var(--systemRed);
 }
 
 .toast-info {
@@ -195,60 +200,62 @@ function getStatusClass(transfer: FileTransfer): string {
 }
 
 .toast-summary {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: #fafafa;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--systemPrimary);
   display: block;
-  margin-bottom: 0.375rem;
+  margin-bottom: 6px;
 }
 
 .progress-bar {
-  height: 3px;
-  background: rgba(255, 255, 255, 0.1);
+  height: 4px;
+  background: var(--systemGray5);
   border-radius: 2px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: var(--accent-color, #6366f1);
+  background: var(--keyColor);
   border-radius: 2px;
   transition: width 0.3s ease;
 }
 
 .has-failures .progress-fill {
-  background: #ef4444;
+  background: var(--systemRed);
 }
 
 .toast-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .progress-text {
-  font-size: 0.75rem;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--accent-color, #818cf8);
-  min-width: 2.5rem;
+  color: var(--keyColor);
+  min-width: 40px;
   text-align: right;
 }
 
 .expand-btn {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: transparent;
   border: none;
-  color: #71717a;
+  color: var(--systemTertiary);
   cursor: pointer;
+  border-radius: 50%;
   transition: all 0.2s;
 }
 
 .expand-btn:hover {
-  color: #fafafa;
+  background: var(--systemQuinary);
+  color: var(--systemPrimary);
 }
 
 .expand-btn.rotated {
@@ -256,13 +263,13 @@ function getStatusClass(transfer: FileTransfer): string {
 }
 
 .expand-btn svg {
-  width: 1rem;
-  height: 1rem;
+  width: 16px;
+  height: 16px;
 }
 
 /* File List */
 .toast-files {
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 0.5px solid var(--labelDivider);
   max-height: 280px;
   overflow-y: auto;
 }
@@ -270,9 +277,9 @@ function getStatusClass(transfer: FileTransfer): string {
 .file-item {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
-  padding: 0.625rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 0.5px solid var(--labelDivider);
 }
 
 .file-item:last-child {
@@ -280,13 +287,13 @@ function getStatusClass(transfer: FileTransfer): string {
 }
 
 .file-item.status-failed {
-  background: rgba(239, 68, 68, 0.08);
+  background: rgba(255, 59, 48, 0.08);
 }
 
 .file-icon {
-  width: 1.25rem;
-  height: 1.25rem;
-  color: #71717a;
+  width: 20px;
+  height: 20px;
+  color: var(--systemTertiary);
   flex-shrink: 0;
 }
 
@@ -297,15 +304,15 @@ function getStatusClass(transfer: FileTransfer): string {
 
 .file-icon.status-uploading,
 .file-icon.status-downloading {
-  color: var(--accent-color, #818cf8);
+  color: var(--keyColor);
 }
 
 .file-icon.status-completed {
-  color: #22c55e;
+  color: var(--systemGreen);
 }
 
 .file-icon.status-failed {
-  color: #ef4444;
+  color: var(--systemRed);
 }
 
 .file-info {
@@ -314,18 +321,18 @@ function getStatusClass(transfer: FileTransfer): string {
 }
 
 .file-name {
-  font-size: 0.75rem;
-  color: #e4e4e7;
+  font-size: 13px;
+  color: var(--systemPrimary);
   display: block;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 0.25rem;
+  margin-bottom: 4px;
 }
 
 .file-error {
-  font-size: 0.6875rem;
-  color: #fca5a5;
+  font-size: 11px;
+  color: var(--systemRed);
   display: block;
   white-space: nowrap;
   overflow: hidden;
@@ -335,106 +342,107 @@ function getStatusClass(transfer: FileTransfer): string {
 .file-progress {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .file-progress-bar {
   flex: 1;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 1px;
+  height: 3px;
+  background: var(--systemGray5);
+  border-radius: 1.5px;
   overflow: hidden;
 }
 
 .file-progress-fill {
   height: 100%;
-  background: var(--accent-color, #6366f1);
-  border-radius: 1px;
+  background: var(--keyColor);
+  border-radius: 1.5px;
   transition: width 0.2s ease;
 }
 
 .file-percent {
-  font-size: 0.625rem;
-  color: #71717a;
-  min-width: 2rem;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--systemSecondary);
+  min-width: 32px;
   text-align: right;
 }
 
 .file-actions {
   display: flex;
-  gap: 0.25rem;
+  gap: 4px;
 }
 
 .retry-btn,
 .remove-btn {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
+  background: transparent;
   border: none;
-  border-radius: 0.25rem;
-  color: #71717a;
+  border-radius: 50%;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s;
+}
+
+.retry-btn {
+  color: var(--keyColor);
 }
 
 .retry-btn:hover {
-  background: rgba(var(--accent-rgb, 99, 102, 241), 0.2);
-  color: var(--accent-color, #818cf8);
+  background: rgba(var(--keyColor-rgb), 0.12);
+}
+
+.remove-btn {
+  color: var(--systemTertiary);
 }
 
 .remove-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+  background: var(--systemQuinary);
+  color: var(--systemPrimary);
 }
 
 .retry-btn svg,
 .remove-btn svg {
-  width: 0.875rem;
-  height: 0.875rem;
+  width: 14px;
+  height: 14px;
 }
 
+/* Clear All Button */
 .clear-all-btn {
   width: 100%;
-  padding: 0.625rem;
+  padding: 12px;
   background: transparent;
   border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  color: #71717a;
-  font-size: 0.75rem;
+  border-top: 0.5px solid var(--labelDivider);
+  color: var(--keyColor);
+  font-size: 15px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.15s;
 }
 
 .clear-all-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #fafafa;
+  background: var(--systemQuinary);
 }
 
 /* Transitions */
-.toast-slide-enter-active {
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
+.toast-slide-enter-active,
 .toast-slide-leave-active {
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-.toast-slide-enter-from {
+.toast-slide-enter-from,
+.toast-slide-leave-to {
   opacity: 0;
   transform: translateY(20px) scale(0.95);
 }
 
-.toast-slide-leave-to {
-  opacity: 0;
-  transform: translateY(10px) scale(0.98);
-}
-
 .expand-enter-active,
 .expand-leave-active {
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
   overflow: hidden;
 }
 

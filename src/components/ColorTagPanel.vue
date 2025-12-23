@@ -10,7 +10,7 @@ const emit = defineEmits<{
   (e: 'select', tagId: string | null): void
 }>()
 
-const { usedTags, tagCounts, renameTag } = useColorTags()
+const { usedTags, tagCounts } = useColorTags()
 
 const editingTagId = ref<string | null>(null)
 const editingName = ref('')
@@ -32,9 +32,7 @@ function startEditing(tag: ColorTagDefinition) {
 }
 
 function saveEdit() {
-  if (editingTagId.value && editingName.value.trim()) {
-    renameTag(editingTagId.value, editingName.value.trim())
-  }
+  // Tags use predefined names, editing is disabled
   editingTagId.value = null
   editingName.value = ''
 }
@@ -81,12 +79,17 @@ function handleKeydown(e: KeyboardEvent) {
           v-if="editingTagId !== tag.id"
           class="tag-item"
           :class="{ active: selectedTagId === tag.id }"
+          :style="selectedTagId === tag.id ? { 
+            '--tag-accent': tag.color,
+            backgroundColor: `${tag.color}15`,
+            borderColor: tag.color
+          } : {}"
           @click="handleSelect(tag.id)"
           @dblclick="startEditing(tag)"
           role="button"
           tabindex="0"
         >
-          <span class="tag-color" :style="{ backgroundColor: tag.color }" />
+          <span class="tag-color" :style="{ backgroundColor: tag.color, boxShadow: `0 0 8px ${tag.color}40` }" />
           <span class="tag-name">{{ tag.name }}</span>
           <span class="tag-count">{{ tag.count }}</span>
           <button class="edit-btn" @click.stop="startEditing(tag)" title="Renomear">
@@ -181,8 +184,10 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 .tag-item.active {
-  background: var(--accent-light);
+  background: var(--tag-accent, var(--accent-light));
   color: var(--accent-color);
+  border: 1px solid var(--tag-accent, var(--accent-color));
+  box-shadow: 0 0 12px rgba(var(--tag-accent-rgb, var(--accent-rgb)), 0.3);
 }
 
 .tag-color {

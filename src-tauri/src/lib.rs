@@ -2,12 +2,14 @@ mod github;
 mod compress;
 mod crypto;
 mod pipeline;
+mod security_verify;
 
 use github::{
-    get_user, list_photos, poll_oauth, start_oauth, upload_photo, upload_photo_processed,
+    get_user, list_photos, poll_oauth, start_oauth, upload_photo,
     create_repo, get_repo_info, update_repo_visibility, scan_folder, upload_folder_as_album,
     upload_folder_recursive, list_albums, download_photo, delete_photo, remove_local_file,
-    get_local_image_info, delete_album, rename_album, HttpClient
+    get_local_image_info, delete_album, rename_album, HttpClient, download_secure_photo,
+    upload_secure_message, download_secure_message
 };
 
 use compress::{
@@ -45,7 +47,6 @@ pub fn run() {
             get_user,
             // Photo Upload
             upload_photo,
-            upload_photo_processed,
             list_photos,
             // Repository Management
             create_repo,
@@ -60,6 +61,11 @@ pub fn run() {
             rename_album,
             // Photo Operations
             download_photo,
+            download_photo,
+            download_secure_photo,
+            upload_secure_message,
+            download_secure_message,
+            delete_photo,
             delete_photo,
             remove_local_file,
             get_local_image_info,

@@ -1,7 +1,8 @@
 import { ref, onUnmounted } from 'vue'
 
-// Check if running in dev mock mode
-export const isDevMode = import.meta.env.DEV && import.meta.env.VITE_MOCK_AUTH === 'true'
+// Check if running in dev mock mode OR in browser without Tauri
+const isTauriAvailable = typeof window !== 'undefined' && !!(window as any).__TAURI__
+export const isDevMode = import.meta.env.DEV && (import.meta.env.VITE_MOCK_AUTH === 'true' || !isTauriAvailable)
 
 interface DeviceCodeResponse {
   device_code: string
@@ -16,15 +17,29 @@ interface GitHubUser {
   avatar_url: string
 }
 
+export interface PublicBundle {
+  pq_encap: number[]
+  x25519: number[]
+  pq_verify: number[]
+  ed_verify: number[]
+}
+
+interface KeypairResult {
+  public_bundle: PublicBundle
+  keypair_bytes: number[]
+}
+
 const token = ref<string | null>(isDevMode ? 'mock-token-dev' : null)
 const user = ref<GitHubUser | null>(isDevMode ? { login: 'dev-user', avatar_url: 'https://avatars.githubusercontent.com/u/0?v=4' } : null)
 const repo = ref<string>(isDevMode ? 'dev-user/photos' : '')
+const publicBundle = ref<PublicBundle | null>(null)
+const keypairBytes = ref<number[] | null>(null)
 
 export function useGitHubAuth() {
   const loading = ref(false)
   const userCode = ref('')
   const error = ref<string | null>(null)
-  
+
   let pollInterval: ReturnType<typeof setInterval> | null = null
   let pollTimeout: ReturnType<typeof setTimeout> | null = null
 
@@ -51,6 +66,19 @@ export function useGitHubAuth() {
       const store = await load('settings.json')
       token.value = await store.get<string>('token') || null
       repo.value = await store.get<string>('repo') || ''
+
+      // Load keys
+      const storedKeypair = await store.get<number[]>('keypair_bytes')
+      const storedBundle = await store.get<PublicBundle>('public_bundle')
+
+      if (storedKeypair && storedBundle) {
+        keypairBytes.value = storedKeypair
+        publicBundle.value = storedBundle
+      } else if (token.value) {
+        // If logged in but no keys, generate them
+        await rotateKeys()
+      }
+
       if (token.value) {
         user.value = await invoke<GitHubUser>('get_user', { token: token.value })
       }
@@ -62,7 +90,26 @@ export function useGitHubAuth() {
         const store = await load('settings.json')
         await store.delete('token')
         await store.save()
-      } catch {}
+      } catch { }
+    }
+  }
+
+  async function rotateKeys() {
+    if (isDevMode) return
+    try {
+      const { invoke } = await import('@tauri-apps/api/core')
+      const { load } = await import('@tauri-apps/plugin-store')
+
+      const res = await invoke<KeypairResult>('generate_keypair')
+      keypairBytes.value = res.keypair_bytes
+      publicBundle.value = res.public_bundle
+
+      const store = await load('settings.json')
+      await store.set('keypair_bytes', res.keypair_bytes)
+      await store.set('public_bundle', res.public_bundle)
+      await store.save()
+    } catch (e) {
+      console.error('Failed to rotate keys:', e)
     }
   }
 
@@ -74,6 +121,12 @@ export function useGitHubAuth() {
       token.value = 'mock-token-dev'
       user.value = { login: 'dev-user', avatar_url: 'https://avatars.githubusercontent.com/u/0?v=4' }
       repo.value = 'dev-user/photos'
+      publicBundle.value = {
+        pq_encap: Array(1184).fill(0),
+        x25519: Array(32).fill(0),
+        pq_verify: Array(1312).fill(0),
+        ed_verify: Array(32).fill(0)
+      }
       loading.value = false
       return
     }
@@ -82,16 +135,16 @@ export function useGitHubAuth() {
     clearPolling()
     loading.value = true
     error.value = null
-    
+
     try {
       const { invoke } = await import('@tauri-apps/api/core')
       const { open } = await import('@tauri-apps/plugin-shell')
       const { load } = await import('@tauri-apps/plugin-store')
-      
+
       const res = await invoke<DeviceCodeResponse>('start_oauth')
       userCode.value = res.user_code
       await open(res.verification_uri)
-      
+
       pollTimeout = setTimeout(() => {
         clearPolling()
         loading.value = false
@@ -106,13 +159,18 @@ export function useGitHubAuth() {
             clearPolling()
             token.value = t
             user.value = await invoke<GitHubUser>('get_user', { token: t })
-            
+
+            // Generate keys on new login
+            if (!keypairBytes.value) {
+              await rotateKeys()
+            }
+
             try {
               const store = await load('settings.json')
               await store.set('token', t)
               await store.save()
-            } catch {}
-            
+            } catch { }
+
             loading.value = false
             userCode.value = ''
           }
@@ -133,7 +191,9 @@ export function useGitHubAuth() {
     clearPolling()
     token.value = null
     user.value = null
-    
+    // We don't necessarily clear keys on logout to allow decryption of existing local checks
+    // but strict security might require it. For now, keep them to avoid data loss feeling.
+
     if (isDevMode) return
 
     try {
@@ -141,12 +201,12 @@ export function useGitHubAuth() {
       const store = await load('settings.json')
       await store.delete('token')
       await store.save()
-    } catch {}
+    } catch { }
   }
 
   async function setRepo(r: string) {
     repo.value = r
-    
+
     if (isDevMode) return
 
     try {
@@ -154,13 +214,15 @@ export function useGitHubAuth() {
       const store = await load('settings.json')
       await store.set('repo', r)
       await store.save()
-    } catch {}
+    } catch { }
   }
 
   return {
     token,
     user,
     repo,
+    publicBundle,
+    keypairBytes,
     loading,
     userCode,
     error,

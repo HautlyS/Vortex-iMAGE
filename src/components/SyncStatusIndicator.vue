@@ -20,9 +20,33 @@ const tooltip = computed(() => getStatusTooltip(props.status))
 const actions = computed(() => getAvailableActions(props.status, props.photoId))
 const iconColor = computed(() => getStatusColor(props.status))
 
+const menuStyle = ref({ top: '0px', left: '0px' })
+const buttonRef = ref<HTMLElement | null>(null)
+
+function updatePosition() {
+  if (!buttonRef.value) return
+  const rect = buttonRef.value.getBoundingClientRect()
+  // Position above the button, centered horiziontally relative to button
+  let left = rect.left + (rect.width / 2)
+  
+  // Basic boundary check could be added here, but for now just lifting it out of overflow:hidden container
+  // Actually, let's put it *above* typically, so:
+  // top = rect.top - projectedHeight
+  
+  menuStyle.value = {
+    top: `${rect.top}px`, // We will use transform to translate Y up 100% + gap
+    left: `${left}px`
+  }
+}
+
 function toggleMenu(e: MouseEvent) {
   e.stopPropagation()
-  showMenu.value = !showMenu.value
+  if (!showMenu.value) {
+    updatePosition()
+    showMenu.value = true
+  } else {
+    showMenu.value = false
+  }
 }
 
 function handleAction(actionId: string) {
@@ -35,24 +59,36 @@ function closeMenu() {
 }
 
 // Close menu when clicking outside
+
+// Add/remove click listener
+import { onUnmounted, watch, nextTick } from 'vue'
+
+watch(showMenu, (isOpen) => {
+  if (isOpen) {
+    nextTick(updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+    window.addEventListener('resize', updatePosition)
+    setTimeout(() => document.addEventListener('click', handleClickOutside), 0)
+  } else {
+    window.removeEventListener('scroll', updatePosition, true)
+    window.removeEventListener('resize', updatePosition)
+    document.removeEventListener('click', handleClickOutside)
+  }
+})
+
 function handleClickOutside(e: MouseEvent) {
+  // Check if click is inside menu
+  const menuEl = document.querySelector('.sync-menu')
+  if (menuEl && menuEl.contains(e.target as Node)) return
+  
   if (menuRef.value && !menuRef.value.contains(e.target as Node)) {
     closeMenu()
   }
 }
 
-// Add/remove click listener
-import { onUnmounted, watch } from 'vue'
-
-watch(showMenu, (isOpen) => {
-  if (isOpen) {
-    setTimeout(() => document.addEventListener('click', handleClickOutside), 0)
-  } else {
-    document.removeEventListener('click', handleClickOutside)
-  }
-})
-
 onUnmounted(() => {
+  window.removeEventListener('scroll', updatePosition, true)
+  window.removeEventListener('resize', updatePosition)
   document.removeEventListener('click', handleClickOutside)
 })
 </script>
@@ -60,6 +96,7 @@ onUnmounted(() => {
 <template>
   <div class="sync-indicator" ref="menuRef">
     <!-- Status Icon Button -->
+    <div ref="buttonRef">
     <button 
       class="indicator-btn" 
       :title="tooltip"
@@ -82,47 +119,54 @@ onUnmounted(() => {
         <path d="M9 12l2 2 4-4" />
       </svg>
     </button>
+    </div>
 
     <!-- Action Menu -->
-    <Transition name="menu">
-      <div v-if="showMenu" class="sync-menu">
-        <div class="menu-header">
-          <span class="menu-title">Sync Status</span>
-          <span class="status-badge" :style="{ backgroundColor: iconColor }">
-            {{ status === 'local-only' ? 'Local' : status === 'remote-only' ? 'Remote' : 'Synced' }}
-          </span>
+    <Teleport to="body">
+      <Transition name="menu">
+        <div 
+          v-if="showMenu" 
+          class="sync-menu"
+          :style="menuStyle"
+        >
+          <div class="menu-header">
+            <span class="menu-title">Sync Status</span>
+            <span class="status-badge" :style="{ backgroundColor: iconColor }">
+              {{ status === 'local-only' ? 'Local' : status === 'remote-only' ? 'Remote' : 'Synced' }}
+            </span>
+          </div>
+          <p class="menu-description">{{ tooltip }}</p>
+          <div class="menu-divider" />
+          <div class="menu-actions">
+            <button 
+              v-for="action in actions" 
+              :key="action.id"
+              class="menu-action"
+              @click="handleAction(action.id)"
+            >
+              <!-- Upload Icon -->
+              <svg v-if="action.icon === 'upload'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17,8 12,3 7,8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              <!-- Download Icon -->
+              <svg v-else-if="action.icon === 'download'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7,10 12,15 17,10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              <!-- Trash Icon -->
+              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              </svg>
+              <span>{{ action.label }}</span>
+            </button>
+          </div>
         </div>
-        <p class="menu-description">{{ tooltip }}</p>
-        <div class="menu-divider" />
-        <div class="menu-actions">
-          <button 
-            v-for="action in actions" 
-            :key="action.id"
-            class="menu-action"
-            @click="handleAction(action.id)"
-          >
-            <!-- Upload Icon -->
-            <svg v-if="action.icon === 'upload'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="17,8 12,3 7,8" />
-              <line x1="12" y1="3" x2="12" y2="15" />
-            </svg>
-            <!-- Download Icon -->
-            <svg v-else-if="action.icon === 'download'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7,10 12,15 17,10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            <!-- Trash Icon -->
-            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-            </svg>
-            <span>{{ action.label }}</span>
-          </button>
-        </div>
-      </div>
-    </Transition>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -164,10 +208,11 @@ onUnmounted(() => {
 
 /* Menu */
 .sync-menu {
-  position: absolute;
-  bottom: calc(100% + 0.5rem);
-  left: 50%;
-  transform: translateX(-50%);
+  position: fixed;
+  top: 0;
+  left: 0;
+  margin-top: -10px; /* Gap */
+  transform: translate(-50%, -100%);
   width: 220px;
   background: rgba(17, 17, 19, 0.98);
   backdrop-filter: blur(16px);
