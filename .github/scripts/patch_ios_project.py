@@ -59,7 +59,9 @@ def patch_pbxproj(path):
         # FIX: Remove DEBUG=1 from GCC_PREPROCESSOR_DEFINITIONS passed to the script
         # This prevents tauri-cli from thinking it's a debug build even if configuration is Release.
         # Matches --gcc-preprocessor-definitions ... ${GCC_PREPROCESSOR_DEFINITIONS...} ...
-        (r'--gcc-preprocessor-definitions\s+(?:[\\"]*)(?:\$)?(?:\{)?GCC_PREPROCESSOR_DEFINITIONS.*?(?:\}|(?=\s)|(?=[\\"]))', '--gcc-preprocessor-definitions ""'),
+        # NOTE: We must use escaped quotes (\\"\\") because this string is inserted into a quoted shellScript in pbxproj.
+        (r'--gcc-preprocessor-definitions\s+(?:[\\"]*)(?:\$)?(?:\{)?GCC_PREPROCESSOR_DEFINITIONS.*?(?:\}|(?=\s)|(?=[\\"]))', r'--gcc-preprocessor-definitions \\"\\"'),
+
 
     ]
 
