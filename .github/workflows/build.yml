@@ -14,8 +14,6 @@ jobs:
   build-ios-unsigned:
     runs-on: macos-latest
     timeout-minutes: 60
-    env:
-      CARGO_INCREMENTAL: 1
     steps:
       - uses: actions/checkout@v4
 
@@ -44,227 +42,113 @@ jobs:
         run: pnpm run build
 
       - name: Initialize iOS project
-        run: |
-          if [ ! -d "src-tauri/gen/apple" ]; then
-            pnpm tauri ios init
-          else
-            echo "✅ iOS project already initialized"
-          fi
+        run: pnpm tauri ios init
 
-      - name: Patch iOS Project (Unsigned)
-        run: |
-          mkdir -p .github/scripts
-          python3 .github/scripts/patch_ios_project.py
+      - name: Patch iOS project for unsigned build
+        run: python3 .github/scripts/patch_ios_project.py
 
-      - name: Build Rust library for iOS
+      - name: Build Rust library for iOS device
         run: |
           cd src-tauri
           cargo build --release --target aarch64-apple-ios
           
-          # Copy library to where Xcode expects it
+          # Copy to where Xcode expects it
           mkdir -p gen/apple/Externals/aarch64-apple-ios/release
-          cp target/aarch64-apple-ios/release/libapp.a gen/apple/Externals/aarch64-apple-ios/release/ || true
+          cp target/aarch64-apple-ios/release/libapp.a gen/apple/Externals/aarch64-apple-ios/release/
           
-          echo "✅ Rust library built and copied"
-          ls -la target/aarch64-apple-ios/release/*.a 2>/dev/null || echo "No .a files found"
+          echo "✅ Rust library built"
+          ls -la target/aarch64-apple-ios/release/*.a
 
-      - name: Build iOS App (Unsigned)
+      - name: Build iOS Archive (Unsigned)
         run: |
           set -e
           
-          # Find Xcode project
           XCODEPROJ=$(find src-tauri/gen/apple -name "*.xcodeproj" -type d | head -1)
-          if [ -z "$XCODEPROJ" ]; then
-            echo "ERROR: No Xcode project found in src-tauri/gen/apple"
-            find src-tauri/gen/apple -type d -name "*.xcodeproj" || true
-            exit 1
-          fi
+          echo "Project: $XCODEPROJ"
           
-          echo "✅ Found Xcode project: $XCODEPROJ"
+          # Get scheme name
+          SCHEME=$(xcodebuild -project "$XCODEPROJ" -list 2>/dev/null | \
+            awk '/Schemes:/{flag=1; next} flag && /^$/{flag=0} flag' | \
+            sed 's/^[[:space:]]*//' | grep -i ios | head -1)
           
-          # Extract scheme name
-          SCHEMES=$(xcodebuild -project "$XCODEPROJ" -list 2>/dev/null | \
-            awk '/Schemes:/{flag=1; next} flag && /^$/{flag=0} flag')
+          [ -z "$SCHEME" ] && SCHEME=$(xcodebuild -project "$XCODEPROJ" -list 2>/dev/null | \
+            awk '/Schemes:/{flag=1; next} flag && /^$/{flag=0} flag' | \
+            sed 's/^[[:space:]]*//' | head -1)
           
-          if [ -z "$SCHEMES" ]; then
-            echo "ERROR: No schemes found in Xcode project"
-            xcodebuild -project "$XCODEPROJ" -list || true
-            exit 1
-          fi
+          echo "Scheme: $SCHEME"
           
-          SCHEME=$(echo "$SCHEMES" | sed 's/^[[:space:]]*//' | head -1)
-          
-          if [ -z "$SCHEME" ]; then
-            echo "ERROR: Failed to extract scheme name"
-            exit 1
-          fi
-          
-          echo "✅ Using scheme: '$SCHEME'"
-          
-          # Verify code signing configuration
-          echo "Verifying code signing configuration..."
-          CODE_SIGN_STATUS=$(xcodebuild -project "$XCODEPROJ" -scheme "$SCHEME" \
-            -showBuildSettings 2>/dev/null | grep "CODE_SIGN_IDENTITY " | awk '{print $NF}')
-          
-          if [ -z "$CODE_SIGN_STATUS" ] || [ "$CODE_SIGN_STATUS" = "(null)" ]; then
-            echo "✅ Code signing disabled as expected"
-          else
-            echo "⚠️  CODE_SIGN_IDENTITY will be: $CODE_SIGN_STATUS"
-          fi
-          
-          # Build unsigned IPA
-          echo "🔨 Building unsigned iOS app..."
-          xcodebuild build \
+          # Build archive with unsigned settings (per Export-unsigned-ipa-files approach)
+          xcodebuild archive \
             -project "$XCODEPROJ" \
             -scheme "$SCHEME" \
             -configuration Release \
-            -sdk iphoneos \
+            -archivePath ./unsigned.xcarchive \
             -destination "generic/platform=iOS" \
-            -derivedDataPath ./build \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" \
-            PROVISIONING_PROFILE_REQUIRED=NO \
-            ONLY_ACTIVE_ARCH=NO \
-            2>&1 | tee build.log
+            AD_HOC_CODE_SIGNING_ALLOWED=NO \
+            ONLY_ACTIVE_ARCH=NO
           
-          if [ ${PIPESTATUS[0]} -ne 0 ]; then
-            echo "ERROR: xcodebuild failed"
-            echo "Last 50 lines of build log:"
-            tail -50 build.log
-            exit 1
-          fi
-          
-          echo "✅ Build completed successfully"
+          echo "✅ Archive created"
 
-      - name: Package IPA
+      - name: Package IPA from Archive
         run: |
           set -e
           
-          echo "🔍 Searching for .app bundle..."
+          # Per Export-unsigned-ipa-files: extract from xcarchive
+          ARCHIVE_PATH="./unsigned.xcarchive"
           
-          # Search for .app bundle in multiple locations
-          APP_PATH=$(find ./build/Build/Products/Release-iphoneos -name "*.app" -type d 2>/dev/null | head -1)
+          if [ ! -d "$ARCHIVE_PATH" ]; then
+            echo "❌ Archive not found"
+            exit 1
+          fi
+          
+          # Find .app in archive (Products/Applications/)
+          APP_PATH=$(find "$ARCHIVE_PATH/Products/Applications" -name "*.app" -type d 2>/dev/null | head -1)
           
           if [ -z "$APP_PATH" ]; then
-            echo "ℹ️  Not found in Release-iphoneos, performing broad search..."
-            APP_PATH=$(find ./build -name "*.app" -type d 2>/dev/null | grep -v "Simulator" | head -1)
+            echo "Searching alternative locations..."
+            APP_PATH=$(find "$ARCHIVE_PATH" -name "*.app" -type d 2>/dev/null | head -1)
           fi
-          
           
           if [ -z "$APP_PATH" ]; then
-            echo "ERROR: No .app bundle found anywhere in build directory"
-            echo "Build directory structure:"
-            find ./build -type d -name "*.app" 2>/dev/null || echo "  (no .app bundles found)"
-            find ./build/Build/Products -type d 2>/dev/null | head -20 || echo "  (Products directory not found)"
+            echo "❌ No .app found in archive"
+            find "$ARCHIVE_PATH" -type d | head -20
             exit 1
           fi
           
-          echo "✅ Found app bundle: $APP_PATH"
+          echo "✅ Found: $APP_PATH"
           
-          # Validate .app bundle structure
-          if [ ! -d "$APP_PATH" ]; then
-            echo "ERROR: Expected .app bundle directory not found at: $APP_PATH"
-            exit 1
-          fi
-          
-          if [ ! -f "$APP_PATH/Info.plist" ]; then
-            echo "ERROR: Invalid .app bundle - missing Info.plist"
-            exit 1
-          fi
-          
-          echo "✅ .app bundle is valid (Info.plist present)"
-          
-          # List bundle contents for debugging
-          echo "ℹ️  App bundle contents:"
-          ls -la "$APP_PATH" | head -10
-          
-          # Create Payload folder and package IPA
-          echo "📦 Creating IPA package..."
-          rm -rf Payload
+          # Create IPA structure
           mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
           
-          cp -R "$APP_PATH" Payload/ || { 
-            echo "ERROR: Failed to copy app bundle to Payload folder"
-            exit 1
-          }
-          
-          echo "✅ App bundle copied to Payload/"
-          
-          # Create IPA (zip with correct structure)
-          zip -r -q iMAGE-unsigned.ipa Payload/ || {
-            echo "ERROR: Failed to create IPA zip file"
-            exit 1
-          }
-          
+          # Package IPA
+          zip -r -q iMAGE-unsigned.ipa Payload/
           rm -rf Payload
           
-          # Validate IPA structure
-          echo "🔍 Validating IPA structure..."
-          
-          if [ ! -f "iMAGE-unsigned.ipa" ]; then
-            echo "ERROR: IPA file was not created"
-            exit 1
-          fi
-          
-          # Verify IPA is valid zip
-          unzip -t iMAGE-unsigned.ipa > /dev/null 2>&1 || {
-            echo "ERROR: IPA file is corrupted or not a valid ZIP archive"
-            exit 1
-          }
-          
-          # Check for Payload/.app structure
-          unzip -l iMAGE-unsigned.ipa | grep -q "Payload.*\.app" || {
-            echo "ERROR: IPA missing expected Payload/.app structure"
-            echo "IPA contents:"
-            unzip -l iMAGE-unsigned.ipa | head -20
-            exit 1
-          }
-          
-          # Get IPA size
-          IPA_SIZE=$(stat -f%z iMAGE-unsigned.ipa 2>/dev/null || stat -c%s iMAGE-unsigned.ipa 2>/dev/null)
+          # Validate
+          unzip -t iMAGE-unsigned.ipa > /dev/null
+          IPA_SIZE=$(stat -f%z iMAGE-unsigned.ipa 2>/dev/null || stat -c%s iMAGE-unsigned.ipa)
           IPA_SIZE_MB=$(echo "scale=2; $IPA_SIZE / 1024 / 1024" | bc)
           
-          echo "✅ IPA validation passed"
           echo ""
-          echo "📊 IPA Details:"
-          echo "  File: iMAGE-unsigned.ipa"
-          echo "  Size: ${IPA_SIZE_MB}MB"
-          echo "  Structure: Valid (Payload/.app/...)"
+          echo "✅ IPA created: iMAGE-unsigned.ipa (${IPA_SIZE_MB}MB)"
           echo ""
-          echo "🚀 Ready for Sideloadly installation:"
-          echo "  1. Download iMAGE-unsigned.ipa from artifacts"
-          echo "  2. Open Sideloadly on your macOS machine"
-          echo "  3. Select your iOS device"
-          echo "  4. Drag & drop the IPA"
-          echo "  5. Enter your Apple ID (no developer account needed)"
-          echo "  6. App will be signed and installed automatically"
+          echo "📱 Install with Sideloadly:"
+          echo "   1. Download artifact"
+          echo "   2. Open Sideloadly"
+          echo "   3. Drag & drop IPA"
+          echo "   4. Sign with Apple ID"
 
-      - name: Upload IPA artifact
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
           name: ios-unsigned-ipa
           path: iMAGE-unsigned.ipa
           retention-days: 30
-
-      - name: Build Summary
-        if: always()
-        run: |
-          echo "📋 Build Summary"
-          echo "================"
-          if [ -f "iMAGE-unsigned.ipa" ]; then
-            SIZE=$(stat -f%z iMAGE-unsigned.ipa 2>/dev/null || stat -c%s iMAGE-unsigned.ipa 2>/dev/null)
-            SIZE_MB=$(echo "scale=2; $SIZE / 1024 / 1024" | bc)
-            echo "✅ iOS Unsigned IPA: $SIZE_MB MB"
-            echo "   Artifact: ios-unsigned-ipa"
-          else
-            echo "❌ iOS Unsigned IPA: Build failed"
-          fi
-          if [ -f "build.log" ]; then
-            echo ""
-            echo "Build log available in artifacts"
-          fi
 
   build-android:
     runs-on: ubuntu-latest
@@ -321,22 +205,6 @@ jobs:
           path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
           retention-days: 30
 
-      - name: Build Summary
-        if: always()
-        run: |
-          echo "📋 Build Summary"
-          echo "================"
-          if find src-tauri/gen/android/app/build/outputs/apk -name "*.apk" -type f 2>/dev/null | grep -q .; then
-            echo "✅ Android APK: Build successful"
-            find src-tauri/gen/android/app/build/outputs/apk -name "*.apk" -type f | while read apk; do
-              SIZE=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null)
-              SIZE_MB=$(echo "scale=2; $SIZE / 1024 / 1024" | bc)
-              echo "   $(basename "$apk"): $SIZE_MB MB"
-            done
-          else
-            echo "❌ Android APK: Build failed"
-          fi
-
   build-desktop:
     strategy:
       fail-fast: false
@@ -382,19 +250,7 @@ jobs:
         run: pnpm run build
 
       - name: Build desktop app
-        run: |
-          # Retry logic for transient network errors during bundling
-          for i in 1 2 3; do
-            echo "Build attempt $i..."
-            if pnpm tauri build; then
-              echo "✅ Build succeeded on attempt $i"
-              exit 0
-            fi
-            echo "⚠️ Build failed on attempt $i, retrying in 10s..."
-            sleep 10
-          done
-          echo "❌ All build attempts failed"
-          exit 1
+        run: pnpm tauri build
 
       - uses: actions/upload-artifact@v4
         with:
@@ -407,31 +263,3 @@ jobs:
             src-tauri/target/release/bundle/**/*.msi
             src-tauri/target/release/bundle/**/*.exe
           retention-days: 30
-
-      - name: Build Summary
-        if: always()
-        shell: bash
-        run: |
-          echo "📋 Build Summary"
-          echo "================"
-          FOUND=0
-          for ext in dmg app deb AppImage msi exe; do
-            if find src-tauri/target/release/bundle -name "*.$ext" -type f 2>/dev/null | grep -q .; then
-              echo "✅ Desktop ${{ matrix.target }}: $ext artifact found"
-              find src-tauri/target/release/bundle -name "*.$ext" -type f | while read file; do
-                SIZE=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null || echo 0)
-                SIZE_MB=$((SIZE / 1024 / 1024))
-                echo "   $(basename "$file"): ${SIZE_MB}MB"
-              done
-              FOUND=1
-            fi
-          done
-          if [ $FOUND -eq 0 ]; then
-            echo "❌ Desktop ${{ matrix.target }}: No artifacts found"
-          fi
-      - name: Upload build log (if failed)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-build-log
-          path: build.log

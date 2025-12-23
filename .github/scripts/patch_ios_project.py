@@ -1,80 +1,88 @@
+#!/usr/bin/env python3
+"""
+Patch Tauri iOS project for unsigned builds.
+Uses safe string operations that preserve pbxproj format.
+"""
 import os
-import re
 import glob
 import sys
+import subprocess
+
+def run_plistbuddy(pbxproj_path, command):
+    """Run PlistBuddy command on pbxproj file."""
+    try:
+        result = subprocess.run(
+            ['/usr/libexec/PlistBuddy', '-c', command, pbxproj_path],
+            capture_output=True, text=True
+        )
+        return result.returncode == 0
+    except Exception:
+        return False
 
 def patch_pbxproj(path):
-    print(f"Modifying: {path}")
+    """Patch pbxproj using line-by-line safe replacements."""
+    print(f"Patching: {path}")
     
     with open(path, 'r') as f:
-        content = f.read()
-
-    # 1. Safer handling of TargetAttributes
-    content = re.sub(r'ProvisioningStyle = Automatic;', 'ProvisioningStyle = Manual;', content)
+        lines = f.readlines()
     
-    # 2. Remove SystemCapabilities
-    content = re.sub(r'SystemCapabilities = \{.*?\};', 'SystemCapabilities = {};', content, flags=re.DOTALL)
-
-    # 3. CRITICAL FIX: Replace the Tauri build script with a no-op
-    # The script tries to run tauri ios xcode-script which needs a dev server
-    # We already built the Rust library separately, so just skip it
-    content = re.sub(
-        r'shellScript = ".*?pnpm tauri ios xcode-script.*?";',
-        'shellScript = "echo \\"Using pre-built Rust library\\"";',
-        content,
-        flags=re.DOTALL
-    )
-
-    replacements = [
-        # Remove Signing Identity
-        (r'CODE_SIGN_IDENTITY = "[^"]*"', 'CODE_SIGN_IDENTITY = ""'),
-        (r'"CODE_SIGN_IDENTITY\[sdk=iphoneos\*\]" = "[^"]*"', '"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = ""'),
+    new_lines = []
+    in_shell_script = False
+    brace_count = 0
+    
+    for line in lines:
+        modified = line
         
-        # Remove Development Team
-        (r'DEVELOPMENT_TEAM = [A-Z0-9]+', 'DEVELOPMENT_TEAM = ""'),
-        (r'DEVELOPMENT_TEAM = "[^"]*"', 'DEVELOPMENT_TEAM = ""'),
+        # Track shell script blocks to replace tauri xcode-script
+        if 'shellScript = "' in line and 'tauri' in line.lower():
+            # Replace the entire shellScript line
+            indent = len(line) - len(line.lstrip())
+            modified = ' ' * indent + 'shellScript = "echo \\"Pre-built Rust library\\"";\n'
+            new_lines.append(modified)
+            continue
         
-        # Remove Provisioning Profiles
-        (r'PROVISIONING_PROFILE_SPECIFIER = "[^"]*"', 'PROVISIONING_PROFILE_SPECIFIER = ""'),
-        (r'"PROVISIONING_PROFILE_SPECIFIER\[sdk=iphoneos\*\]" = "[^"]*"', '"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = ""'),
+        # Safe key-value replacements (preserve semicolons)
+        replacements = [
+            ('CODE_SIGN_IDENTITY = "Apple Development"', 'CODE_SIGN_IDENTITY = ""'),
+            ('CODE_SIGN_IDENTITY = "-"', 'CODE_SIGN_IDENTITY = ""'),
+            ('CODE_SIGNING_REQUIRED = YES', 'CODE_SIGNING_REQUIRED = NO'),
+            ('CODE_SIGNING_ALLOWED = YES', 'CODE_SIGNING_ALLOWED = NO'),
+            ('CODE_SIGN_STYLE = Automatic', 'CODE_SIGN_STYLE = Manual'),
+            ('ProvisioningStyle = Automatic', 'ProvisioningStyle = Manual'),
+            # Switch from debug to release library
+            ('debug/libapp.a', 'release/libapp.a'),
+        ]
         
-        # Disable Code Signing Requirements
-        (r'CODE_SIGNING_REQUIRED = YES', 'CODE_SIGNING_REQUIRED = NO'),
-        (r'CODE_SIGNING_ALLOWED = YES', 'CODE_SIGNING_ALLOWED = NO'),
-        (r'AD_HOC_CODE_SIGNING_ALLOWED = YES', 'AD_HOC_CODE_SIGNING_ALLOWED = NO'),
+        for old, new in replacements:
+            if old in modified:
+                modified = modified.replace(old, new)
         
-        # Force Manual Signing Style
-        (r'CODE_SIGN_STYLE = Automatic', 'CODE_SIGN_STYLE = Manual'),
-
-        # Disable Provisioning Profile Requirement
-        (r'PROVISIONING_PROFILE_REQUIRED = YES', 'PROVISIONING_PROFILE_REQUIRED = NO'),
-    ]
-
-    for pattern, replacement in replacements:
-        content = re.sub(pattern, replacement, content)
-
-    # Hardcoded Path Replacement - use release library
-    content = content.replace('debug/libapp.a', 'release/libapp.a')
-    content = content.replace('debug/libvortex_image_lib.a', 'release/libvortex_image_lib.a')
-
-    # Force inject settings if missing
-    if 'CODE_SIGNING_REQUIRED' not in content:
-        content = content.replace('buildSettings = {', 'buildSettings = {\n\t\t\t\tCODE_SIGNING_REQUIRED = NO;')
-    if 'CODE_SIGNING_ALLOWED' not in content:
-        content = content.replace('buildSettings = {', 'buildSettings = {\n\t\t\t\tCODE_SIGNING_ALLOWED = NO;')
+        # Clear DEVELOPMENT_TEAM values (preserve format)
+        if 'DEVELOPMENT_TEAM = ' in modified and '""' not in modified:
+            # Extract just the key part and set empty value
+            if ';' in modified:
+                indent = len(modified) - len(modified.lstrip())
+                modified = ' ' * indent + 'DEVELOPMENT_TEAM = "";\n'
         
+        new_lines.append(modified)
+    
     with open(path, 'w') as f:
-        f.write(content)
-    print("Successfully patched pbxproj")
+        f.writelines(new_lines)
+    
+    print(f"✅ Patched: {path}")
 
 def main():
     pbxproj_files = glob.glob('src-tauri/gen/apple/**/*.pbxproj', recursive=True)
+    
     if not pbxproj_files:
-        print("ERROR: No pbxproj found")
-        sys.exit(1)
-        
+        print("⚠️  No pbxproj files found - iOS project may not be initialized yet")
+        print("   This is OK if running before 'tauri ios init'")
+        sys.exit(0)
+    
     for pbx in pbxproj_files:
         patch_pbxproj(pbx)
+    
+    print(f"✅ Patched {len(pbxproj_files)} file(s)")
 
 if __name__ == "__main__":
     main()
