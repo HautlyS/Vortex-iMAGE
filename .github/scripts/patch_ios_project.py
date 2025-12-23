@@ -9,7 +9,13 @@ def patch_pbxproj(path):
     with open(path, 'r') as f:
         content = f.read()
 
-    # Replacements to strip signing
+    # Remove TargetAttributes (controls automatic signing)
+    # This block often contains "ProvisioningStyle"
+    content = re.sub(r'TargetAttributes = \{.*?\};', 'TargetAttributes = {};', content, flags=re.DOTALL)
+    
+    # Remove SystemCapabilities (triggers signing requirements)
+    content = re.sub(r'SystemCapabilities = \{.*?\};', 'SystemCapabilities = {};', content, flags=re.DOTALL)
+
     replacements = [
         # Remove Signing Identity
         (r'CODE_SIGN_IDENTITY = "[^"]*"', 'CODE_SIGN_IDENTITY = ""'),
@@ -29,6 +35,9 @@ def patch_pbxproj(path):
         
         # Ensure Ad-Hoc signing is allowed (sometimes useful)
         (r'AD_HOC_CODE_SIGNING_ALLOWED = NO', 'AD_HOC_CODE_SIGNING_ALLOWED = YES'),
+        
+        # Force Manual Signing Style
+        (r'CODE_SIGN_STYLE = Automatic', 'CODE_SIGN_STYLE = Manual'),
     ]
 
     for pattern, replacement in replacements:
