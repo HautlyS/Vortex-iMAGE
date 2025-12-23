@@ -72,12 +72,16 @@ jobs:
           # Get scheme
           SCHEME=$(xcodebuild -project "$XCODEPROJ" -list 2>/dev/null | grep -A 100 "Schemes:" | grep -v "Schemes:" | sed 's/^[[:space:]]*//' | grep -v "^$" | head -1)
           echo "Scheme: $SCHEME"
+
+          # Debug Build Settings
+          echo "Build Settings:"
+          xcodebuild -project "$XCODEPROJ" -scheme "$SCHEME" -showBuildSettings
           
           # Build
           xcodebuild build \
             -project "$XCODEPROJ" \
             -scheme "$SCHEME" \
-            -configuration Release \
+            -configuration Debug \
             -sdk iphoneos \
             -destination "generic/platform=iOS" \
             -derivedDataPath ./build \
