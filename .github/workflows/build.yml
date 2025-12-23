@@ -14,6 +14,8 @@ jobs:
   build-ios-unsigned:
     runs-on: macos-latest
     timeout-minutes: 60
+    env:
+      CARGO_INCREMENTAL: 1
     steps:
       - uses: actions/checkout@v4
 
@@ -52,7 +54,7 @@ jobs:
       - name: Build Rust library for iOS
         run: |
           cd src-tauri
-          cargo build --release --target aarch64-apple-ios
+          cargo build --target aarch64-apple-ios
 
       - name: Build iOS App (Unsigned)
         run: |
@@ -90,10 +92,16 @@ jobs:
         run: |
           set -e
           
-          APP_PATH=$(find ./build/Build/Products/Release-iphoneos -name "*.app" -type d | head -1)
+          # Try finding in Debug folder first (since we removed --release)
+          APP_PATH=$(find ./build/Build/Products/Debug-iphoneos -name "*.app" -type d | head -1)
           
           if [ -z "$APP_PATH" ]; then
-             echo "Trying alternate path..."
+             echo "Trying Release folder..."
+             APP_PATH=$(find ./build/Build/Products/Release-iphoneos -name "*.app" -type d | head -1)
+          fi
+          
+          if [ -z "$APP_PATH" ]; then
+             echo "Trying broad search..."
              APP_PATH=$(find ./build -name "*.app" -type d | grep -v "Simulator" | head -1)
           fi
 
@@ -165,7 +173,7 @@ jobs:
         run: pnpm tauri android init
 
       - name: Build Android APK
-        run: pnpm tauri android build --release
+        run: pnpm tauri android build
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
 
