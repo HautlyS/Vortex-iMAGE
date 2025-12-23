@@ -180,7 +180,7 @@ fn sanitize_filename(name: &str) -> String {
 pub async fn start_oauth(client: State<'_, HttpClient>) -> Result<DeviceCodeResponse, AppError> {
     let res = client
         .0
-        .post("https:
+        .post("https://github.com/login/device/code")
         .header("Accept", "application/json")
         .form(&[("client_id", CLIENT_ID), ("scope", "repo")])
         .send()
@@ -200,7 +200,7 @@ pub async fn poll_oauth(
 ) -> Result<Option<String>, AppError> {
     let res = client
         .0
-        .post("https:
+        .post("https://github.com/login/oauth/access_token")
         .header("Accept", "application/json")
         .form(&[
             ("client_id", CLIENT_ID),
@@ -229,7 +229,7 @@ pub async fn get_user(
 ) -> Result<GitHubUser, AppError> {
     let res = client
         .0
-        .get("https:
+        .get("https://api.github.com/user")
         .header("Authorization", format!("Bearer {}", token))
         .header("User-Agent", "vortex-image")
         .send()
@@ -327,7 +327,7 @@ pub async fn upload_photo(
     drop(final_payload);
 
     let upload_path = format!("photos/{}", safe_filename);
-    let url = format!("https:
+    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, upload_path);
 
     let body = serde_json::json!({
         "message": format!("Upload {} (secure)", safe_filename),
@@ -436,7 +436,7 @@ async fn upload_lfs_internal(
         percent: 20,
     });
 
-    let batch_url = format!("https:
+    let batch_url = format!("https://github.com/{}.git/info/lfs/objects/batch", repo);
     let batch_body = serde_json::json!({
         "operation": "upload",
         "transfers": ["basic"],
@@ -490,7 +490,7 @@ async fn upload_lfs_internal(
     }
 
     Ok(UploadResult {
-        url: format!("https:
+        url: format!("https://github.com/{}/blob/main/photos/{}", repo, filename),
         sha: oid,
     })
 }
@@ -565,7 +565,7 @@ pub async fn create_repo(
 
     let res = client
         .0
-        .post("https:
+        .post("https://api.github.com/user/repos")
         .header("Authorization", format!("Bearer {}", token))
         .header("User-Agent", "vortex-image")
         .header("Accept", "application/vnd.github+json")
@@ -602,7 +602,7 @@ pub async fn get_repo_info(
 ) -> Result<RepoInfo, AppError> {
     validate_repo(&repo)?;
 
-    let url = format!("https:
+    let url = format!("https://api.github.com/repos/{}", repo);
 
     let res = client
         .0
@@ -642,7 +642,7 @@ pub async fn update_repo_visibility(
 ) -> Result<RepoInfo, AppError> {
     validate_repo(&repo)?;
 
-    let url = format!("https:
+    let url = format!("https://api.github.com/repos/{}", repo);
 
     let body = serde_json::json!({
         "private": private
@@ -689,7 +689,7 @@ pub async fn list_photos(
     validate_repo(&repo)?;
     
     let folder_path = folder.unwrap_or_else(|| "photos".to_string());
-    let url = format!("https:
+    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, folder_path);
 
     let res = client
         .0
@@ -1048,7 +1048,7 @@ async fn upload_single_file(
     let content = fs::read(local_path).await?;
     let encoded = STANDARD.encode(&content);
 
-    let url = format!("https:
+    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, upload_path);
 
     let body = serde_json::json!({
         "message": format!("Upload {}", upload_path),
@@ -1115,7 +1115,7 @@ pub async fn list_albums(
 ) -> Result<Vec<Album>, AppError> {
     validate_repo(&repo)?;
 
-    let url = format!("https:
+    let url = format!("https://api.github.com/repos/{}/contents/photos", repo);
 
     let res = client
         .0
@@ -1158,7 +1158,7 @@ async fn get_album_recursive(
     path: &str,
     name: &str,
 ) -> Result<Album, AppError> {
-    let url = format!("https:
+    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, path);
 
     let res = client
         .get(&url)
@@ -1238,7 +1238,7 @@ pub async fn download_photo(
         percent: 0,
     });
 
-    let url = format!("https:
+    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, remote_path);
     
     let res = client
         .0
@@ -1303,7 +1303,7 @@ pub async fn delete_photo(
 ) -> Result<(), AppError> {
     validate_repo(&repo)?;
 
-    let url = format!("https:
+    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, path);
     
     let get_res = client
         .0
@@ -1404,7 +1404,7 @@ pub async fn delete_album(
     let mut deleted_count = 0u32;
 
     for file in files {
-        let url = format!("https:
+        let url = format!("https://api.github.com/repos/{}/contents/{}", repo, file.path);
 
         let get_res = client
             .0
@@ -1459,7 +1459,7 @@ async fn get_album_files_recursive(
     token: &str,
     path: &str,
 ) -> Result<Vec<FileInfo>, AppError> {
-    let url = format!("https:
+    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, path);
 
     let res = client
         .get(&url)
@@ -1530,7 +1530,7 @@ pub async fn rename_album(
         let relative = file.path.strip_prefix(&old_path).unwrap_or(&file.path);
         let new_file_path = format!("{}{}", new_path, relative);
 
-        let url = format!("https:
+        let url = format!("https://api.github.com/repos/{}/contents/{}", repo, file.path);
         let get_res = client
             .0
             .get(&url)
@@ -1548,7 +1548,7 @@ pub async fn rename_album(
         let content = json["content"].as_str().unwrap_or("");
         let sha = json["sha"].as_str().unwrap_or("");
 
-        let create_url = format!("https:
+        let create_url = format!("https://api.github.com/repos/{}/contents/{}", repo, new_file_path);
         let create_body = serde_json::json!({
             "message": format!("Move {} to {}", file.path, new_file_path),
             "content": content
@@ -1599,7 +1599,7 @@ pub async fn download_secure_photo(
 ) -> Result<Vec<u8>, AppError> {
     validate_repo(&repo)?;
 
-    let url = format!("https:
+    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, remote_path);
 
     let res = client
         .0
@@ -1673,7 +1673,7 @@ pub async fn upload_secure_message(
     let encoded = STANDARD.encode(&encrypted_bytes);
     
     let upload_path = format!("messages/{}.msg", safe_filename);
-    let url = format!("https:
+    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, upload_path);
 
     let body = serde_json::json!({
         "message": format!("Upload secure message {}", safe_filename),
@@ -1721,7 +1721,7 @@ pub async fn download_secure_message(
         format!("messages/{}.msg", safe_filename)
     };
 
-    let url = format!("https:
+    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, remote_path);
 
     let res = client
         .0
