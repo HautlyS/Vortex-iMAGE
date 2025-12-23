@@ -9,11 +9,13 @@ def patch_pbxproj(path):
     with open(path, 'r') as f:
         content = f.read()
 
-    # Remove TargetAttributes (controls automatic signing)
-    # This block often contains "ProvisioningStyle"
-    content = re.sub(r'TargetAttributes = \{.*?\};', 'TargetAttributes = {};', content, flags=re.DOTALL)
+    # 1. Safer handling of TargetAttributes
+    # Instead of trying to delete the whole block (which fails on nested braces),
+    # we specifically target ProvisioningStyle to ensure it is Manual.
+    content = re.sub(r'ProvisioningStyle = Automatic;', 'ProvisioningStyle = Manual;', content)
     
-    # Remove SystemCapabilities (triggers signing requirements)
+    # 2. Remove SystemCapabilities (triggers signing requirements)
+    # This regex is safer because SystemCapabilities usually don't have deeply nested braces
     content = re.sub(r'SystemCapabilities = \{.*?\};', 'SystemCapabilities = {};', content, flags=re.DOTALL)
 
     replacements = [
@@ -33,10 +35,10 @@ def patch_pbxproj(path):
         (r'CODE_SIGNING_REQUIRED = YES', 'CODE_SIGNING_REQUIRED = NO'),
         (r'CODE_SIGNING_ALLOWED = YES', 'CODE_SIGNING_ALLOWED = NO'),
         
-        # Ensure Ad-Hoc signing is allowed (sometimes useful)
-        (r'AD_HOC_CODE_SIGNING_ALLOWED = NO', 'AD_HOC_CODE_SIGNING_ALLOWED = YES'),
+        # FIX: Disable Ad-Hoc signing for unsigned builds
+        (r'AD_HOC_CODE_SIGNING_ALLOWED = YES', 'AD_HOC_CODE_SIGNING_ALLOWED = NO'),
         
-        # Force Manual Signing Style
+        # Force Manual Signing Style (handles cases outside TargetAttributes too)
         (r'CODE_SIGN_STYLE = Automatic', 'CODE_SIGN_STYLE = Manual'),
     ]
 
@@ -54,7 +56,6 @@ def patch_pbxproj(path):
     print("Successfully patched pbxproj")
 
 def main():
-    # 1. Patch Project File
     pbxproj_files = glob.glob('src-tauri/gen/apple/**/*.pbxproj', recursive=True)
     if not pbxproj_files:
         print("ERROR: No pbxproj found")
