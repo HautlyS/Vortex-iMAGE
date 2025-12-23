@@ -1,82 +1,62 @@
 #!/usr/bin/env python3
 """
 Patch Tauri iOS project for unsigned builds.
-Uses safe string operations that preserve pbxproj format.
+Uses safe regex operations that preserve pbxproj format.
 """
 import os
 import glob
 import sys
-import subprocess
-
-def run_plistbuddy(pbxproj_path, command):
-    """Run PlistBuddy command on pbxproj file."""
-    try:
-        result = subprocess.run(
-            ['/usr/libexec/PlistBuddy', '-c', command, pbxproj_path],
-            capture_output=True, text=True
-        )
-        return result.returncode == 0
-    except Exception:
-        return False
+import re
 
 def patch_pbxproj(path):
-    """Patch pbxproj using line-by-line safe replacements."""
+    """Patch pbxproj using regex-safe replacements."""
     print(f"Patching: {path}")
     
     with open(path, 'r') as f:
-        lines = f.readlines()
+        content = f.read()
     
-    new_lines = []
-    in_shell_script = False
-    brace_count = 0
+    original = content
     
-    for line in lines:
-        modified = line
-        
-        # Track shell script blocks to replace tauri xcode-script
-        if 'shellScript = "' in line and 'tauri' in line.lower():
-            # Replace the entire shellScript line
-            indent = len(line) - len(line.lstrip())
-            modified = ' ' * indent + 'shellScript = "echo \\"Pre-built Rust library\\"";\n'
-            new_lines.append(modified)
-            continue
-        
-        # Safe key-value replacements (preserve semicolons)
-        replacements = [
-            ('CODE_SIGN_IDENTITY = "Apple Development"', 'CODE_SIGN_IDENTITY = ""'),
-            ('CODE_SIGN_IDENTITY = "-"', 'CODE_SIGN_IDENTITY = ""'),
-            ('CODE_SIGNING_REQUIRED = YES', 'CODE_SIGNING_REQUIRED = NO'),
-            ('CODE_SIGNING_ALLOWED = YES', 'CODE_SIGNING_ALLOWED = NO'),
-            ('CODE_SIGN_STYLE = Automatic', 'CODE_SIGN_STYLE = Manual'),
-            ('ProvisioningStyle = Automatic', 'ProvisioningStyle = Manual'),
-            # Switch from debug to release library
-            ('debug/libapp.a', 'release/libapp.a'),
-        ]
-        
-        for old, new in replacements:
-            if old in modified:
-                modified = modified.replace(old, new)
-        
-        # Clear DEVELOPMENT_TEAM values (preserve format)
-        if 'DEVELOPMENT_TEAM = ' in modified and '""' not in modified:
-            # Extract just the key part and set empty value
-            if ';' in modified:
-                indent = len(modified) - len(modified.lstrip())
-                modified = ' ' * indent + 'DEVELOPMENT_TEAM = "";\n'
-        
-        new_lines.append(modified)
+    # Replace tauri xcode-script shellScript (handles multiline)
+    content = re.sub(
+        r'(shellScript\s*=\s*")[^"]*tauri[^"]*(")',
+        r'\1echo "Pre-built Rust library"\2',
+        content,
+        flags=re.IGNORECASE
+    )
+    
+    # Safe key-value replacements
+    replacements = [
+        (r'CODE_SIGN_IDENTITY\s*=\s*"[^"]*"', 'CODE_SIGN_IDENTITY = ""'),
+        (r'CODE_SIGNING_REQUIRED\s*=\s*YES', 'CODE_SIGNING_REQUIRED = NO'),
+        (r'CODE_SIGNING_ALLOWED\s*=\s*YES', 'CODE_SIGNING_ALLOWED = NO'),
+        (r'CODE_SIGN_STYLE\s*=\s*Automatic', 'CODE_SIGN_STYLE = Manual'),
+        (r'ProvisioningStyle\s*=\s*Automatic', 'ProvisioningStyle = Manual'),
+        # Clear DEVELOPMENT_TEAM (handles quoted and unquoted values)
+        (r'DEVELOPMENT_TEAM\s*=\s*"[^"]*"', 'DEVELOPMENT_TEAM = ""'),
+        (r'DEVELOPMENT_TEAM\s*=\s*[A-Z0-9]+;', 'DEVELOPMENT_TEAM = "";'),
+        # Switch from debug to release library
+        (r'debug/libapp\.a', 'release/libapp.a'),
+    ]
+    
+    for pattern, replacement in replacements:
+        content = re.sub(pattern, replacement, content)
+    
+    # Validate: check for obvious syntax issues
+    if content.count('{') != content.count('}'):
+        print(f"⚠️  Warning: Brace mismatch in {path}")
     
     with open(path, 'w') as f:
-        f.writelines(new_lines)
+        f.write(content)
     
-    print(f"✅ Patched: {path}")
+    changes = len(original) != len(content) or original != content
+    print(f"✅ Patched: {path} ({'modified' if changes else 'no changes needed'})")
 
 def main():
     pbxproj_files = glob.glob('src-tauri/gen/apple/**/*.pbxproj', recursive=True)
     
     if not pbxproj_files:
         print("⚠️  No pbxproj files found - iOS project may not be initialized yet")
-        print("   This is OK if running before 'tauri ios init'")
         sys.exit(0)
     
     for pbx in pbxproj_files:

@@ -1,8 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { invoke } from '@tauri-apps/api/core'
 import Masonry from './Masonry.vue'
 import CircularGallery from './CircularGallery.vue'
 import type { Photo } from '../types/photo'
+import { useGitHubAuth } from '../composables/useGitHubAuth'
+import { useFavorites } from '../composables/useFavorites'
+
+const { token, repo } = useGitHubAuth()
+const { isFavorite, toggleFavorite } = useFavorites()
 
 interface Album {
   name: string
@@ -150,13 +156,32 @@ function handleItemClick(item: any) {
   if (item.isFolder && item.album) {
     emit('albumClick', item.album)
   } else if (item.photo) {
-    emit('photoClick', item.photo)
+    // Open lightbox on single click for photos
+    const index = displayPhotos.value.findIndex(p => p.sha === item.id)
+    if (index !== -1) {
+      lightboxStartIndex.value = index
+      currentLightboxIndex.value = index
+      isLightboxOpen.value = true
+    }
   }
 }
 
 // Lightbox (CircularGallery) Logic
 const isLightboxOpen = ref(false);
 const lightboxStartIndex = ref(0);
+const currentLightboxIndex = ref(0);
+const isSaving = ref(false);
+const isSyncing = ref(false);
+const saveSuccess = ref(false);
+const syncSuccess = ref(false);
+
+// Current photo in lightbox
+const currentLightboxPhoto = computed(() => displayPhotos.value[currentLightboxIndex.value])
+
+// Handle index change from CircularGallery
+function handleLightboxIndexChange(index: number) {
+  currentLightboxIndex.value = index
+}
 
 // Format photos for CircularGallery (only photos, not folders)
 const circularItems = computed(() => 
@@ -166,20 +191,79 @@ const circularItems = computed(() =>
     }))
 );
 
-function handleItemDblClick(item: any) {
-    if (item.isFolder) return // Don't open lightbox for folders
-    
-    const index = displayPhotos.value.findIndex(p => p.sha === item.id);
-    if (index !== -1) {
-        lightboxStartIndex.value = index;
-        isLightboxOpen.value = true;
-    }
+// Save current photo to device gallery
+async function saveToGallery() {
+  if (!currentLightboxPhoto.value || !token.value || !repo.value) return
+  
+  isSaving.value = true
+  saveSuccess.value = false
+  
+  try {
+    await invoke('download_photo', {
+      token: token.value,
+      repo: repo.value,
+      path: currentLightboxPhoto.value.name,
+      savePath: null // Let backend choose default download location
+    })
+    saveSuccess.value = true
+    // Haptic feedback
+    if ('vibrate' in navigator) navigator.vibrate(10)
+    setTimeout(() => { saveSuccess.value = false }, 2000)
+  } catch (e) {
+    console.error('Save failed:', e)
+  } finally {
+    isSaving.value = false
+  }
 }
 
-function handlePhotoListDblClick(photo: Photo) {
+// Sync photo with GitHub (re-upload/update)
+async function syncToGit() {
+  if (!currentLightboxPhoto.value || !token.value || !repo.value) return
+  
+  isSyncing.value = true
+  syncSuccess.value = false
+  
+  try {
+    // For now, just verify the photo exists on GitHub
+    // In a full implementation, this would check for changes and re-upload if needed
+    await invoke('download_photo', {
+      token: token.value,
+      repo: repo.value,
+      path: currentLightboxPhoto.value.name,
+      savePath: null
+    })
+    syncSuccess.value = true
+    if ('vibrate' in navigator) navigator.vibrate([10, 50, 10])
+    setTimeout(() => { syncSuccess.value = false }, 2000)
+  } catch (e) {
+    console.error('Sync failed:', e)
+  } finally {
+    isSyncing.value = false
+  }
+}
+
+// Toggle favorite for current photo
+function toggleCurrentFavorite() {
+  if (!currentLightboxPhoto.value) return
+  toggleFavorite({ 
+    type: 'photo', 
+    id: currentLightboxPhoto.value.sha, 
+    path: currentLightboxPhoto.value.name 
+  })
+  if ('vibrate' in navigator) navigator.vibrate(10)
+}
+
+function handleItemDblClick(item: any) {
+    // Double click reserved for future use (e.g., quick edit)
+    if (item.isFolder) return
+}
+
+function handlePhotoListClick(photo: Photo) {
+  // Open lightbox from list view on single click
   const index = displayPhotos.value.findIndex(p => p.sha === photo.sha);
   if (index !== -1) {
     lightboxStartIndex.value = index;
+    currentLightboxIndex.value = index;
     isLightboxOpen.value = true;
   }
 }
@@ -340,8 +424,7 @@ function closeContextMenu() {
               v-for="photo in displayPhotos.slice(0, 8)" 
               :key="`recent-${photo.sha}`"
               class="list-item photo-item"
-              @click="emit('photoClick', photo)"
-              @dblclick="handlePhotoListDblClick(photo)"
+              @click="handlePhotoListClick(photo)"
             >
               <div class="list-item-icon">
                 <img :src="photo.url" :alt="photo.name" class="photo-thumbnail" />
@@ -362,8 +445,7 @@ function closeContextMenu() {
               v-for="photo in displayPhotos" 
               :key="`all-${photo.sha}`"
               class="list-item photo-item"
-              @click="emit('photoClick', photo)"
-              @dblclick="handlePhotoListDblClick(photo)"
+              @click="handlePhotoListClick(photo)"
             >
               <div class="list-item-icon">
                 <img :src="photo.url" :alt="photo.name" class="photo-thumbnail" />
@@ -381,27 +463,93 @@ function closeContextMenu() {
     <!-- Circular Gallery Overlay -->
     <Teleport to="body">
         <Transition
-            enter-active-class="transition-opacity duration-300"
-            enter-from-class="opacity-0"
-            enter-to-class="opacity-100"
-            leave-active-class="transition-opacity duration-300"
-            leave-from-class="opacity-100"
-            leave-to-class="opacity-0"
+            enter-active-class="transition-all duration-300 ease-out"
+            enter-from-class="opacity-0 scale-95"
+            enter-to-class="opacity-100 scale-100"
+            leave-active-class="transition-all duration-200 ease-in"
+            leave-from-class="opacity-100 scale-100"
+            leave-to-class="opacity-0 scale-95"
         >
             <div 
                 v-if="isLightboxOpen" 
-                class="fixed inset-0 z-[9999] bg-black"
+                class="lightbox-overlay"
+                @click.self="isLightboxOpen = false"
             >
-                <!-- Close Button -->
+                <!-- Close Button - iOS safe area aware -->
                 <button 
-                  class="absolute top-6 right-6 z-50 p-2 text-white/70 hover:text-white transition-colors cursor-pointer"
+                  class="lightbox-close"
                   @click="isLightboxOpen = false"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                   </svg>
                 </button>
+
+                <!-- Photo counter -->
+                <div class="lightbox-counter">
+                  {{ currentLightboxIndex + 1 }} / {{ circularItems.length }}
+                </div>
+
+                <!-- Lightbox Tools -->
+                <div class="lightbox-tools">
+                  <!-- Save to Gallery -->
+                  <button 
+                    class="lightbox-tool"
+                    :class="{ success: saveSuccess }"
+                    :disabled="isSaving"
+                    @click="saveToGallery"
+                    title="Salvar no dispositivo"
+                  >
+                    <svg v-if="isSaving" class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10" opacity="0.25"/>
+                      <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                    </svg>
+                    <svg v-else-if="saveSuccess" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M20 6L9 17l-5-5"/>
+                    </svg>
+                    <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="7,10 12,15 17,10"/>
+                      <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    <span>Salvar</span>
+                  </button>
+
+                  <!-- Favorite -->
+                  <button 
+                    class="lightbox-tool"
+                    :class="{ active: currentLightboxPhoto && isFavorite(currentLightboxPhoto.sha) }"
+                    @click="toggleCurrentFavorite"
+                    title="Favoritar"
+                  >
+                    <svg viewBox="0 0 24 24" :fill="currentLightboxPhoto && isFavorite(currentLightboxPhoto.sha) ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    </svg>
+                    <span>Favorito</span>
+                  </button>
+
+                  <!-- Sync to Git -->
+                  <button 
+                    class="lightbox-tool"
+                    :class="{ success: syncSuccess }"
+                    :disabled="isSyncing"
+                    @click="syncToGit"
+                    title="Sincronizar com GitHub"
+                  >
+                    <svg v-if="isSyncing" class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10" opacity="0.25"/>
+                      <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                    </svg>
+                    <svg v-else-if="syncSuccess" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M20 6L9 17l-5-5"/>
+                    </svg>
+                    <svg v-else viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    <span>Sync</span>
+                  </button>
+                </div>
 
                 <div class="w-full h-full">
                     <CircularGallery
@@ -409,10 +557,11 @@ function closeContextMenu() {
                         :bend="1.5"
                         text-color="#ffffff"
                         :border-radius="0.05"
-                        font="bold 60px Figtree"
+                        font="bold 48px -apple-system, BlinkMacSystemFont, sans-serif"
                         :scroll-speed="2"
                         :scroll-ease="0.1"
                         :initial-index="lightboxStartIndex"
+                        @index-change="handleLightboxIndexChange"
                     />
                 </div>
             </div>
@@ -445,6 +594,126 @@ function closeContextMenu() {
   position: relative;
   background: transparent;
 }
+
+/* Lightbox Overlay */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #000;
+  padding-top: env(safe-area-inset-top, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.lightbox-close {
+  position: absolute;
+  top: calc(16px + env(safe-area-inset-top, 0));
+  right: 16px;
+  z-index: 50;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: none;
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lightbox-close:active {
+  transform: scale(0.9);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.lightbox-counter {
+  position: absolute;
+  top: calc(20px + env(safe-area-inset-top, 0));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 20px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Lightbox Tools */
+.lightbox-tools {
+  position: absolute;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lightbox-tool {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  min-width: 64px;
+}
+
+.lightbox-tool svg {
+  width: 24px;
+  height: 24px;
+}
+
+.lightbox-tool:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.lightbox-tool:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lightbox-tool.active {
+  color: #ff3b5c;
+}
+
+.lightbox-tool.success {
+  color: #34c759;
+}
+
+.lightbox-tool .spin {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* ... existing styles ... */
 
 .loading-state,

@@ -96,8 +96,13 @@ const props = withDefaults(defineProps<CircularGalleryProps>(), {
 
 const containerRef = useTemplateRef<HTMLDivElement>('containerRef');
 const centerItem = ref<GalleryItem | null>(null);
+const centerIndex = ref(0);
 const auth = useGitHubAuth();
 let app: App | null = null;
+
+const emit = defineEmits<{
+  'index-change': [index: number]
+}>();
 let rafId: number | null = null;
 
 // Pinch-to-zoom for circular gallery
@@ -143,6 +148,10 @@ const handleTouchEnd = () => {
 function updateCenterItem() {
   if (app && props.items?.length) {
     const idx = app.getCenterIndex();
+    if (idx !== centerIndex.value) {
+      centerIndex.value = idx;
+      emit('index-change', idx);
+    }
     centerItem.value = props.items[idx] || null;
   }
   rafId = requestAnimationFrame(updateCenterItem);

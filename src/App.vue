@@ -23,7 +23,7 @@ import AuthButton from './components/AuthButton.vue'
 import { Vortex } from './components/ui/vortex'
 import NeuralBackground from './components/ui/NeuralBackground/NeuralBackground.vue'
 import Cursor from './components/ui/cursor/Cursor.vue'
-import { OptimizedGallery } from './components/optimized'
+import PhotoGallery from './components/PhotoGallery.vue'
 import PrivacySettings from './components/PrivacySettings.vue'
 import FolderUploadDialog from './components/FolderUploadDialog.vue'
 import RepoCreator from './components/RepoCreator.vue'
@@ -821,12 +821,16 @@ async function retryLoadPhotos() {
             </div>
             
             <!-- Optimized Photo Gallery -->
-            <OptimizedGallery 
+            <PhotoGallery 
               v-else
-              :items="optimizedGalleryItems"
-              :gallery-height="galleryHeight"
-              @item-click="handleOptimizedItemClick"
-              @item-dbl-click="handleOptimizedItemDblClick"
+              :photos="filteredPhotos"
+              :loading="loadingPhotos"
+              :albums="albums"
+              :show-albums="currentView === 'albums'"
+              :view-mode="viewMode"
+              :current-album-path="selectedAlbumPath"
+              @photo-click="handlePhotoClick"
+              @album-click="handleAlbumSelect"
             />
           </AsyncState>
         </template>
