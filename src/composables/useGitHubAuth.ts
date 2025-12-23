@@ -35,7 +35,7 @@ interface KeypairResult {
 }
 
 const token = ref<string | null>(isDevMode ? 'mock-token-dev' : null)
-const user = ref<GitHubUser | null>(isDevMode ? { login: 'dev-user', avatar_url: 'https:
+const user = ref<GitHubUser | null>(isDevMode ? { login: 'dev-user', avatar_url: 'https://github.com/identicons/dev.png' } : null)
 const repo = ref<string>(isDevMode ? 'dev-user/photos' : '')
 const publicBundle = ref<PublicBundle | null>(null)
 const keypairBytes = ref<number[] | null>(null)
@@ -123,7 +123,7 @@ export function useGitHubAuth() {
       loading.value = true
       await new Promise(r => setTimeout(r, 500))
       token.value = 'mock-token-dev'
-      user.value = { login: 'dev-user', avatar_url: 'https:
+      user.value = { login: 'dev-user', avatar_url: 'https://github.com/identicons/dev.png' }
       repo.value = 'dev-user/photos'
       publicBundle.value = {
         pq_encap: Array(1184).fill(0),

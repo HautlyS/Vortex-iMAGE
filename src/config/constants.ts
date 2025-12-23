@@ -142,7 +142,7 @@ export const IMAGE_EXTENSIONS = [
 
 export const GITHUB = {
   clientId: 'Ov23lijNSMM1i93CQdfQ',
-  apiBase: 'https:
+  apiBase: 'https://api.github.com',
   uploadTimeout: 120000,
   lfsUploadTimeout: 300000,
 } as const

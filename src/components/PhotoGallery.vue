@@ -41,15 +41,15 @@ const emit = defineEmits<{
 const mockPhotos: Photo[] = Array.from({ length: 12 }, (_, i) => ({
   sha: `mock-${i}`,
   name: `Mock Photo ${i + 1}`,
-  url: `https:
+  url: `https://picsum.photos/seed/${i}/400/400`
 }))
 
 const mockAlbums: Album[] = [
   { name: 'Viagens', path: 'viagens', photo_count: 24, children: [
-    { name: '2024', path: 'viagens/2024', photo_count: 12, children: [], coverUrl: 'https:
-    { name: '2023', path: 'viagens/2023', photo_count: 12, children: [], coverUrl: 'https:
-  ], coverUrl: 'https:
-  { name: 'Família', path: 'familia', photo_count: 56, children: [], coverUrl: 'https:
+    { name: '2024', path: 'viagens/2024', photo_count: 12, children: [], coverUrl: 'https://picsum.photos/seed/v2024/400/400' },
+    { name: '2023', path: 'viagens/2023', photo_count: 12, children: [], coverUrl: 'https://picsum.photos/seed/v2023/400/400' },
+  ], coverUrl: 'https://picsum.photos/seed/viagens/400/400' },
+  { name: 'Família', path: 'familia', photo_count: 56, children: [], coverUrl: 'https://picsum.photos/seed/familia/400/400' },
 ]
 
 const displayPhotos = computed(() => {
@@ -107,7 +107,7 @@ const displayAlbums = computed(() => {
 function getAlbumCover(album: Album): string {
   if (album.coverUrl) return album.coverUrl
   const photo = props.photos.find(p => p.path?.startsWith(album.path))
-  return photo?.url || `https:
+  return photo?.url || `https://picsum.photos/seed/${album.path}/400/400`
 }
 
 const albumItems = computed(() =>
@@ -329,7 +329,9 @@ function closeContextMenu() {
       <div v-if="currentAlbumPath" class="mb-4">
 
         <button class="btn btn-secondary" @click="emit('albumClick', { path: getParentPath(currentAlbumPath) || '', name: 'Back', photo_count: 0, children: [] })">
-          <svg xmlns="http:
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m15 18-6-6 6-6"/>
+          </svg>
           Voltar
         </button>
       </div>
@@ -345,7 +347,10 @@ function closeContextMenu() {
             @click="emit('albumClick', { name: 'Home', path: '', photo_count: 0, children: [] })"
             :class="{ '!bg-white/10': !currentAlbumPath }"
          >
-            <svg xmlns="http:
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
          </button>
          
          <template v-if="currentAlbumPath">
@@ -465,7 +470,7 @@ function closeContextMenu() {
                   class="lightbox-close"
                   @click="isLightboxOpen = false"
                 >
-                  <svg xmlns="http:
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                   </svg>

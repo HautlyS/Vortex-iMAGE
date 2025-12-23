@@ -45,7 +45,7 @@ const MOCK_PHOTOS: Photo[] = Array.from({ length: 50 }, (_, i) => {
   const names = ['sunset', 'mountain', 'city', 'forest', 'ocean', 'desert', 'autumn', 'snow', 'beach', 'night', 'waterfall', 'flower', 'lake', 'canyon', 'aurora', 'wildlife', 'architecture', 'portrait', 'street', 'abstract']
   return {
     name: `${names[i % names.length]}-${i + 1}.jpg`,
-    url: `https:
+    url: `https://picsum.photos/seed/${i}/${h}/${h}`,
     sha: `mock-sha-${i + 1}`,
     size: 150000 + Math.floor(Math.random() * 200000),
     path: i < 10 ? 'viagens' : i < 20 ? 'viagens/2024' : i < 30 ? 'familia' : undefined
@@ -163,7 +163,7 @@ export function usePhotoUpload() {
           const seed = Math.floor(Math.random() * 1000)
           photos.value.unshift({
             name: next.name,
-            url: `https:
+            url: `https://picsum.photos/seed/${seed}/600/600`,
             sha: `mock-sha-${seed}`,
             size: Math.floor(Math.random() * 200000) + 150000
           })
@@ -191,7 +191,7 @@ export function usePhotoUpload() {
 
           photos.value.unshift({
             name: filename,
-            url: `https:
+            url: result.url,
             sha: result.sha,
             path: `photos/${filename}`
           })

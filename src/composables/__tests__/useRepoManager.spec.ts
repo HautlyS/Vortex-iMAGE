@@ -158,7 +158,7 @@ describe('useRepoManager', () => {
           full_name: fullName,
           private: testCase.visibility === 'private',
           description: testCase.description,
-          html_url: `https:
+          html_url: `https://github.com/${fullName}`,
           default_branch: 'main',
         })
 
@@ -197,7 +197,7 @@ describe('useRepoManager', () => {
           full_name: fullName,
           private: testCase.remotePrivate,
           description: null,
-          html_url: `https:
+          html_url: `https://github.com/${fullName}`,
           default_branch: 'main',
         })
 
@@ -233,7 +233,7 @@ describe('useRepoManager', () => {
           full_name: fullName,
           private: testCase.initialPrivate,
           description: null,
-          html_url: `https:
+          html_url: `https://github.com/${fullName}`,
           default_branch: 'main',
         }
 
@@ -242,7 +242,7 @@ describe('useRepoManager', () => {
           full_name: fullName,
           private: testCase.newPrivate,
           description: null,
-          html_url: `https:
+          html_url: `https://github.com/${fullName}`,
           default_branch: 'main',
         })
 

@@ -313,7 +313,7 @@ onUnmounted(() => {
               </div>
             </div>
             <a 
-              :href="`https:
+              :href="`https://maps.google.com/?q=${metadata.location.latitude},${metadata.location.longitude}`"
               target="_blank"
               class="map-link"
             >

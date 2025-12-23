@@ -216,7 +216,7 @@ describe('Folder Upload Properties', () => {
             for (const file of files) {
               if (file.succeeded) {
                 succeeded.push({
-                  url: `https:
+                  url: `https://example.com/${file.name}`,
                   sha: 'abc123',
                 })
               } else {
@@ -261,7 +261,7 @@ describe('Folder Upload Properties', () => {
             for (const file of files) {
               if (file.succeeded) {
                 succeeded.push({
-                  url: `https:
+                  url: `https://example.com/${file.name}`,
                   sha: 'abc123',
                 })
               } else {
@@ -285,7 +285,7 @@ describe('Folder Upload Properties', () => {
     it('batch result correctly partitions mixed success/failure', () => {
       fc.assert(
         fc.property(
-          fc.nat({ max: 100 }), 
+          fc.nat({ max: 100 }),
           fc.nat({ max: 100 }), 
           (totalFiles, successCount) => {
             const actualSuccessCount = Math.min(successCount, totalFiles)
@@ -295,7 +295,7 @@ describe('Folder Upload Properties', () => {
               succeeded: Array(actualSuccessCount)
                 .fill(null)
                 .map((_, i) => ({
-                  url: `https:
+                  url: `https://example.com/image${i}.jpg`,
                   sha: `sha${i}`,
                 })),
               failed: Array(failureCount)
