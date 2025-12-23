@@ -23,7 +23,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'pnpm'
 
       - uses: dtolnay/rust-toolchain@stable
@@ -44,60 +44,17 @@ jobs:
       - name: Initialize iOS project
         run: pnpm tauri ios init
 
-      - name: Disable code signing (Python)
+      - name: Patch iOS Project (Unsigned)
         run: |
-          python3 << 'EOF'
-          import re
-          import glob
-          
-          pbxproj = glob.glob('src-tauri/gen/apple/**/*.pbxproj', recursive=True)
-          if not pbxproj:
-              print("ERROR: No pbxproj found")
-              exit(1)
-          
-          path = pbxproj[0]
-          print(f"Modifying: {path}")
-          
-          with open(path, 'r') as f:
-              content = f.read()
-          
-          # Backup
-          with open(path + '.backup', 'w') as f:
-              f.write(content)
-          
-          # Replace code signing settings (preserve semicolons)
-          replacements = [
-              (r'CODE_SIGN_IDENTITY = "[^"]*"', 'CODE_SIGN_IDENTITY = ""'),
-              (r'DEVELOPMENT_TEAM = [A-Z0-9]+', 'DEVELOPMENT_TEAM = ""'),
-              (r'DEVELOPMENT_TEAM = "[^"]*"', 'DEVELOPMENT_TEAM = ""'),
-              (r'CODE_SIGNING_REQUIRED = YES', 'CODE_SIGNING_REQUIRED = NO'),
-              (r'CODE_SIGNING_ALLOWED = YES', 'CODE_SIGNING_ALLOWED = NO'),
-              (r'PROVISIONING_PROFILE_SPECIFIER = "[^"]*"', 'PROVISIONING_PROFILE_SPECIFIER = ""'),
-              (r'"CODE_SIGN_IDENTITY\[sdk=iphoneos\*\]" = "[^"]*"', '"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = ""'),
-          ]
-          
-          for pattern, replacement in replacements:
-              content = re.sub(pattern, replacement, content)
-          
-          # Add missing settings if not present
-          if 'CODE_SIGNING_REQUIRED' not in content:
-              content = content.replace('buildSettings = {', 'buildSettings = {\n\t\t\t\tCODE_SIGNING_REQUIRED = NO;')
-          if 'CODE_SIGNING_ALLOWED' not in content:
-              content = content.replace('buildSettings = {', 'buildSettings = {\n\t\t\t\tCODE_SIGNING_ALLOWED = NO;')
-          
-          with open(path, 'w') as f:
-              f.write(content)
-          
-          print("Code signing disabled successfully")
-          EOF
+          mkdir -p .github/scripts
+          python3 .github/scripts/patch_ios_project.py
 
       - name: Build Rust library for iOS
         run: |
           cd src-tauri
           cargo build --release --target aarch64-apple-ios
-          echo "Rust library built for arm64"
 
-      - name: Build iOS app (unsigned for device)
+      - name: Build iOS App (Unsigned)
         run: |
           set -e
           
@@ -114,7 +71,7 @@ jobs:
           SCHEME=$(xcodebuild -project "$XCODEPROJ" -list 2>/dev/null | grep -A 100 "Schemes:" | grep -v "Schemes:" | sed 's/^[[:space:]]*//' | grep -v "^$" | head -1)
           echo "Scheme: $SCHEME"
           
-          # Build for device (arm64) - unsigned
+          # Build
           xcodebuild build \
             -project "$XCODEPROJ" \
             -scheme "$SCHEME" \
@@ -127,48 +84,34 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" \
             AD_HOC_CODE_SIGNING_ALLOWED=YES \
-            ONLY_ACTIVE_ARCH=NO \
-            ENABLE_BITCODE=NO
+            ONLY_ACTIVE_ARCH=NO
 
-      - name: Create unsigned IPA for Sideloadly
+      - name: Package IPA
         run: |
           set -e
           
-          # Find the .app bundle
-          APP_PATH=$(find ./build -name "*.app" -type d | grep -v "Simulator" | head -1)
+          APP_PATH=$(find ./build/Build/Products/Release-iphoneos -name "*.app" -type d | head -1)
           
           if [ -z "$APP_PATH" ]; then
-            echo "Searching in alternative locations..."
-            APP_PATH=$(find src-tauri/gen/apple -name "*.app" -type d 2>/dev/null | head -1)
+             echo "Trying alternate path..."
+             APP_PATH=$(find ./build -name "*.app" -type d | grep -v "Simulator" | head -1)
           fi
-          
+
           if [ -z "$APP_PATH" ]; then
             echo "ERROR: No .app bundle found"
-            find . -name "*.app" -type d 2>/dev/null || true
+            find ./build -name "*.app"
             exit 1
           fi
           
           echo "Found app: $APP_PATH"
           
-          # Verify it's an arm64 build
-          BINARY=$(find "$APP_PATH" -type f -perm +111 | head -1)
-          if [ -n "$BINARY" ]; then
-            file "$BINARY" || true
-          fi
-          
-          # Create IPA structure
           mkdir -p Payload
           cp -R "$APP_PATH" Payload/
           
-          # Create IPA
-          zip -r iMAGE-unsigned.ipa Payload -x "*.DS_Store"
+          zip -r iMAGE-unsigned.ipa Payload
           rm -rf Payload
           
-          # Verify
-          ls -lh iMAGE-unsigned.ipa
-          unzip -l iMAGE-unsigned.ipa | head -20
-          
-          echo "✅ Unsigned IPA created for Sideloadly"
+          echo "✅ Created iMAGE-unsigned.ipa"
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
@@ -176,7 +119,6 @@ jobs:
           name: ios-unsigned-ipa
           path: iMAGE-unsigned.ipa
           retention-days: 30
-          if-no-files-found: error
 
   build-android:
     runs-on: ubuntu-latest
