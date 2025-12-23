@@ -85,7 +85,7 @@ tokio = { version = "1", features = ["fs", "rt-multi-thread"] }
 # feature flag. For iOS builds, pqcrypto is completely excluded via feature flags.
 #
 # BUILD INSTRUCTIONS:
-# - iOS:           cargo build --target aarch64-apple-ios (NO features - uses pure Rust)
+# - iOS:           cargo build release --target aarch64-apple-ios (NO features - uses pure Rust)
 # - Android:       cargo build --target aarch64-linux-android --features pqcrypto-backend
 # - Desktop Linux: cargo build --features pqcrypto-backend
 # - Desktop macOS: cargo build --features pqcrypto-backend

@@ -40,6 +40,10 @@ def patch_pbxproj(path):
         
         # Force Manual Signing Style (handles cases outside TargetAttributes too)
         (r'CODE_SIGN_STYLE = Automatic', 'CODE_SIGN_STYLE = Manual'),
+
+        # Disable Provisioning Profile Requirement
+        (r'PROVISIONING_PROFILE_REQUIRED = YES', 'PROVISIONING_PROFILE_REQUIRED = NO'),
+
     ]
 
     for pattern, replacement in replacements:
