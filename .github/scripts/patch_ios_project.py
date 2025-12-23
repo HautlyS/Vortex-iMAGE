@@ -46,15 +46,28 @@ def patch_pbxproj(path):
 
         # FIX: Force Tauri script to run in Release mode (prevents "missing addr file" panic)
         # Matches --configuration ${CONFIGURATION}, "${CONFIGURATION}", \"${CONFIGURATION}\", ${CONFIGURATION:?} etc.
-        (r'--configuration\s*(?:[\\"]*)\$\{CONFIGURATION[^}]*\}(?:[\\"]*)', '--configuration Release'),
-
-
-
-
+        # Regex explanation:
+        # --configuration\s+   : Matches "--configuration" followed by whitespace
+        # (?:[\\"]*)           : Non-capturing group for optional quotes/escaped quotes
+        # (?:\$)?              : Optional "$" (for $CONFIGURATION case)
+        # (?:\{)?              : Optional "{"
+        # CONFIGURATION        : The literal string "CONFIGURATION"
+        # .*?                  : Any suffixes like ":?"
+        # (?:\}|(?=\s)|(?=[\\"])) : End of variable (closing brace, or lookahead for space/quote)
+        (r'--configuration\s+(?:[\\"]*)(?:\$)?(?:\{)?CONFIGURATION.*?(?:\}|(?=\s)|(?=[\\"]))', '--configuration Release'),
     ]
 
+    # Apply regex replacements
     for pattern, replacement in replacements:
         content = re.sub(pattern, replacement, content)
+
+    # FIX 2: Hardcoded Path Replacement
+    # Some generated projects have hardcoded references to "debug/libapp.a" even in Release schemes.
+    # We forcefully redirect them to the release artifacts we just built.
+    print("Patching hardcoded debug paths...")
+    content = content.replace('debug/libapp.a', 'release/libapp.a')
+    content = content.replace('debug/libvortex_image_lib.a', 'release/libvortex_image_lib.a')
+
 
     # Force inject settings if missing
     if 'CODE_SIGNING_REQUIRED' not in content:

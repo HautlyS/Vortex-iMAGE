@@ -118,6 +118,14 @@ fn is_retryable_status(status: reqwest::StatusCode) -> bool {
     )
 }
 
+/// Extract Retry-After header value in seconds
+fn get_retry_after(headers: &reqwest::header::HeaderMap) -> Option<u64> {
+    headers
+        .get(reqwest::header::RETRY_AFTER)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.parse::<u64>().ok())
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct DeviceCodeResponse {
     pub device_code: String,
@@ -268,18 +276,20 @@ pub async fn upload_photo(
     });
 
     // 1. Mandatory Compression
-    // We use aggressive compression for photos by default
     let compression_settings = ItemCompressionSettings {
         enabled: true,
         algorithm: Algorithm::Zstd,
         level: 3,
         prefer_speed: false,
         min_size_threshold: 128,
-        skip_already_compressed: false, // Force re-compression attempt or wrapping
+        skip_already_compressed: false,
     };
 
     let compressed_data = compress_file_data(&content, &filename, &compression_settings)
         .map_err(|e| AppError::Validation(format!("Compression failed: {}", e)))?;
+    
+    // Drop original content early to free memory
+    drop(content);
     
     // Emit progress (30%)
     let _ = app.emit("upload-progress", UploadProgress {
@@ -289,10 +299,10 @@ pub async fn upload_photo(
         percent: 30,
     });
 
-    // 2. Mandatory Encryption
-    // We serialize the compressed data structure to preserve metadata (original size, algo)
+    // 2. Mandatory Encryption - serialize and encrypt in one step
     let compressed_bytes = serde_json::to_vec(&compressed_data)
         .map_err(|e| AppError::Validation(format!("Serialization failed: {}", e)))?;
+    drop(compressed_data);
 
     let encryption_settings = EncryptionSettings {
         enabled: true,
@@ -301,13 +311,13 @@ pub async fn upload_photo(
         recipient_bundle: Some(public_bundle),
     };
 
-    // Encrypt using hybrid scheme
     let encrypted_file = encrypt_file_data(&compressed_bytes, &encryption_settings, None, None)
         .map_err(|e| AppError::Validation(format!("Encryption failed: {}", e)))?;
+    drop(compressed_bytes);
         
-    // Serialize final encrypted package
     let final_payload = serde_json::to_vec(&encrypted_file)
         .map_err(|e| AppError::Validation(format!("Final serialization failed: {}", e)))?;
+    drop(encrypted_file);
 
     let final_size = final_payload.len() as u64;
 
@@ -324,10 +334,6 @@ pub async fn upload_photo(
     }
 
     let encoded = STANDARD.encode(&final_payload);
-    drop(content);
-    drop(compressed_data);
-    drop(compressed_bytes);
-    drop(encrypted_file);
     drop(final_payload);
 
     let upload_path = format!("photos/{}", safe_filename);
@@ -1101,6 +1107,14 @@ async fn upload_single_file(
                 .json(&body)
                 .send()
                 .await?;
+
+            if res.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+                // Respect Retry-After header
+                if let Some(retry_secs) = get_retry_after(res.headers()) {
+                    sleep(Duration::from_secs(retry_secs)).await;
+                }
+                return Err(AppError::Api("Rate limited".into()));
+            }
 
             if is_retryable_status(res.status()) {
                 return Err(AppError::Api(format!("Retryable error: {}", res.status())));
