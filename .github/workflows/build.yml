@@ -14,6 +14,8 @@ jobs:
   build-ios-unsigned:
     runs-on: macos-latest
     timeout-minutes: 60
+    env:
+      CARGO_INCREMENTAL: 1
     steps:
       - uses: actions/checkout@v4
 
@@ -23,7 +25,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20' # Unified to 20 for stability
+          node-version: '22'
           cache: 'pnpm'
 
       - uses: dtolnay/rust-toolchain@stable
@@ -33,7 +35,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: "src-tauri" # Points to Cargo.toml dir
+          workspaces: "./src-tauri -> target"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -42,162 +44,295 @@ jobs:
         run: pnpm run build
 
       - name: Initialize iOS project
-        run: pnpm tauri ios init
-
-      - name: Patch iOS Project (The "Deep" Reddit Fix)
         run: |
-          # Create the patch script dynamically
-          cat > .github/scripts/patch_ios_project.py << 'EOF'
-          import os
-          import sys
-          import glob
+          if [ ! -d "src-tauri/gen/apple" ]; then
+            pnpm tauri ios init
+          else
+            echo "✅ iOS project already initialized"
+          fi
 
-          def find_xcode_project():
-              matches = glob.glob("src-tauri/gen/apple/*.xcodeproj/project.pbxproj")
-              if not matches:
-                  print("Error: project.pbxproj not found")
-                  sys.exit(1)
-              return matches[0]
-
-          def patch_project(file_path):
-              with open(file_path, 'r') as f:
-                  content = f.read()
-              
-              replacements = {
-                  'CODE_SIGN_IDENTITY = "Apple Development";': 'CODE_SIGN_IDENTITY = "";',
-                  'CODE_SIGN_IDENTITY = "iPhone Developer";': 'CODE_SIGN_IDENTITY = "";',
-                  'CODE_SIGNING_REQUIRED = YES;': 'CODE_SIGNING_REQUIRED = NO;',
-                  'CODE_SIGNING_ALLOWED = YES;': 'CODE_SIGNING_ALLOWED = NO;',
-                  'DEVELOPMENT_TEAM = '';': 'DEVELOPMENT_TEAM = "";',
-              }
-              
-              new_content = content
-              for old, new in replacements.items():
-                  if old in new_content:
-                      new_content = new_content.replace(old, new)
-              
-              import re
-              # Fallback regex to ensure NO signing
-              new_content = re.sub(r'CODE_SIGNING_ALLOWED = YES;', 'CODE_SIGNING_ALLOWED = NO;', new_content)
-              
-              with open(file_path, 'w') as f:
-                  f.write(new_content)
-              print("Patched successfully")
-
-          if __name__ == "__main__":
-              os.chdir(os.getcwd()) 
-              patch_project(find_xcode_project())
-          EOF
-          
+      - name: Patch iOS Project (Unsigned)
+        run: |
+          mkdir -p .github/scripts
           python3 .github/scripts/patch_ios_project.py
+
+      - name: Build Rust library for iOS
+        run: |
+          cd src-tauri
+          cargo build --target aarch64-apple-ios
 
       - name: Build iOS App (Unsigned)
         run: |
           set -e
           
-          # Find project
-          XCODEPROJ=$(find src-tauri/gen/apple -name "*.xcodeproj" | head -1)
+          # Find Xcode project
+          XCODEPROJ=$(find src-tauri/gen/apple -name "*.xcodeproj" -type d | head -1)
           if [ -z "$XCODEPROJ" ]; then
-            echo "ERROR: No Xcode project found"
+            echo "ERROR: No Xcode project found in src-tauri/gen/apple"
+            find src-tauri/gen/apple -type d -name "*.xcodeproj" || true
             exit 1
           fi
-
-          # Get scheme (usually matches APP_NAME or defined in tauri.conf.json)
-          SCHEME=$(xcodebuild -project "$XCODEPROJ" -list 2>/dev/null | grep -A 100 "Schemes:" | grep -v "Schemes:" | sed 's/^[[:space:]]*//' | grep -v "^$" | head -1)
           
-          echo "Building Scheme: $SCHEME"
-
-          # Build
-          # Note: We removed the manual 'cargo build' step. Xcode handles it.
+          echo "✅ Found Xcode project: $XCODEPROJ"
+          
+          # Extract scheme name
+          SCHEMES=$(xcodebuild -project "$XCODEPROJ" -list 2>/dev/null | \
+            awk '/Schemes:/{flag=1; next} flag && /^$/{flag=0} flag')
+          
+          if [ -z "$SCHEMES" ]; then
+            echo "ERROR: No schemes found in Xcode project"
+            xcodebuild -project "$XCODEPROJ" -list || true
+            exit 1
+          fi
+          
+          SCHEME=$(echo "$SCHEMES" | sed 's/^[[:space:]]*//' | head -1)
+          
+          if [ -z "$SCHEME" ]; then
+            echo "ERROR: Failed to extract scheme name"
+            exit 1
+          fi
+          
+          echo "✅ Using scheme: '$SCHEME'"
+          
+          # Verify code signing configuration
+          echo "Verifying code signing configuration..."
+          CODE_SIGN_STATUS=$(xcodebuild -project "$XCODEPROJ" -scheme "$SCHEME" \
+            -showBuildSettings 2>/dev/null | grep "CODE_SIGN_IDENTITY " | awk '{print $NF}')
+          
+          if [ -z "$CODE_SIGN_STATUS" ] || [ "$CODE_SIGN_STATUS" = "(null)" ]; then
+            echo "✅ Code signing disabled as expected"
+          else
+            echo "⚠️  CODE_SIGN_IDENTITY will be: $CODE_SIGN_STATUS"
+          fi
+          
+          # Build unsigned IPA
+          echo "🔨 Building unsigned iOS app..."
           xcodebuild build \
-          -project "$XCODEPROJ" \
-          -scheme "$SCHEME" \
-          -configuration Debug \
-          -sdk iphoneos \
-          -destination "generic/platform=iOS" \
-          -derivedDataPath ./build \
-          CODE_SIGN_IDENTITY="-" \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGNING_ALLOWED=NO \
-          DEVELOPMENT_TEAM="" \
-          ONLY_ACTIVE_ARCH=NO
+            -project "$XCODEPROJ" \
+            -scheme "$SCHEME" \
+            -configuration Debug \
+            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath ./build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            DEVELOPMENT_TEAM="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            ONLY_ACTIVE_ARCH=NO \
+            2>&1 | tee build.log
+          
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "ERROR: xcodebuild failed"
+            echo "Last 50 lines of build log:"
+            tail -50 build.log
+            exit 1
+          fi
+          
+          echo "✅ Build completed successfully"
 
       - name: Package IPA
         run: |
           set -e
           
-          # Find the .app
-          APP_PATH=$(find ./build/Build/Products/Debug-iphoneos -name "*.app" -type d | head -1)
+          echo "🔍 Searching for .app bundle..."
+          
+          # Search for .app bundle in multiple locations
+          APP_PATH=$(find ./build/Build/Products/Debug-iphoneos -name "*.app" -type d 2>/dev/null | head -1)
           
           if [ -z "$APP_PATH" ]; then
-            echo "ERROR: No .app bundle found in Debug-iphoneos"
-            echo "Available artifacts:"
-            find ./build -name "*.app" -type d
+            echo "ℹ️  Not found in Debug-iphoneos, checking Release-iphoneos..."
+            APP_PATH=$(find ./build/Build/Products/Release-iphoneos -name "*.app" -type d 2>/dev/null | head -1)
+          fi
+          
+          if [ -z "$APP_PATH" ]; then
+            echo "ℹ️  Not found in Release-iphoneos, performing broad search..."
+            APP_PATH=$(find ./build -name "*.app" -type d 2>/dev/null | grep -v "Simulator" | head -1)
+          fi
+          
+          if [ -z "$APP_PATH" ]; then
+            echo "ERROR: No .app bundle found anywhere in build directory"
+            echo "Build directory structure:"
+            find ./build -type d -name "*.app" 2>/dev/null || echo "  (no .app bundles found)"
+            find ./build/Build/Products -type d 2>/dev/null | head -20 || echo "  (Products directory not found)"
             exit 1
           fi
-
-          echo "Found app: $APP_PATH"
           
+          echo "✅ Found app bundle: $APP_PATH"
+          
+          # Validate .app bundle structure
+          if [ ! -d "$APP_PATH" ]; then
+            echo "ERROR: Expected .app bundle directory not found at: $APP_PATH"
+            exit 1
+          fi
+          
+          if [ ! -f "$APP_PATH/Info.plist" ]; then
+            echo "ERROR: Invalid .app bundle - missing Info.plist"
+            exit 1
+          fi
+          
+          echo "✅ .app bundle is valid (Info.plist present)"
+          
+          # List bundle contents for debugging
+          echo "ℹ️  App bundle contents:"
+          ls -la "$APP_PATH" | head -10
+          
+          # Create Payload folder and package IPA
+          echo "📦 Creating IPA package..."
+          rm -rf Payload
           mkdir -p Payload
-          cp -R "$APP_PATH" Payload/
           
-          # Verify the binary inside is actually unsigned (optional but good for debugging)
-          # codesign -dv Payload/*.app 2>&1 || true
+          cp -R "$APP_PATH" Payload/ || { 
+            echo "ERROR: Failed to copy app bundle to Payload folder"
+            exit 1
+          }
           
-          zip -r "${APP_NAME}-unsigned.ipa" Payload
+          echo "✅ App bundle copied to Payload/"
+          
+          # Create IPA (zip with correct structure)
+          zip -r -q iMAGE-unsigned.ipa Payload/ || {
+            echo "ERROR: Failed to create IPA zip file"
+            exit 1
+          }
+          
           rm -rf Payload
           
-          echo "✅ Created ${APP_NAME}-unsigned.ipa"
+          # Validate IPA structure
+          echo "🔍 Validating IPA structure..."
+          
+          if [ ! -f "iMAGE-unsigned.ipa" ]; then
+            echo "ERROR: IPA file was not created"
+            exit 1
+          fi
+          
+          # Verify IPA is valid zip
+          unzip -t iMAGE-unsigned.ipa > /dev/null 2>&1 || {
+            echo "ERROR: IPA file is corrupted or not a valid ZIP archive"
+            exit 1
+          }
+          
+          # Check for Payload/.app structure
+          unzip -l iMAGE-unsigned.ipa | grep -q "Payload.*\.app" || {
+            echo "ERROR: IPA missing expected Payload/.app structure"
+            echo "IPA contents:"
+            unzip -l iMAGE-unsigned.ipa | head -20
+            exit 1
+          }
+          
+          # Get IPA size
+          IPA_SIZE=$(stat -f%z iMAGE-unsigned.ipa 2>/dev/null || stat -c%s iMAGE-unsigned.ipa 2>/dev/null)
+          IPA_SIZE_MB=$(echo "scale=2; $IPA_SIZE / 1024 / 1024" | bc)
+          
+          echo "✅ IPA validation passed"
+          echo ""
+          echo "📊 IPA Details:"
+          echo "  File: iMAGE-unsigned.ipa"
+          echo "  Size: ${IPA_SIZE_MB}MB"
+          echo "  Structure: Valid (Payload/.app/...)"
+          echo ""
+          echo "🚀 Ready for Sideloadly installation:"
+          echo "  1. Download iMAGE-unsigned.ipa from artifacts"
+          echo "  2. Open Sideloadly on your macOS machine"
+          echo "  3. Select your iOS device"
+          echo "  4. Drag & drop the IPA"
+          echo "  5. Enter your Apple ID (no developer account needed)"
+          echo "  6. App will be signed and installed automatically"
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
           name: ios-unsigned-ipa
-          path: ${{ env.APP_NAME }}-unsigned.ipa
+          path: iMAGE-unsigned.ipa
           retention-days: 30
+
+      - name: Build Summary
+        if: always()
+        run: |
+          echo "📋 Build Summary"
+          echo "================"
+          if [ -f "iMAGE-unsigned.ipa" ]; then
+            SIZE=$(stat -f%z iMAGE-unsigned.ipa 2>/dev/null || stat -c%s iMAGE-unsigned.ipa 2>/dev/null)
+            SIZE_MB=$(echo "scale=2; $SIZE / 1024 / 1024" | bc)
+            echo "✅ iOS Unsigned IPA: $SIZE_MB MB"
+            echo "   Artifact: ios-unsigned-ipa"
+          else
+            echo "❌ iOS Unsigned IPA: Build failed"
+          fi
+          if [ -f "build.log" ]; then
+            echo ""
+            echo "Build log available in artifacts"
+          fi
 
   build-android:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+
       - uses: pnpm/action-setup@v4
         with:
           version: 9
+
       - uses: actions/setup-node@v4
         with:
-          node-version: '20' # Unified
+          node-version: '20'
           cache: 'pnpm'
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: "src-tauri"
+          workspaces: "./src-tauri -> target"
+
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+
       - name: Install NDK
         run: sdkmanager "ndk;27.0.12077973"
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
       - name: Build frontend
         run: pnpm run build
+
       - name: Initialize Android project
         run: pnpm tauri android init
+
       - name: Build Android APK
         run: pnpm tauri android build
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
+
       - uses: actions/upload-artifact@v4
         with:
           name: android-apk
           path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
           retention-days: 30
+
+      - name: Build Summary
+        if: always()
+        run: |
+          echo "📋 Build Summary"
+          echo "================"
+          if find src-tauri/gen/android/app/build/outputs/apk -name "*.apk" -type f 2>/dev/null | grep -q .; then
+            echo "✅ Android APK: Build successful"
+            find src-tauri/gen/android/app/build/outputs/apk -name "*.apk" -type f | while read apk; do
+              SIZE=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null)
+              SIZE_MB=$(echo "scale=2; $SIZE / 1024 / 1024" | bc)
+              echo "   $(basename "$apk"): $SIZE_MB MB"
+            done
+          else
+            echo "❌ Android APK: Build failed"
+          fi
 
   build-desktop:
     strategy:
@@ -214,29 +349,38 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+
       - uses: pnpm/action-setup@v4
         with:
           version: 9
+
       - uses: actions/setup-node@v4
         with:
-          node-version: '20' # Unified
+          node-version: '20'
           cache: 'pnpm'
+
       - uses: dtolnay/rust-toolchain@stable
+
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: "src-tauri"
+          workspaces: "./src-tauri -> target"
+
       - name: Install Linux dependencies
         if: matrix.os == 'ubuntu-22.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
       - name: Build frontend
         run: pnpm run build
+
       - name: Build desktop app
         run: pnpm tauri build
+
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-${{ matrix.target }}
@@ -248,3 +392,24 @@ jobs:
             src-tauri/target/release/bundle/**/*.msi
             src-tauri/target/release/bundle/**/*.exe
           retention-days: 30
+
+      - name: Build Summary
+        if: always()
+        run: |
+          echo "📋 Build Summary"
+          echo "================"
+          FOUND=0
+          for ext in dmg app deb AppImage msi exe; do
+            if find src-tauri/target/release/bundle -name "*.$ext" -type f 2>/dev/null | grep -q .; then
+              echo "✅ Desktop ${{ matrix.target }}: $ext artifact found"
+              find src-tauri/target/release/bundle -name "*.$ext" -type f | while read file; do
+                SIZE=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null)
+                SIZE_MB=$(echo "scale=2; $SIZE / 1024 / 1024" | bc)
+                echo "   $(basename "$file"): $SIZE_MB MB"
+              done
+              FOUND=1
+            fi
+          done
+          if [ $FOUND -eq 0 ]; then
+            echo "❌ Desktop ${{ matrix.target }}: No artifacts found"
+          fi
