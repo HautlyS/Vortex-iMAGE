@@ -144,10 +144,6 @@ jobs:
             APP_PATH=$(find ./build -name "*.app" -type d 2>/dev/null | grep -v "Simulator" | head -1)
           fi
           
-          if [ -z "$APP_PATH" ]; then
-            echo "ℹ️  Not found in Release-iphoneos, performing broad search..."
-            APP_PATH=$(find ./build -name "*.app" -type d 2>/dev/null | grep -v "Simulator" | head -1)
-          fi
           
           if [ -z "$APP_PATH" ]; then
             echo "ERROR: No .app bundle found anywhere in build directory"

@@ -139,7 +139,9 @@ setup_android_sdk() {
         "platform-tools" \
         "platforms;android-${ANDROID_PLATFORM}" \
         "build-tools;${ANDROID_BUILD_TOOLS}" \
-        "ndk;${NDK_VERSION}"
+        "ndk;${NDK_VERSION}" \
+        "emulator" \
+        "system-images;android-${ANDROID_PLATFORM};google_apis;x86_64"
     
     log_success "Android SDK setup complete"
 }
@@ -226,6 +228,9 @@ build_android() {
 
 run_android() {
     log_info "Running on Android device/emulator..."
+    
+    # Ensure tools are in PATH
+    export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH"
     
     cd "$(dirname "$0")/.."
     
