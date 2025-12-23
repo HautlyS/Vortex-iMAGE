@@ -1,6 +1,12 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <template>
   <div ref="containerRef" :class="[glassSurfaceClasses, focusVisibleClasses, className]" :style="containerStyles">
-    <svg class="w-full h-full pointer-events-none absolute inset-0 opacity-0 -z-10" xmlns="http://www.w3.org/2000/svg">
+    <svg class="w-full h-full pointer-events-none absolute inset-0 opacity-0 -z-10" xmlns="http:
       <defs>
         <filter :id="filterId" color-interpolation-filters="sRGB" x="0%" y="0%" width="100%" height="100%">
           <feImage ref="feImageRef" x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="map" />
@@ -133,7 +139,6 @@ const updateDarkMode = () => {
   return () => mediaQuery.removeEventListener('change', handler);
 };
 
-// Generate unique IDs for SVG elements
 const generateUniqueId = () => {
   return Math.random().toString(36).substring(2, 15);
 };
@@ -159,7 +164,7 @@ const generateDisplacementMap = () => {
   const edgeSize = Math.min(actualWidth, actualHeight) * (props.borderWidth * 0.5);
 
   const svgContent = `
-      <svg viewBox="0 0 ${actualWidth} ${actualHeight}" xmlns="http://www.w3.org/2000/svg">
+      <svg viewBox="0 0 ${actualWidth} ${actualHeight}" xmlns="http:
         <defs>
           <linearGradient id="${redGradId}" x1="100%" y1="0%" x2="0%" y2="0%">
             <stop offset="0%" stop-color="#0000"/>

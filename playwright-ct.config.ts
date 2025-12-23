@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 0 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 2 modules
+ */
+
 import { defineConfig, devices } from '@playwright/experimental-ct-vue';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';

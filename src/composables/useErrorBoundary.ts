@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 1 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { ref, onErrorCaptured, onUnmounted } from 'vue'
 
 export interface ErrorInfo {
@@ -21,8 +27,7 @@ export function useErrorBoundary() {
     
     errors.value.push(errorInfo)
     hasError.value = true
-    
-    // Log to console for debugging
+
     console.error('Error captured:', errorInfo)
   }
 
@@ -36,14 +41,12 @@ export function useErrorBoundary() {
     hasError.value = errors.value.length > 0
   }
 
-  // Capture Vue component errors
   onErrorCaptured((error, instance) => {
     const componentName = instance?.$options.name || instance?.$options.__name || 'Unknown'
     captureError(error, componentName)
-    return false // Prevent error from propagating
+    return false 
   })
 
-  // Global error handlers with cleanup
   const handleError = (event: ErrorEvent) => {
     captureError(new Error(event.message), 'Global')
   }
@@ -57,7 +60,6 @@ export function useErrorBoundary() {
     window.addEventListener('unhandledrejection', handleRejection)
   }
 
-  // Cleanup on unmount
   onUnmounted(() => {
     if (typeof window !== 'undefined') {
       window.removeEventListener('error', handleError)

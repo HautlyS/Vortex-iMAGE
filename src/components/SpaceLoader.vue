@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { Vortex } from './ui/vortex'
@@ -73,7 +79,7 @@ onUnmounted(() => {
   width: 100vw !important;
   height: 100vh !important;
   z-index: 9999;
-  /* iOS safe areas */
+  
   padding-top: env(safe-area-inset-top, 0);
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
@@ -85,7 +91,7 @@ onUnmounted(() => {
   justify-content: center;
   height: 100%;
   gap: 24px;
-  /* Account for iOS notch */
+  
   padding-top: env(safe-area-inset-top, 0);
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
@@ -115,7 +121,6 @@ onUnmounted(() => {
   50% { transform: translateY(-8px); }
 }
 
-/* Reduce motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
   .app-icon {
     animation: none;

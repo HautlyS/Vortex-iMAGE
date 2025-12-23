@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useUploadToast, type FileTransfer } from '../composables/useUploadToast'
@@ -132,7 +138,7 @@ function getStatusClass(transfer: FileTransfer): string {
 </template>
 
 <style scoped>
-/* iOS-style Upload Toast */
+
 .upload-toast {
   position: fixed;
   bottom: 24px;
@@ -155,7 +161,6 @@ function getStatusClass(transfer: FileTransfer): string {
     0 10px 40px rgba(0, 0, 0, 0.25);
 }
 
-/* Header */
 .toast-header {
   display: flex;
   align-items: center;
@@ -267,7 +272,6 @@ function getStatusClass(transfer: FileTransfer): string {
   height: 16px;
 }
 
-/* File List */
 .toast-files {
   border-top: 0.5px solid var(--labelDivider);
   max-height: 280px;
@@ -410,7 +414,6 @@ function getStatusClass(transfer: FileTransfer): string {
   height: 14px;
 }
 
-/* Clear All Button */
 .clear-all-btn {
   width: 100%;
   padding: 12px;
@@ -428,7 +431,6 @@ function getStatusClass(transfer: FileTransfer): string {
   background: var(--systemQuinary);
 }
 
-/* Transitions */
 .toast-slide-enter-active,
 .toast-slide-leave-active {
   transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);

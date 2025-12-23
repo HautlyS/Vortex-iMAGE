@@ -1,19 +1,17 @@
+/**
+ * TypeScript Module - 1 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { describe, it, expect } from 'vitest'
 import * as fc from 'fast-check'
 
-/**
- * Repository name validation logic (mirrors Rust implementation)
- * Valid: alphanumeric, hyphens, underscores, dots
- * Length: 1-100 characters
- * Cannot start/end with dot or hyphen
- * Cannot contain consecutive dots
- */
 export function validateRepoName(name: string): { valid: boolean; error?: string } {
   if (!name || name.length === 0 || name.length > 100) {
     return { valid: false, error: 'Repository name must be 1-100 characters' }
   }
 
-  // Check for valid characters
   const validChars = /^[a-zA-Z0-9._-]+$/
   if (!validChars.test(name)) {
     return {
@@ -23,7 +21,6 @@ export function validateRepoName(name: string): { valid: boolean; error?: string
     }
   }
 
-  // Cannot start or end with dot or hyphen
   if (
     name.startsWith('.') ||
     name.startsWith('-') ||
@@ -36,7 +33,6 @@ export function validateRepoName(name: string): { valid: boolean; error?: string
     }
   }
 
-  // Cannot contain consecutive dots
   if (name.includes('..')) {
     return { valid: false, error: 'Repository name cannot contain consecutive dots' }
   }
@@ -44,11 +40,9 @@ export function validateRepoName(name: string): { valid: boolean; error?: string
   return { valid: true }
 }
 
-// Helper to generate valid repo name characters
 const validRepoChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.'
 const alphanumeric = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
-// Generate a string from a character set
 function genStringFromChars(chars: string, minLen: number, maxLen: number) {
   return fc
     .array(fc.constantFrom(...chars.split('')), { minLength: minLen, maxLength: maxLen })
@@ -56,12 +50,7 @@ function genStringFromChars(chars: string, minLen: number, maxLen: number) {
 }
 
 describe('Repository Name Validation', () => {
-  /**
-   * Feature: photo-manager-enhancement, Property 4: Repository Name Validation
-   * For any string input as repository name, the validation function SHALL accept only
-   * strings matching the pattern with length between 1 and 100 characters, and reject all others.
-   * Validates: Requirements 2.6
-   */
+  
   describe('Property 4: Repository Name Validation', () => {
     it('Property 4: valid names (alphanumeric only) are accepted', () => {
       fc.assert(
@@ -78,7 +67,6 @@ describe('Repository Name Validation', () => {
         fc.property(genStringFromChars(validRepoChars, 1, 50), (name) => {
           const result = validateRepoName(name)
 
-          // Check if name has invalid structure
           const hasInvalidStructure =
             name.startsWith('.') ||
             name.startsWith('-') ||

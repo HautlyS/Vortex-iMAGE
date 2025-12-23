@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 1 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 2 modules
+ */
+
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { load } from '@tauri-apps/plugin-store'
@@ -93,10 +99,9 @@ export function usePipeline() {
   async function initialize(): Promise<void> {
     if (initialized) return
     try {
-      // Load presets from backend
-      presets.value = await invoke<PipelineConfig[]>('pipeline_get_presets')
       
-      // Load saved pipelines
+      presets.value = await invoke<PipelineConfig[]>('pipeline_get_presets')
+
       const store = await load('settings.json')
       const saved = await store.get<PipelineConfig[]>('pipelines')
       if (saved) {
@@ -200,7 +205,7 @@ export function usePipeline() {
     const index = pipeline.layers.findIndex(l => l.id === layerId)
     if (index !== -1) {
       pipeline.layers.splice(index, 1)
-      // Reorder remaining layers
+      
       pipeline.layers.forEach((l, i) => l.order = i)
       pipeline.updated_at = Math.floor(Date.now() / 1000)
       savePipelines()
@@ -291,7 +296,6 @@ export function usePipeline() {
     })
   }
 
-  // Helper to create operations
   function createCompressOperation(algorithm = 'zstd', level = 3): CompressOperation {
     return { type: 'compress', algorithm, level }
   }

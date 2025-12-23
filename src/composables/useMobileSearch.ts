@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 2 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { ref, onMounted, onUnmounted } from 'vue'
 
 export function useMobileSearch() {

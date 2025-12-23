@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 2 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: SyncStatusIndicator, DecayCard
+ */
+
 <script setup lang="ts">
 import { ref } from 'vue'
 import SyncStatusIndicator from './SyncStatusIndicator.vue'
@@ -131,14 +137,12 @@ function handleSyncAction(action: string, photoId: string) {
 </template>
 
 <style scoped>
-/* Specific overrides or additional styles for PhotoPreview usage */
+
 .photo-preview.resizing { 
   cursor: nwse-resize; 
   transform: none; 
 }
 
-/* Reusing styles that need to be slotted in */
-/* Favorite Button */
 .favorite-btn {
   position: absolute;
   top: 0.5rem;
@@ -162,7 +166,6 @@ function handleSyncAction(action: string, photoId: string) {
 .favorite-btn.active { opacity: 1; color: #ff2d6a; }
 .favorite-btn svg { width: 0.875rem; height: 0.875rem; }
 
-/* Resize Handle */
 .resize-handle {
   position: absolute;
   bottom: 0;
@@ -184,7 +187,6 @@ function handleSyncAction(action: string, photoId: string) {
 .resize-handle:hover { background: var(--cyber-cyan, #00f0ff); color: #000; }
 .resize-handle svg { width: 0.75rem; height: 0.75rem; }
 
-/* Sync Status */
 .sync-status-wrapper {
   position: absolute;
   bottom: 0.5rem;
@@ -194,7 +196,6 @@ function handleSyncAction(action: string, photoId: string) {
 .sync-status-wrapper :deep(.indicator-btn) { opacity: 0; }
 :deep(.decay-card:hover) .sync-status-wrapper :deep(.indicator-btn) { opacity: 1; }
 
-/* Selection Indicator */
 .selection-indicator {
   position: absolute;
   top: 0.5rem;
@@ -214,7 +215,6 @@ function handleSyncAction(action: string, photoId: string) {
 @keyframes scaleIn { from { transform: scale(0); } to { transform: scale(1); } }
 .selection-indicator svg { width: 0.875rem; height: 0.875rem; }
 
-/* Hover Overlay */
 .hover-overlay {
   position: absolute;
   bottom: 0;

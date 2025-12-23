@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 1 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: ConfirmDialog
+ */
+
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { load } from '@tauri-apps/plugin-store'
@@ -28,8 +34,7 @@ async function loadSettings() {
     deleteAfterUpload.value = await store.get('deleteAfterUpload') ?? false
     compressImages.value = await store.get('compressImages') ?? false
     stripMetadata.value = await store.get('stripMetadata') ?? true
-    
-    // Sync with GitHub to get actual repo visibility
+
     if (token.value && repo.value) {
       const isPrivate = await syncPrivacy(repo.value, token.value)
       privacyLevel.value = isPrivate ? 'private' : 'public'
@@ -39,7 +44,7 @@ async function loadSettings() {
 }
 
 async function handlePrivacyChange(level: 'public' | 'private' | 'unlisted') {
-  // If changing from private to public, show confirmation
+  
   if (privacyLevel.value === 'private' && level === 'public') {
     pendingPublicChange.value = true
     showConfirmPublic.value = true
@@ -67,8 +72,7 @@ async function saveSettings() {
   await store.set('compressImages', compressImages.value)
   await store.set('stripMetadata', stripMetadata.value)
   await store.save()
-  
-  // Sync visibility with GitHub
+
   if (token.value && repo.value && privacyLevel.value !== 'unlisted') {
     try {
       await updateVisibility(repo.value, privacyLevel.value === 'private', token.value)
@@ -308,7 +312,6 @@ onMounted(loadSettings)
   padding: 1.5rem;
 }
 
-/* Loading State */
 .loading-state {
   display: flex;
   flex-direction: column;
@@ -350,7 +353,6 @@ onMounted(loadSettings)
   animation: spin 1s linear infinite;
 }
 
-/* Privacy Options */
 .privacy-options { display: flex; flex-direction: column; gap: 0.5rem; }
 .privacy-option {
   display: flex;
@@ -381,7 +383,6 @@ onMounted(loadSettings)
 .option-title { font-size: 0.875rem; font-weight: 500; }
 .option-desc { font-size: 0.75rem; color: #71717a; }
 
-/* Toggle Options */
 .toggle-option {
   display: flex;
   align-items: center;
@@ -420,7 +421,6 @@ onMounted(loadSettings)
 }
 .toggle.active .toggle-slider { transform: translateX(1.25rem); }
 
-/* Integrations */
 .integrations { display: flex; flex-direction: column; gap: 0.5rem; }
 .integration {
   display: flex;
@@ -455,7 +455,6 @@ onMounted(loadSettings)
   text-transform: uppercase;
 }
 
-/* Footer */
 .modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -498,7 +497,6 @@ onMounted(loadSettings)
   animation: spin 1s linear infinite;
 }
 
-/* Transitions */
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

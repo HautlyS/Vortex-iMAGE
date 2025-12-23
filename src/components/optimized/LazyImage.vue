@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <template>
   <div class="lazy-image-container" :style="{ width: `${width}px`, height: `${height}px` }">
     <div
@@ -108,7 +114,6 @@ onUnmounted(() => {
   observer.value?.disconnect()
 })
 
-// Reset state when src changes
 watch(() => props.src, () => {
   loaded.value = false
   error.value = false

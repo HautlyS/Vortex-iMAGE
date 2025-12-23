@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <script setup lang="ts">
 import { ref } from 'vue'
 
@@ -221,7 +227,6 @@ function handleSelect(path: string | null) {
   border-left: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Expand transition */
 .expand-enter-active,
 .expand-leave-active {
   transition: all 0.2s ease;

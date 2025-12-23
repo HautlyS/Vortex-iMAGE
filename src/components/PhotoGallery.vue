@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 4 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: Masonry, CircularGallery, FloatingTagPanel...
+ */
+
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
@@ -32,19 +38,18 @@ const emit = defineEmits<{
   albumClick: [album: Album]
 }>()
 
-// Mock photos for dev mode
 const mockPhotos: Photo[] = Array.from({ length: 12 }, (_, i) => ({
   sha: `mock-${i}`,
   name: `Mock Photo ${i + 1}`,
-  url: `https://picsum.photos/seed/gallery${i}/400/${300 + (i % 5) * 50}`,
+  url: `https:
 }))
 
 const mockAlbums: Album[] = [
   { name: 'Viagens', path: 'viagens', photo_count: 24, children: [
-    { name: '2024', path: 'viagens/2024', photo_count: 12, children: [], coverUrl: 'https://picsum.photos/seed/sub1/400/350' },
-    { name: '2023', path: 'viagens/2023', photo_count: 12, children: [], coverUrl: 'https://picsum.photos/seed/sub2/400/350' },
-  ], coverUrl: 'https://picsum.photos/seed/album1/400/350' },
-  { name: 'Família', path: 'familia', photo_count: 56, children: [], coverUrl: 'https://picsum.photos/seed/album2/400/400' },
+    { name: '2024', path: 'viagens/2024', photo_count: 12, children: [], coverUrl: 'https:
+    { name: '2023', path: 'viagens/2023', photo_count: 12, children: [], coverUrl: 'https:
+  ], coverUrl: 'https:
+  { name: 'Família', path: 'familia', photo_count: 56, children: [], coverUrl: 'https:
 ]
 
 const displayPhotos = computed(() => {
@@ -54,7 +59,6 @@ const displayPhotos = computed(() => {
   return props.photos
 })
 
-// Find subalbums for current path
 function findSubalbums(albums: Album[], parentPath: string | null): Album[] {
   if (!parentPath) return albums
   
@@ -77,8 +81,6 @@ function getParentPath(path: string): string | null {
   return parts.length > 1 ? parts.slice(0, -1).join('/') : null
 }
 
-
-
 function getBreadcrumbs(path: string) {
     if (!path) return []
     const parts = path.split('/')
@@ -94,8 +96,7 @@ const displayAlbums = computed(() => {
     : (props.albums || [])
   
   if (!props.showAlbums) return []
-  
-  // If inside an album, show subalbums
+
   if (props.currentAlbumPath) {
     return findSubalbums(allAlbums, props.currentAlbumPath)
   }
@@ -103,14 +104,12 @@ const displayAlbums = computed(() => {
   return allAlbums
 })
 
-// Get cover image for album (first photo in that path)
 function getAlbumCover(album: Album): string {
   if (album.coverUrl) return album.coverUrl
   const photo = props.photos.find(p => p.path?.startsWith(album.path))
-  return photo?.url || `https://picsum.photos/seed/${album.path}/400/350`
+  return photo?.url || `https:
 }
 
-// Convert albums to Masonry items
 const albumItems = computed(() =>
   displayAlbums.value.map(album => ({
     id: `folder-${album.path}`,
@@ -124,7 +123,6 @@ const albumItems = computed(() =>
   }))
 )
 
-// Convert photos to Masonry items
 const photoItems = computed(() => 
   displayPhotos.value.map(photo => {
     const hash = photo.sha.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
@@ -139,8 +137,6 @@ const photoItems = computed(() =>
   })
 )
 
-// Combined items: folders first, then photos
-// Also inject tag colors
 const masonryItems = computed(() => {
   const allItems = [...albumItems.value, ...photoItems.value]
   return allItems.map(item => {
@@ -156,7 +152,7 @@ function handleItemClick(item: any) {
   if (item.isFolder && item.album) {
     emit('albumClick', item.album)
   } else if (item.photo) {
-    // Open lightbox on single click for photos
+    
     const index = displayPhotos.value.findIndex(p => p.sha === item.id)
     if (index !== -1) {
       lightboxStartIndex.value = index
@@ -166,7 +162,6 @@ function handleItemClick(item: any) {
   }
 }
 
-// Lightbox (CircularGallery) Logic
 const isLightboxOpen = ref(false);
 const lightboxStartIndex = ref(0);
 const currentLightboxIndex = ref(0);
@@ -175,15 +170,12 @@ const isSyncing = ref(false);
 const saveSuccess = ref(false);
 const syncSuccess = ref(false);
 
-// Current photo in lightbox
 const currentLightboxPhoto = computed(() => displayPhotos.value[currentLightboxIndex.value])
 
-// Handle index change from CircularGallery
 function handleLightboxIndexChange(index: number) {
   currentLightboxIndex.value = index
 }
 
-// Format photos for CircularGallery (only photos, not folders)
 const circularItems = computed(() => 
     displayPhotos.value.map(p => ({
         image: p.url,
@@ -191,7 +183,6 @@ const circularItems = computed(() =>
     }))
 );
 
-// Save current photo to device gallery
 async function saveToGallery() {
   if (!currentLightboxPhoto.value || !token.value || !repo.value) return
   
@@ -203,10 +194,10 @@ async function saveToGallery() {
       token: token.value,
       repo: repo.value,
       path: currentLightboxPhoto.value.name,
-      savePath: null // Let backend choose default download location
+      savePath: null 
     })
     saveSuccess.value = true
-    // Haptic feedback
+    
     if ('vibrate' in navigator) navigator.vibrate(10)
     setTimeout(() => { saveSuccess.value = false }, 2000)
   } catch (e) {
@@ -216,7 +207,6 @@ async function saveToGallery() {
   }
 }
 
-// Sync photo with GitHub (re-upload/update)
 async function syncToGit() {
   if (!currentLightboxPhoto.value || !token.value || !repo.value) return
   
@@ -224,8 +214,7 @@ async function syncToGit() {
   syncSuccess.value = false
   
   try {
-    // For now, just verify the photo exists on GitHub
-    // In a full implementation, this would check for changes and re-upload if needed
+
     await invoke('download_photo', {
       token: token.value,
       repo: repo.value,
@@ -242,7 +231,6 @@ async function syncToGit() {
   }
 }
 
-// Toggle favorite for current photo
 function toggleCurrentFavorite() {
   if (!currentLightboxPhoto.value) return
   toggleFavorite({ 
@@ -254,12 +242,12 @@ function toggleCurrentFavorite() {
 }
 
 function handleItemDblClick(item: any) {
-    // Double click reserved for future use (e.g., quick edit)
+    
     if (item.isFolder) return
 }
 
 function handlePhotoListClick(photo: Photo) {
-  // Open lightbox from list view on single click
+  
   const index = displayPhotos.value.findIndex(p => p.sha === photo.sha);
   if (index !== -1) {
     lightboxStartIndex.value = index;
@@ -269,7 +257,7 @@ function handlePhotoListClick(photo: Photo) {
 }
 
 function formatDate(sha: string): string {
-  // Simple date formatting based on sha hash
+  
   const hash = sha.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
   const days = hash % 30 + 1
   const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
@@ -277,7 +265,6 @@ function formatDate(sha: string): string {
   return `${days} ${month}`
 }
 
-// --- Tag System Logic ---
 import { useTags } from '../composables/useTags'
 import FloatingTagPanel from './FloatingTagPanel.vue'
 import ContextColorMenu from './ContextColorMenu.vue'
@@ -302,8 +289,7 @@ function handleContextMenu(item: any, event: MouseEvent) {
     activeColor: currentTag?.color,
     targetItemId: item.id
   }
-  
-  // Close menu on next click
+
   const closeListener = () => {
     contextMenu.value.visible = false
     window.removeEventListener('click', closeListener)
@@ -313,8 +299,7 @@ function handleContextMenu(item: any, event: MouseEvent) {
 
 function handleColorSelect(color: string) {
   if (!contextMenu.value.targetItemId) return
-  
-  // Find or create tag for this color
+
   let tag = tags.value.find(t => t.color === color)
   if (!tag) {
     tag = addTag(color)
@@ -344,7 +329,7 @@ function closeContextMenu() {
       <div v-if="currentAlbumPath" class="mb-4">
 
         <button class="btn btn-secondary" @click="emit('albumClick', { path: getParentPath(currentAlbumPath) || '', name: 'Back', photo_count: 0, children: [] })">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <svg xmlns="http:
           Voltar
         </button>
       </div>
@@ -360,7 +345,7 @@ function closeContextMenu() {
             @click="emit('albumClick', { name: 'Home', path: '', photo_count: 0, children: [] })"
             :class="{ '!bg-white/10': !currentAlbumPath }"
          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <svg xmlns="http:
          </button>
          
          <template v-if="currentAlbumPath">
@@ -480,7 +465,7 @@ function closeContextMenu() {
                   class="lightbox-close"
                   @click="isLightboxOpen = false"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg xmlns="http:
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                   </svg>
@@ -595,7 +580,6 @@ function closeContextMenu() {
   background: transparent;
 }
 
-/* Lightbox Overlay */
 .lightbox-overlay {
   position: fixed;
   inset: 0;
@@ -648,7 +632,6 @@ function closeContextMenu() {
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* Lightbox Tools */
 .lightbox-tools {
   position: absolute;
   bottom: calc(24px + env(safe-area-inset-bottom, 0));
@@ -713,8 +696,6 @@ function closeContextMenu() {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
-
-/* ... existing styles ... */
 
 .loading-state,
 .empty-state {

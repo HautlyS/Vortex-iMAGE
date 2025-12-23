@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 1 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: SecureImage
+ */
+
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import SecureImage from './SecureImage.vue'
@@ -39,8 +45,6 @@ const photoTags = computed(() => {
   return tag ? [tag] : []
 })
 
-
-// Load metadata when photo changes
 watch(() => props.photo, async (newPhoto) => {
   if (newPhoto?.url) {
     metadata.value = await extractMetadata(newPhoto.url)
@@ -68,7 +72,6 @@ function handleSwipe(direction: 'left' | 'right') {
   }
 }
 
-// Touch handling for swipe
 let touchStartX = 0
 let touchStartY = 0
 
@@ -82,8 +85,7 @@ function onTouchEnd(e: TouchEvent) {
   const touchEndY = e.changedTouches[0].clientY
   const deltaX = touchEndX - touchStartX
   const deltaY = touchEndY - touchStartY
-  
-  // Only trigger swipe if horizontal movement is greater than vertical
+
   if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
     handleSwipe(deltaX > 0 ? 'right' : 'left')
   }
@@ -207,7 +209,6 @@ onUnmounted(() => {
         <span class="photo-counter">{{ currentIndex + 1 }} / {{ photos.length }}</span>
       </div>
 
-
       <!-- Expanded Metadata -->
       <Transition name="slide">
         <div v-if="showMetadata && metadata" class="metadata-panel">
@@ -312,7 +313,7 @@ onUnmounted(() => {
               </div>
             </div>
             <a 
-              :href="`https://maps.google.com/?q=${metadata.location.latitude},${metadata.location.longitude}`"
+              :href="`https:
               target="_blank"
               class="map-link"
             >
@@ -365,7 +366,6 @@ onUnmounted(() => {
   </div>
 </template>
 
-
 <style scoped>
 .photo-detail {
   position: fixed;
@@ -376,7 +376,6 @@ onUnmounted(() => {
   flex-direction: column;
 }
 
-/* Close Button */
 .close-btn {
   position: absolute;
   top: calc(var(--mobile-gap-md, 12px) + env(safe-area-inset-top, 0px));
@@ -406,7 +405,6 @@ onUnmounted(() => {
   height: 1.25rem;
 }
 
-/* Navigation Buttons */
 .nav-btn {
   position: absolute;
   top: 50%;
@@ -442,7 +440,6 @@ onUnmounted(() => {
   .nav-btn { display: none; }
 }
 
-/* Image Container */
 .image-container {
   flex: 1;
   display: flex;
@@ -459,7 +456,6 @@ onUnmounted(() => {
   border-radius: var(--radius-md, 8px);
 }
 
-/* Info Bar */
 .info-bar {
   background: var(--amoled-surface-1, #0a0a0a);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -476,7 +472,6 @@ onUnmounted(() => {
   overflow-y: auto;
 }
 
-/* Drag Handle */
 .drag-handle {
   display: flex;
   justify-content: center;
@@ -491,7 +486,6 @@ onUnmounted(() => {
   border-radius: var(--radius-full, 9999px);
 }
 
-/* Quick Actions */
 .quick-actions {
   display: flex;
   justify-content: center;
@@ -532,7 +526,6 @@ onUnmounted(() => {
   border-width: 2px;
 }
 
-/* Color Picker */
 .color-picker-wrapper {
   position: relative;
 }
@@ -565,7 +558,6 @@ onUnmounted(() => {
   transform: scale(0.9);
 }
 
-/* Basic Info */
 .basic-info {
   display: flex;
   flex-direction: column;
@@ -591,8 +583,6 @@ onUnmounted(() => {
   margin-top: 4px;
 }
 
-
-/* Metadata Panel */
 .metadata-panel {
   margin-top: var(--mobile-gap-lg, 16px);
   display: flex;
@@ -653,7 +643,6 @@ onUnmounted(() => {
   word-break: break-word;
 }
 
-/* Settings Grid */
 .settings-grid {
   display: flex;
   flex-wrap: wrap;
@@ -676,7 +665,6 @@ onUnmounted(() => {
   opacity: 0.7;
 }
 
-/* Map Link */
 .map-link {
   display: flex;
   align-items: center;
@@ -704,7 +692,6 @@ onUnmounted(() => {
   height: 1rem;
 }
 
-/* Loading */
 .metadata-loading {
   display: flex;
   flex-direction: column;
@@ -728,7 +715,6 @@ onUnmounted(() => {
   to { transform: rotate(360deg); }
 }
 
-/* Transitions */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.2s ease;

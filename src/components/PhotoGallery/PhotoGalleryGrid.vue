@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 1 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: PhotoPreview
+ */
+
 <script setup lang="ts">
 import { computed, toRefs } from 'vue'
 import PhotoPreview from '../PhotoPreview.vue'
@@ -22,13 +28,11 @@ const emit = defineEmits<{
   'open-lightbox': [photo: Photo]
 }>()
 
-// Memoize grid style for performance
 const gridStyle = computed(() => ({
   gridTemplateColumns: `repeat(auto-fill, minmax(${props.previewSize || GALLERY.preview.defaultSize}px, 1fr))`,
   gap: `${GALLERY.grid.gap}px`
 }))
 
-// Memoize photos for better reactivity
 const { photos } = toRefs(props)
 
 function handlePhotoSelect(photo: Photo, additive: boolean, range: boolean) {

@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 4 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { ref, computed } from 'vue'
 
 export interface FavoriteItem {

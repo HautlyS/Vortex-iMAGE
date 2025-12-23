@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 2 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { ref } from 'vue'
 import { load } from '@tauri-apps/plugin-store'
 
@@ -8,9 +14,6 @@ const DEFAULT_SIZE = 180
 const size = ref(DEFAULT_SIZE)
 let initialized = false
 
-/**
- * Clamps a size value to the valid range [MIN_SIZE, MAX_SIZE]
- */
 export function clampSize(value: number): number {
   if (!Number.isFinite(value)) return DEFAULT_SIZE
   return Math.max(MIN_SIZE, Math.min(MAX_SIZE, Math.round(value)))
@@ -27,7 +30,7 @@ export function usePhotoPreviewSize() {
       }
       initialized = true
     } catch {
-      // Use default on error
+      
     }
   }
 
@@ -37,7 +40,7 @@ export function usePhotoPreviewSize() {
       await store.set('previewSize', size.value)
       await store.save()
     } catch {
-      // Silent fail
+      
     }
   }
 

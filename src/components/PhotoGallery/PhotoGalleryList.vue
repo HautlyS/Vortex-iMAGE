@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <script setup lang="ts">
 import { toRefs } from 'vue'
 import type { Photo } from '../../types/photo'
@@ -17,7 +23,6 @@ const emit = defineEmits<{
   'copy-url': [url: string]
 }>()
 
-// Memoize photos for better reactivity
 const { photos } = toRefs(props)
 
 function formatSize(bytes?: number): string {

@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <template>
   <div 
     v-if="tags.length > 0" 
@@ -11,7 +17,7 @@
     >
       <span class="headline">Etiquetas</span>
       <div class="drag-handle">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+        <svg xmlns="http:
       </div>
     </div>
     
@@ -33,7 +39,7 @@
         </div>
         
         <button class="edit-btn" @click="startEdit(tag)">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          <svg xmlns="http:
         </button>
       </div>
     </div>
@@ -52,19 +58,17 @@ const emit = defineEmits<{
   updateTag: [id: string, name: string]
 }>()
 
-
 const editingId = ref<string | null>(null)
 const editName = ref('')
 const editInput = ref<HTMLInputElement[] | null>(null)
 
-// Dragging State
 const pos = ref({ x: window.innerWidth / 2 - 160, y: window.innerHeight / 2 - 200 })
 const isDragging = ref(false)
 const dragStart = ref({ x: 0, y: 0 })
 const initialPos = ref({ x: 0, y: 0 })
 
 function startDrag(e: MouseEvent) {
-  // Only drag from header
+  
   isDragging.value = true
   dragStart.value = { x: e.clientX, y: e.clientY }
   initialPos.value = { x: pos.value.x, y: pos.value.y }
@@ -106,7 +110,6 @@ function saveEdit(tag: Tag) {
   editingId.value = null
 }
 
-// onMounted hook removed as not needed
 </script>
 
 <style scoped>
@@ -139,8 +142,6 @@ function saveEdit(tag: Tag) {
 .drag-handle {
   opacity: 0.5;
 }
-
-/* ... existing list styles ... */
 
 .drag-handle {
   cursor: grab;

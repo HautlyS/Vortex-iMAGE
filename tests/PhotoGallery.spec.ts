@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 0 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { test, expect } from '@playwright/experimental-ct-vue';
 import PhotoGallery from '@/components/PhotoGallery.vue';
 
@@ -8,7 +14,7 @@ test('render empty state', async ({ mount, page }) => {
 
     const component = await mount(PhotoGallery, {
         props: {
-            photos: [], // prop is reactive but mock composable also holds state
+            photos: [], 
             loading: false
         }
     });
@@ -16,9 +22,8 @@ test('render empty state', async ({ mount, page }) => {
 });
 
 test('render photos', async ({ mount, page }) => {
-    const mockPhotos = ['https://via.placeholder.com/300', 'https://via.placeholder.com/301'];
+    const mockPhotos = ['https:
 
-    // Inject into mock composable state
     await page.evaluate((photos) => {
         (window as any).__MOCK_PHOTOS__ = { photos };
     }, mockPhotos);
@@ -30,7 +35,6 @@ test('render photos', async ({ mount, page }) => {
         }
     });
 
-    // Check if images are rendered
     const images = component.locator('img');
     await expect(images).toHaveCount(2);
 });

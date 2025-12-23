@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { usePipeline, type PipelineConfig, type PipelineLayer, type PipelineOperation } from '../composables/usePipeline'
@@ -40,7 +46,6 @@ const showAddLayer = ref(false)
 const selectedLayerType = ref<string>('compress')
 const estimate = ref<any>(null)
 
-// Compression settings for new layer
 const compressAlgorithm = ref('zstd')
 const compressLevel = ref(3)
 
@@ -77,7 +82,7 @@ watch(editingPipeline, async () => {
 async function updateEstimate() {
   if (!editingPipeline.value) return
   try {
-    estimate.value = await estimatePipeline(1024 * 1024, editingPipeline.value) // 1MB sample
+    estimate.value = await estimatePipeline(1024 * 1024, editingPipeline.value) 
   } catch (e) {
     console.error('Failed to estimate:', e)
   }
@@ -803,7 +808,6 @@ function formatRatio(ratio: number): string {
   opacity: 0.5;
 }
 
-/* Modal */
 .modal-overlay {
   position: fixed;
   inset: 0;

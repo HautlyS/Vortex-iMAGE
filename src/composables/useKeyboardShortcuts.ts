@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 1 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 3 modules
+ */
+
 import { ref, onUnmounted } from 'vue'
 import { useSelection } from './useSelection'
 import { useFavorites } from './useFavorites'
@@ -23,7 +29,7 @@ export function useKeyboardShortcuts(
     
     if (e.key === 'Delete' && selectedCount.value > 0) {
       e.preventDefault()
-      // TODO: Implement delete
+      
     }
     
     if (e.key === favKey.key && selectedCount.value > 0) {

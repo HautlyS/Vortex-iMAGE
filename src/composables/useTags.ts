@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 1 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { ref, computed } from 'vue'
 
 export interface Tag {
@@ -7,7 +13,7 @@ export interface Tag {
 }
 
 export interface TaggedItem {
-    itemId: string // sha or path
+    itemId: string 
     tagId: string
 }
 
@@ -17,15 +23,13 @@ const taggedItems = ref<TaggedItem[]>([])
 export function useTags() {
 
     const addTag = (color: string) => {
-        // Check if a tag with this color already exists (optional: allow multiple same-color tags?)
-        // For now, let's allow multiple, but typically user might want unique colors. 
-        // The prompt says "painel deve aparecer ... com nomes default"
+
         const existing = tags.value.find(t => t.color === color)
         if (existing) return existing
 
         const newTag: Tag = {
             id: crypto.randomUUID(),
-            name: `Color ${tags.value.length + 1}`, // Default name
+            name: `Color ${tags.value.length + 1}`, 
             color
         }
         tags.value.push(newTag)
@@ -34,7 +38,7 @@ export function useTags() {
 
     const removeTag = (tagId: string) => {
         tags.value = tags.value.filter(t => t.id !== tagId)
-        // Also remove assignments
+        
         taggedItems.value = taggedItems.value.filter(t => t.tagId !== tagId)
     }
 
@@ -46,12 +50,10 @@ export function useTags() {
     }
 
     const assignTag = (itemId: string, tagId: string) => {
-        // Remove existing tag for this item if we only want one tag per item?
-        // Prompt implies "modifica a cor da borda", usually implies single primary color.
-        // Let's assume one tag per item for the border color effect.
+
         const existingIndex = taggedItems.value.findIndex(t => t.itemId === itemId)
         if (existingIndex !== -1) {
-            // Update existing
+            
             taggedItems.value[existingIndex].tagId = tagId
         } else {
             taggedItems.value.push({ itemId, tagId })

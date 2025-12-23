@@ -1,6 +1,6 @@
-//! Multi-algorithm compression module
-//! Supports: Zstd, LZ4, Snap, Brotli, Gzip
-//! Based on exemple-alghos/compress implementation
+//! Rust Module - 38 functions, 4 structs
+//! Core functionality: Backend operations and data processing
+//! External crates: 9 dependencies
 
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
@@ -27,7 +27,6 @@ impl Serialize for CompressError {
     }
 }
 
-/// Compression algorithm selection
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Algorithm {
@@ -68,7 +67,6 @@ impl Algorithm {
     }
 }
 
-/// Compression settings
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CompressionSettings {
     pub algorithm: Algorithm,
@@ -86,7 +84,6 @@ impl Default for CompressionSettings {
     }
 }
 
-/// Compression result with metadata
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CompressionResult {
     pub data: Vec<u8>,
@@ -95,10 +92,6 @@ pub struct CompressionResult {
     pub compressed_size: usize,
     pub ratio: f64,
 }
-
-// ============================================================================
-// Zstd Compression
-// ============================================================================
 
 pub fn zstd_compress(data: &[u8], level: i32) -> Result<Vec<u8>, CompressError> {
     if data.len() < 64 {
@@ -114,10 +107,6 @@ pub fn zstd_decompress(data: &[u8]) -> Result<Vec<u8>, CompressError> {
         .map_err(|e| CompressError::Decompress(e.to_string()))
 }
 
-// ============================================================================
-// LZ4 Compression (fast)
-// ============================================================================
-
 pub fn lz4_compress(data: &[u8]) -> Vec<u8> {
     lz4_flex::compress_prepend_size(data)
 }
@@ -127,16 +116,11 @@ pub fn lz4_decompress(data: &[u8]) -> Result<Vec<u8>, CompressError> {
         .map_err(|_| CompressError::InvalidData)
 }
 
-// ============================================================================
-// Snap Compression (very fast)
-// ============================================================================
-
 pub fn snap_compress(data: &[u8]) -> Result<Vec<u8>, CompressError> {
     let mut encoder = snap::raw::Encoder::new();
     let compressed = encoder.compress_vec(data)
         .map_err(|e| CompressError::Compress(e.to_string()))?;
-    
-    // Prepend original size for decompression
+
     let mut output = Vec::with_capacity(4 + compressed.len());
     output.extend_from_slice(&(data.len() as u32).to_le_bytes());
     output.extend_from_slice(&compressed);
@@ -157,10 +141,6 @@ pub fn snap_decompress(data: &[u8]) -> Result<Vec<u8>, CompressError> {
     Ok(output)
 }
 
-// ============================================================================
-// Brotli Compression (high ratio)
-// ============================================================================
-
 pub fn brotli_compress(data: &[u8], level: i32) -> Result<Vec<u8>, CompressError> {
     let quality = level.clamp(0, 11);
     let mut output = Vec::new();
@@ -178,10 +158,6 @@ pub fn brotli_decompress(data: &[u8]) -> Result<Vec<u8>, CompressError> {
         .map_err(|e| CompressError::Decompress(e.to_string()))?;
     Ok(output)
 }
-
-// ============================================================================
-// Gzip Compression (compatible)
-// ============================================================================
 
 pub fn gzip_compress(data: &[u8], level: i32) -> Result<Vec<u8>, CompressError> {
     use flate2::write::GzEncoder;
@@ -205,11 +181,6 @@ pub fn gzip_decompress(data: &[u8]) -> Result<Vec<u8>, CompressError> {
     Ok(output)
 }
 
-// ============================================================================
-// Unified Compression API
-// ============================================================================
-
-/// Compress data with specified algorithm
 pub fn compress(data: &[u8], settings: &CompressionSettings) -> Result<CompressionResult, CompressError> {
     let original_size = data.len();
     
@@ -238,7 +209,6 @@ pub fn compress(data: &[u8], settings: &CompressionSettings) -> Result<Compressi
     })
 }
 
-/// Decompress data with specified algorithm
 pub fn decompress(data: &[u8], algorithm: Algorithm) -> Result<Vec<u8>, CompressError> {
     match algorithm {
         Algorithm::Zstd => zstd_decompress(data),
@@ -250,7 +220,6 @@ pub fn decompress(data: &[u8], algorithm: Algorithm) -> Result<Vec<u8>, Compress
     }
 }
 
-/// Auto-select best algorithm based on data characteristics
 pub fn select_algorithm(data: &[u8], prefer_speed: bool) -> Algorithm {
     if data.len() < 64 {
         return Algorithm::None;
@@ -263,7 +232,6 @@ pub fn select_algorithm(data: &[u8], prefer_speed: bool) -> Algorithm {
     }
 }
 
-/// Compress with automatic algorithm selection
 pub fn compress_auto(data: &[u8], prefer_speed: bool) -> Result<CompressionResult, CompressError> {
     let algorithm = select_algorithm(data, prefer_speed);
     let settings = CompressionSettings {
@@ -274,19 +242,14 @@ pub fn compress_auto(data: &[u8], prefer_speed: bool) -> Result<CompressionResul
     compress(data, &settings)
 }
 
-// ============================================================================
-// Per-Item Compression Settings
-// ============================================================================
-
-/// Compression settings for photos/albums with metadata
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ItemCompressionSettings {
     pub enabled: bool,
     pub algorithm: Algorithm,
     pub level: i32,
     pub prefer_speed: bool,
-    pub min_size_threshold: usize, // Don't compress files smaller than this
-    pub skip_already_compressed: bool, // Skip JPEG, PNG, etc.
+    pub min_size_threshold: usize, 
+    pub skip_already_compressed: bool, 
 }
 
 impl Default for ItemCompressionSettings {
@@ -296,13 +259,12 @@ impl Default for ItemCompressionSettings {
             algorithm: Algorithm::Zstd,
             level: 3,
             prefer_speed: false,
-            min_size_threshold: 1024, // 1KB minimum
+            min_size_threshold: 1024, 
             skip_already_compressed: true,
         }
     }
 }
 
-/// Result of compression with full metadata
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CompressedFileData {
     pub data: Vec<u8>,
@@ -311,10 +273,9 @@ pub struct CompressedFileData {
     pub original_size: usize,
     pub compressed_size: usize,
     pub ratio: f64,
-    pub checksum: Vec<u8>, // BLAKE3 hash of original
+    pub checksum: Vec<u8>, 
 }
 
-/// Check if file extension indicates already compressed format
 fn is_compressed_format(filename: &str) -> bool {
     let ext = filename.rsplit('.').next().unwrap_or("").to_lowercase();
     matches!(ext.as_str(), 
@@ -326,16 +287,14 @@ fn is_compressed_format(filename: &str) -> bool {
     )
 }
 
-/// Compress file data with settings
 pub fn compress_file_data(
     data: &[u8],
     filename: &str,
     settings: &ItemCompressionSettings,
 ) -> Result<CompressedFileData, CompressError> {
-    // Calculate checksum first
-    let checksum = blake3::hash(data).as_bytes().to_vec();
     
-    // Check if compression should be skipped
+    let checksum = blake3::hash(data).as_bytes().to_vec();
+
     if !settings.enabled {
         return Ok(CompressedFileData {
             data: data.to_vec(),
@@ -371,8 +330,7 @@ pub fn compress_file_data(
             checksum,
         });
     }
-    
-    // Perform compression
+
     let comp_settings = CompressionSettings {
         algorithm: settings.algorithm,
         level: settings.level,
@@ -380,8 +338,7 @@ pub fn compress_file_data(
     };
     
     let result = compress(data, &comp_settings)?;
-    
-    // Only use compressed if it's actually smaller
+
     if result.compressed_size >= data.len() {
         return Ok(CompressedFileData {
             data: data.to_vec(),
@@ -405,7 +362,6 @@ pub fn compress_file_data(
     })
 }
 
-/// Decompress file data and verify checksum
 pub fn decompress_file_data(
     compressed: &CompressedFileData,
 ) -> Result<Vec<u8>, CompressError> {
@@ -414,8 +370,7 @@ pub fn decompress_file_data(
     }
     
     let decompressed = decompress(&compressed.data, compressed.algorithm)?;
-    
-    // Verify checksum
+
     let checksum = blake3::hash(&decompressed).as_bytes().to_vec();
     if checksum != compressed.checksum {
         return Err(CompressError::Decompress("checksum mismatch - data corrupted".into()));
@@ -424,13 +379,8 @@ pub fn decompress_file_data(
     Ok(decompressed)
 }
 
-// ============================================================================
-// Tauri Commands
-// ============================================================================
-
 use crate::github::AppError;
 
-/// Compress data with specified algorithm (strict mode - errors on unknown algorithm)
 #[tauri::command]
 pub async fn compress_data_strict(
     data: Vec<u8>,
@@ -448,7 +398,6 @@ pub async fn compress_data_strict(
         .map_err(|e| AppError::Validation(e.to_string()))
 }
 
-/// Compress data with specified algorithm
 #[tauri::command]
 pub async fn compress_data(
     data: Vec<u8>,
@@ -465,7 +414,6 @@ pub async fn compress_data(
         .map_err(|e| AppError::Validation(e.to_string()))
 }
 
-/// Decompress data with specified algorithm
 #[tauri::command]
 pub async fn decompress_data(
     data: Vec<u8>,
@@ -476,7 +424,6 @@ pub async fn decompress_data(
         .map_err(|e| AppError::Validation(e.to_string()))
 }
 
-/// Get compression info for data without compressing
 #[tauri::command]
 pub async fn estimate_compression(
     data: Vec<u8>,
@@ -492,7 +439,6 @@ pub async fn estimate_compression(
         .map_err(|e| AppError::Validation(e.to_string()))
 }
 
-/// List available compression algorithms
 #[tauri::command]
 pub fn list_compression_algorithms() -> Vec<String> {
     vec![
@@ -505,7 +451,6 @@ pub fn list_compression_algorithms() -> Vec<String> {
     ]
 }
 
-/// Compress data with automatic algorithm selection
 #[tauri::command]
 pub async fn compress_data_auto(
     data: Vec<u8>,
@@ -515,7 +460,6 @@ pub async fn compress_data_auto(
         .map_err(|e| AppError::Validation(e.to_string()))
 }
 
-/// Compress file with per-item settings
 #[tauri::command]
 pub async fn compress_file(
     data: Vec<u8>,
@@ -526,7 +470,6 @@ pub async fn compress_file(
         .map_err(|e| AppError::Validation(e.to_string()))
 }
 
-/// Decompress file and verify integrity
 #[tauri::command]
 pub async fn decompress_file(
     compressed: CompressedFileData,
@@ -535,7 +478,6 @@ pub async fn decompress_file(
         .map_err(|e| AppError::Validation(e.to_string()))
 }
 
-/// Get compression algorithm recommendations based on file type
 #[tauri::command]
 pub fn get_compression_recommendation(filename: String, file_size: usize) -> serde_json::Value {
     let ext = filename.rsplit('.').next().unwrap_or("").to_lowercase();
@@ -610,12 +552,10 @@ mod tests {
     #[test]
     fn test_compress_auto() {
         let data = vec![42u8; 10000];
-        
-        // Speed preference
+
         let result = compress_auto(&data, true).unwrap();
         assert_eq!(result.algorithm, Algorithm::Lz4);
-        
-        // Ratio preference
+
         let result = compress_auto(&data, false).unwrap();
         assert_eq!(result.algorithm, Algorithm::Zstd);
     }

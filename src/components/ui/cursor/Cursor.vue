@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <script setup lang="ts">
 import { gsap } from 'gsap'
 import { onMounted, onBeforeUnmount, ref } from 'vue'
@@ -71,8 +77,7 @@ const onOver = (e: MouseEvent) => {
   const target = findTarget(e.target as Element)
   
   if (target === activeTarget) return
-  
-  // Kill any running corner animations for smooth transition
+
   corners.forEach(c => gsap.killTweensOf(c))
   
   if (target) {
@@ -81,7 +86,7 @@ const onOver = (e: MouseEvent) => {
   } else {
     activeTarget = null
     isTargeting.value = false
-    // Animate back to default
+    
     for (let i = 0; i < 3; i++) {
       gsap.to(corners[i], { 
         x: defaultPos[i].x, 

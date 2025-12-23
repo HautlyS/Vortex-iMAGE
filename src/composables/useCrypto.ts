@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 1 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 2 modules
+ */
+
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { load } from '@tauri-apps/plugin-store'
@@ -173,7 +179,6 @@ export function useCrypto() {
     return new Uint8Array(result)
   }
 
-  // File encryption with settings
   async function encryptFile(
     data: Uint8Array,
     settings: EncryptionSettings,
@@ -199,7 +204,6 @@ export function useCrypto() {
     return new Uint8Array(result)
   }
 
-  // Create encryption settings helper
   function createEncryptionSettings(options: {
     enabled?: boolean
     usePassword?: boolean

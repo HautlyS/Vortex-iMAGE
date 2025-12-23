@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
 
@@ -121,7 +127,6 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown))
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* Transitions */
 .modal-enter-active, .modal-leave-active {
   transition: opacity 0.2s ease;
 }

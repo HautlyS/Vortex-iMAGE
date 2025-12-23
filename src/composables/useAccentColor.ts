@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 1 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { ref, computed } from 'vue'
 import { load } from '@tauri-apps/plugin-store'
 
@@ -29,7 +35,7 @@ export function useAccentColor() {
         document.documentElement.style.setProperty('--accent', colors[saved])
       }
     } catch {
-      // Use default
+      
     }
   }
 
@@ -41,7 +47,7 @@ export function useAccentColor() {
       await store.set('accent', color)
       await store.save()
     } catch {
-      // Silent fail
+      
     }
   }
 

@@ -1,7 +1,13 @@
+/**
+ * TypeScript Module - 0 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { d as defineComponent, r as ref, i as reactive, j as onMounted, o as onUnmounted, a as createElementBlock, b as openBlock, F as Fragment, g as createCommentVNode, k as createBlock, l as renderList, f as createBaseVNode, m as normalizeClass, t as toDisplayString, p as createStaticVNode, q as Teleport, e as createVNode, T as Transition, w as withCtx, s as withModifiers } from './index-CkkE85_b.js';
 import { _ as _export_sfc } from './_plugin-vue_export-helper-pcqpp-6-.js';
 
-const _sfc_main = /* @__PURE__ */ defineComponent({
+const _sfc_main =  defineComponent({
   __name: "PhotoGallery",
   props: {
     photos: {},
@@ -74,7 +80,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
             });
           }),
           64
-          /* STABLE_FRAGMENT */
+          
         ))
       ])) : $props.photos.length ? (openBlock(), createElementBlock(
         Fragment,
@@ -106,19 +112,19 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
                         _hoisted_7,
                         toDisplayString(url.split("/").pop()),
                         1
-                        /* TEXT */
+                        
                       )
                     ])
                   ])
                 ], 8, _hoisted_3);
               }),
               128
-              /* KEYED_FRAGMENT */
+              
             ))
           ])
         ],
         2112
-        /* STABLE_FRAGMENT, DEV_ROOT_FRAGMENT */
+        
       )) : (openBlock(), createElementBlock(
         Fragment,
         { key: 2 },
@@ -127,7 +133,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
           _cache[0] || (_cache[0] = createStaticVNode('<div class="h-96 flex flex-col items-center justify-center text-gray-500" data-v-51718b6f><div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4" data-v-51718b6f><svg class="w-6 h-6 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" data-v-51718b6f><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" data-v-51718b6f></path></svg></div><p class="text-sm" data-v-51718b6f>No photos found</p></div>', 1))
         ],
         2112
-        /* STABLE_FRAGMENT, DEV_ROOT_FRAGMENT */
+        
       )),
       createCommentVNode(" Cinematic Lightbox "),
       (openBlock(), createBlock(Teleport, { to: "body" }, [
@@ -160,7 +166,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
                     })
                   ],
                   -1
-                  /* CACHED */
+                  
                 )
               ])]),
               $props.photos.indexOf($setup.lightbox) > 0 ? (openBlock(), createElementBlock("button", {
@@ -185,7 +191,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
                     })
                   ],
                   -1
-                  /* CACHED */
+                  
                 )
               ])])) : createCommentVNode("v-if", true),
               $props.photos.indexOf($setup.lightbox) < $props.photos.length - 1 ? (openBlock(), createElementBlock("button", {
@@ -210,7 +216,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
                     })
                   ],
                   -1
-                  /* CACHED */
+                  
                 )
               ])])) : createCommentVNode("v-if", true),
               createCommentVNode(" Main Image "),
@@ -224,20 +230,19 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
                 _hoisted_9,
                 toDisplayString($setup.lightbox.split("/").pop()),
                 1
-                /* TEXT */
+                
               )
             ])) : createCommentVNode("v-if", true)
           ]),
           _: 1
-          /* STABLE */
+          
         })
       ]))
     ],
     64
-    /* STABLE_FRAGMENT */
+    
   );
 }
-const PhotoGallery = /* @__PURE__ */ _export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-51718b6f"], ["__file", "PhotoGallery.vue"]]);
+const PhotoGallery =  _export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-51718b6f"], ["__file", "PhotoGallery.vue"]]);
 
 export { PhotoGallery as default };
-//# sourceMappingURL=PhotoGallery-BjV_KUpv.js.map

@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <template>
   <div 
     v-if="visible"
@@ -41,8 +47,7 @@ const adjustedPos = ref({ x: 0, y: 0 })
 
 const calculatePosition = async () => {
   if (!props.visible) return
-  
-  // Reset first to measure
+
   adjustedPos.value = { x: props.x, y: props.y }
   
   await nextTick()
@@ -54,13 +59,11 @@ const calculatePosition = async () => {
   
   let x = props.x
   let y = props.y
-  
-  // Check right edge
+
   if (x + rect.width > innerWidth) {
     x = x - rect.width
   }
-  
-  // Check bottom edge
+
   if (y + rect.height > innerHeight) {
     y = y - rect.height
   }
@@ -80,24 +83,21 @@ function selectColor(color: string) {
   emit('close')
 }
 
-// Premium curated colors (HSL tailored or system colors)
 const colors = [
-  '#ff3b30', // Red
-  '#ff9500', // Orange
-  '#ffcc00', // Yellow
-  '#28cd41', // Green
-  '#00c7be', // Mint
-  '#59adc4', // Teal
-  '#007aff', // Blue
-  '#5856d6', // Indigo
-  '#af52de', // Purple
-  '#ff2d55', // Pink
-  '#a2845e', // Brown
-  '#8e8e93', // Gray
+  '#ff3b30', 
+  '#ff9500', 
+  '#ffcc00', 
+  '#28cd41', 
+  '#00c7be', 
+  '#59adc4', 
+  '#007aff', 
+  '#5856d6', 
+  '#af52de', 
+  '#ff2d55', 
+  '#a2845e', 
+  '#8e8e93', 
 ]
 
-// Close on click outside (handled by parent usually, but could add listener here)
-// Silence unused variable checks (false positives in some configs)
 void stylePosition;
 void selectColor;
 void colors;

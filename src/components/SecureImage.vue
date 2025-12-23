@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useGitHubAuth } from '../composables/useGitHubAuth'
@@ -22,10 +28,8 @@ const isLoading = ref(true)
 async function loadImage() {
   if (!props.src) return
 
-  // Check if it's a secure GitHub URL
   const isGitHub = props.src.includes('github.com') || props.src.includes('githubusercontent.com')
-  
-  // If dev mode mock or not GitHub, just use src
+
   if (import.meta.env.DEV) {
     objectUrl.value = props.src
     isLoading.value = false
@@ -39,34 +43,26 @@ async function loadImage() {
      emit('load')
      return
   }
-  
-  // Parse path from URL
-  // Expected format: .../contents/photos/filename OR .../blob/main/photos/filename
-  // Simple check: if it contains 'photos/', extract from there
+
   let remotePath = ''
   const parts = props.src.split('photos/')
   if (parts.length > 1) {
     remotePath = 'photos/' + parts[1]
   } else {
-    // Fallback or maybe it's just the filename?
-    // If not parseable, try loading as normal image
+
     objectUrl.value = props.src
     isLoading.value = false
     emit('load')
     return
   }
 
-  // Remove query params if any
   remotePath = remotePath.split('?')[0]
 
   try {
     isLoading.value = true
-    
-    // Check if we have keys
+
     if (!keypairBytes.value) {
-        // If no keys, maybe it's a public unencrypted image? Try fetching normally?
-        // But for "mandatory" encryption, likely we need keys.
-        // We'll try to download secure. If it fails due to keys, error out.
+
         throw new Error("Missing decryption keys")
     }
 
@@ -77,7 +73,7 @@ async function loadImage() {
       keypairBytes: keypairBytes.value
     })
 
-    const blob = new Blob([new Uint8Array(imageBytes)], { type: 'image/jpeg' }) // Detect mime type?
+    const blob = new Blob([new Uint8Array(imageBytes)], { type: 'image/jpeg' }) 
     const url = URL.createObjectURL(blob)
     objectUrl.value = url
     isLoading.value = false
@@ -85,15 +81,15 @@ async function loadImage() {
   } catch (e) {
     console.error('Failed to load secure image:', e)
     error.value = String(e)
-    // Fallback: try loading original src just in case it wasn't encrypted
+    
     objectUrl.value = props.src
     isLoading.value = false
-    // Don't emit error yet, let the img tag fail if it can't load
+    
   }
 }
 
 watch(() => props.src, () => {
-  // Revoke old URL
+  
   if (objectUrl.value && objectUrl.value.startsWith('blob:')) {
     URL.revokeObjectURL(objectUrl.value)
   }

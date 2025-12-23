@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 1 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 3 modules
+ */
+
 import { useSelection } from './useSelection'
 import { useFavorites } from './useFavorites'
 import { useColorTagStore } from './useColorTags'

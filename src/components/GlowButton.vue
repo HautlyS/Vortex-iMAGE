@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <script setup lang="ts">
 defineProps<{
   variant?: 'primary' | 'secondary' | 'ghost'
@@ -41,12 +47,10 @@ defineEmits<{ click: [e: MouseEvent] }>()
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Sizes */
 .glow-btn.sm { padding: 0.5rem 1rem; font-size: 0.8125rem; }
 .glow-btn.md { padding: 0.75rem 1.5rem; font-size: 0.9375rem; }
 .glow-btn.lg { padding: 1rem 2rem; font-size: 1rem; }
 
-/* Background layer */
 .glow-btn-bg {
   position: absolute;
   inset: 0;
@@ -54,7 +58,6 @@ defineEmits<{ click: [e: MouseEvent] }>()
   transition: opacity 0.2s ease;
 }
 
-/* Content layer */
 .glow-btn-content {
   position: relative;
   z-index: 1;
@@ -63,7 +66,6 @@ defineEmits<{ click: [e: MouseEvent] }>()
   gap: 0.5rem;
 }
 
-/* Primary variant */
 .glow-btn.primary {
   color: #000;
   box-shadow: 0 0 20px rgba(var(--accent-rgb, 0, 240, 255), 0.4);
@@ -76,7 +78,6 @@ defineEmits<{ click: [e: MouseEvent] }>()
   box-shadow: 0 0 30px rgba(var(--accent-rgb, 0, 240, 255), 0.6), 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
-/* Secondary variant */
 .glow-btn.secondary {
   color: var(--btn-color);
   box-shadow: inset 0 0 0 1px var(--btn-color);
@@ -91,7 +92,6 @@ defineEmits<{ click: [e: MouseEvent] }>()
   background: rgba(var(--accent-rgb, 0, 240, 255), 0.1);
 }
 
-/* Ghost variant */
 .glow-btn.ghost {
   color: var(--text-secondary, #a1a1aa);
 }
@@ -105,7 +105,6 @@ defineEmits<{ click: [e: MouseEvent] }>()
   background: rgba(255, 255, 255, 0.08);
 }
 
-/* Pulse animation */
 .glow-btn.pulse.primary {
   animation: btn-pulse 2s ease-in-out infinite;
 }
@@ -115,7 +114,6 @@ defineEmits<{ click: [e: MouseEvent] }>()
   50% { box-shadow: 0 0 35px rgba(var(--accent-rgb, 0, 240, 255), 0.7), 0 0 60px rgba(var(--accent-rgb, 0, 240, 255), 0.3); }
 }
 
-/* Disabled state */
 .glow-btn.disabled,
 .glow-btn:disabled {
   opacity: 0.5;
@@ -125,7 +123,6 @@ defineEmits<{ click: [e: MouseEvent] }>()
   animation: none !important;
 }
 
-/* Loading spinner */
 .spinner {
   width: 1em;
   height: 1em;

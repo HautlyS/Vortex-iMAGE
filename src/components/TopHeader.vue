@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 1 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: GlassSurface
+ */
+
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useGitHubAuth } from '../composables/useGitHubAuth'
@@ -11,7 +17,6 @@ const emit = defineEmits<{
   'create-repo': []
 }>()
 
-// Mock repos - in real app, fetch from GitHub API
 const repos = computed(() => {
   if (!repo.value) return []
   return [repo.value]

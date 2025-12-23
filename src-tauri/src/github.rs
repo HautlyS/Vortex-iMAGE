@@ -1,3 +1,7 @@
+//! Rust Module - 40 functions, 16 structs
+//! Core functionality: Backend operations and data processing
+//! External crates: 15 dependencies
+
 use base64::{engine::general_purpose::STANDARD, Engine};
 use image::ImageFormat;
 use reqwest::Client;
@@ -14,7 +18,6 @@ use tokio::time::sleep;
 use crate::compress::{compress_file_data, ItemCompressionSettings, Algorithm};
 use crate::crypto::{encrypt_hybrid, decrypt_hybrid, PublicBundle, EncryptedFileData, EncryptionSettings, encrypt_file_data};
 
-// Centralized constants
 const CLIENT_ID: &str = "Ov23lijNSMM1i93CQdfQ";
 const MAX_RETRIES: u32 = 3;
 const INITIAL_RETRY_DELAY_MS: u64 = 1000;
@@ -45,7 +48,6 @@ impl Serialize for AppError {
     }
 }
 
-// Shared HTTP client with connection pooling
 pub struct HttpClient(pub Arc<Client>);
 
 impl HttpClient {
@@ -58,8 +60,7 @@ impl HttpClient {
             .expect("Failed to create HTTP client");
         Self(Arc::new(client))
     }
-    
-    /// Get a reference to the inner client
+
     #[inline]
     #[allow(dead_code)]
     pub fn inner(&self) -> &Client {
@@ -73,7 +74,6 @@ impl Default for HttpClient {
     }
 }
 
-/// Retry helper with exponential backoff
 async fn retry_with_backoff<F, Fut, T, E>(
     mut operation: F,
     max_retries: u32,
@@ -95,7 +95,7 @@ where
                 if attempt >= max_retries {
                     return Err(e);
                 }
-                // Exponential backoff with jitter
+                
                 let jitter = rand::random::<u64>() % (delay / 2);
                 sleep(Duration::from_millis(delay + jitter)).await;
                 delay *= 2;
@@ -104,7 +104,6 @@ where
     }
 }
 
-/// Check if error is retryable (rate limit, server error, network)
 #[inline]
 fn is_retryable_status(status: reqwest::StatusCode) -> bool {
     matches!(
@@ -118,7 +117,6 @@ fn is_retryable_status(status: reqwest::StatusCode) -> bool {
     )
 }
 
-/// Extract Retry-After header value in seconds
 fn get_retry_after(headers: &reqwest::header::HeaderMap) -> Option<u64> {
     headers
         .get(reqwest::header::RETRY_AFTER)
@@ -182,7 +180,7 @@ fn sanitize_filename(name: &str) -> String {
 pub async fn start_oauth(client: State<'_, HttpClient>) -> Result<DeviceCodeResponse, AppError> {
     let res = client
         .0
-        .post("https://github.com/login/device/code")
+        .post("https:
         .header("Accept", "application/json")
         .form(&[("client_id", CLIENT_ID), ("scope", "repo")])
         .send()
@@ -202,7 +200,7 @@ pub async fn poll_oauth(
 ) -> Result<Option<String>, AppError> {
     let res = client
         .0
-        .post("https://github.com/login/oauth/access_token")
+        .post("https:
         .header("Accept", "application/json")
         .form(&[
             ("client_id", CLIENT_ID),
@@ -214,7 +212,6 @@ pub async fn poll_oauth(
 
     let token_res: TokenResponse = res.json().await?;
 
-    // Check for pending/slow_down first - return None to keep polling
     if let Some(ref err) = token_res.error {
         if err == "authorization_pending" || err == "slow_down" {
             return Ok(None);
@@ -222,7 +219,6 @@ pub async fn poll_oauth(
         return Err(AppError::Api(err.clone()));
     }
 
-    // Return token if present
     Ok(token_res.access_token)
 }
 
@@ -233,7 +229,7 @@ pub async fn get_user(
 ) -> Result<GitHubUser, AppError> {
     let res = client
         .0
-        .get("https://api.github.com/user")
+        .get("https:
         .header("Authorization", format!("Bearer {}", token))
         .header("User-Agent", "vortex-image")
         .send()
@@ -267,7 +263,6 @@ pub async fn upload_photo(
     let content = fs::read(&path).await?;
     let total_bytes = content.len() as u64;
 
-    // Emit initial progress
     let _ = app.emit("upload-progress", UploadProgress {
         id: upload_id.clone(),
         bytes_sent: 0,
@@ -275,7 +270,6 @@ pub async fn upload_photo(
         percent: 0,
     });
 
-    // 1. Mandatory Compression
     let compression_settings = ItemCompressionSettings {
         enabled: true,
         algorithm: Algorithm::Zstd,
@@ -287,11 +281,9 @@ pub async fn upload_photo(
 
     let compressed_data = compress_file_data(&content, &filename, &compression_settings)
         .map_err(|e| AppError::Validation(format!("Compression failed: {}", e)))?;
-    
-    // Drop original content early to free memory
+
     drop(content);
-    
-    // Emit progress (30%)
+
     let _ = app.emit("upload-progress", UploadProgress {
         id: upload_id.clone(),
         bytes_sent: 0,
@@ -299,7 +291,6 @@ pub async fn upload_photo(
         percent: 30,
     });
 
-    // 2. Mandatory Encryption - serialize and encrypt in one step
     let compressed_bytes = serde_json::to_vec(&compressed_data)
         .map_err(|e| AppError::Validation(format!("Serialization failed: {}", e)))?;
     drop(compressed_data);
@@ -321,7 +312,6 @@ pub async fn upload_photo(
 
     let final_size = final_payload.len() as u64;
 
-    // Emit progress (60%)
     let _ = app.emit("upload-progress", UploadProgress {
         id: upload_id.clone(),
         bytes_sent: 0,
@@ -337,7 +327,7 @@ pub async fn upload_photo(
     drop(final_payload);
 
     let upload_path = format!("photos/{}", safe_filename);
-    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, upload_path);
+    let url = format!("https:
 
     let body = serde_json::json!({
         "message": format!("Upload {} (secure)", safe_filename),
@@ -355,7 +345,6 @@ pub async fn upload_photo(
         .send()
         .await?;
 
-    // Emit complete
     let _ = app.emit("upload-progress", UploadProgress {
         id: upload_id.clone(),
         bytes_sent: final_size,
@@ -377,21 +366,19 @@ pub async fn upload_photo(
     })
 }
 
-// Removed deprecated upload_photo_processed
 #[allow(dead_code)]
 fn process_image(content: &[u8], strip_exif: bool, compress: bool, quality: u8) -> Result<Vec<u8>, AppError> {
-    // Try to decode the image
+    
     let img = image::load_from_memory(content)
         .map_err(|e| AppError::Validation(format!("Failed to decode image: {}", e)))?;
 
-    // Determine output format based on input
     let format = image::guess_format(content)
         .unwrap_or(ImageFormat::Jpeg);
 
     let mut output = Cursor::new(Vec::new());
 
     if compress || strip_exif {
-        // Re-encoding strips EXIF data and allows compression
+        
         match format {
             ImageFormat::Jpeg => {
                 let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut output, quality);
@@ -407,7 +394,7 @@ fn process_image(content: &[u8], strip_exif: bool, compress: bool, quality: u8) 
                     .map_err(|e| AppError::Validation(format!("Failed to encode WebP: {}", e)))?;
             }
             _ => {
-                // For unsupported formats, convert to JPEG
+                
                 let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut output, quality);
                 img.write_with_encoder(encoder)
                     .map_err(|e| AppError::Validation(format!("Failed to encode image: {}", e)))?;
@@ -415,7 +402,7 @@ fn process_image(content: &[u8], strip_exif: bool, compress: bool, quality: u8) 
         }
         Ok(output.into_inner())
     } else {
-        // Return original content if no processing needed
+        
         Ok(content.to_vec())
     }
 }
@@ -449,7 +436,7 @@ async fn upload_lfs_internal(
         percent: 20,
     });
 
-    let batch_url = format!("https://github.com/{}.git/info/lfs/objects/batch", repo);
+    let batch_url = format!("https:
     let batch_body = serde_json::json!({
         "operation": "upload",
         "transfers": ["basic"],
@@ -503,7 +490,7 @@ async fn upload_lfs_internal(
     }
 
     Ok(UploadResult {
-        url: format!("https://github.com/{}/blob/main/photos/{}", repo, filename),
+        url: format!("https:
         sha: oid,
     })
 }
@@ -515,10 +502,6 @@ pub struct PhotoItem {
     pub sha: String,
 }
 
-// ============================================================================
-// Repository Management
-// ============================================================================
-
 #[derive(Serialize, Deserialize, Clone)]
 pub struct RepoInfo {
     pub name: String,
@@ -529,9 +512,6 @@ pub struct RepoInfo {
     pub default_branch: String,
 }
 
-/// Validates repository name format
-/// Valid: alphanumeric, hyphens, underscores, dots
-/// Length: 1-100 characters
 pub fn validate_repo_name(name: &str) -> Result<(), AppError> {
     if name.is_empty() || name.len() > 100 {
         return Err(AppError::Validation(
@@ -539,7 +519,6 @@ pub fn validate_repo_name(name: &str) -> Result<(), AppError> {
         ));
     }
 
-    // Check for valid characters
     let valid = name
         .chars()
         .all(|c| c.is_alphanumeric() || c == '-' || c == '_' || c == '.');
@@ -551,7 +530,6 @@ pub fn validate_repo_name(name: &str) -> Result<(), AppError> {
         ));
     }
 
-    // Cannot start or end with dot or hyphen
     if name.starts_with('.') || name.starts_with('-') || name.ends_with('.') || name.ends_with('-')
     {
         return Err(AppError::Validation(
@@ -559,7 +537,6 @@ pub fn validate_repo_name(name: &str) -> Result<(), AppError> {
         ));
     }
 
-    // Cannot contain consecutive dots
     if name.contains("..") {
         return Err(AppError::Validation(
             "Repository name cannot contain consecutive dots".into(),
@@ -588,7 +565,7 @@ pub async fn create_repo(
 
     let res = client
         .0
-        .post("https://api.github.com/user/repos")
+        .post("https:
         .header("Authorization", format!("Bearer {}", token))
         .header("User-Agent", "vortex-image")
         .header("Accept", "application/vnd.github+json")
@@ -625,7 +602,7 @@ pub async fn get_repo_info(
 ) -> Result<RepoInfo, AppError> {
     validate_repo(&repo)?;
 
-    let url = format!("https://api.github.com/repos/{}", repo);
+    let url = format!("https:
 
     let res = client
         .0
@@ -665,7 +642,7 @@ pub async fn update_repo_visibility(
 ) -> Result<RepoInfo, AppError> {
     validate_repo(&repo)?;
 
-    let url = format!("https://api.github.com/repos/{}", repo);
+    let url = format!("https:
 
     let body = serde_json::json!({
         "private": private
@@ -712,7 +689,7 @@ pub async fn list_photos(
     validate_repo(&repo)?;
     
     let folder_path = folder.unwrap_or_else(|| "photos".to_string());
-    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, folder_path);
+    let url = format!("https:
 
     let res = client
         .0
@@ -744,11 +721,6 @@ pub async fn list_photos(
         .collect())
 }
 
-// ============================================================================
-// Folder Scanning and Album Upload
-// ============================================================================
-
-/// Supported image extensions
 const IMAGE_EXTENSIONS: &[&str] = &[
     "jpg", "jpeg", "png", "gif", "webp", "bmp", "tiff", "tif", "svg", "ico", "heic", "heif", "avif",
 ];
@@ -798,7 +770,6 @@ pub struct UploadFailure {
     pub error: String,
 }
 
-/// Recursively scans a folder for images
 #[tauri::command]
 pub async fn scan_folder(path: String) -> Result<FolderScanResult, AppError> {
     let folder_path = std::path::Path::new(&path);
@@ -832,7 +803,7 @@ async fn scan_folder_recursive(folder_path: &std::path::Path) -> Result<FolderSc
         let metadata = entry.metadata().await?;
 
         if metadata.is_dir() {
-            // Skip hidden folders
+            
             if entry_path
                 .file_name()
                 .and_then(|n| n.to_str())
@@ -859,7 +830,6 @@ async fn scan_folder_recursive(folder_path: &std::path::Path) -> Result<FolderSc
     })
 }
 
-/// Collects all images from a folder (non-recursive, just this folder)
 async fn collect_images_in_folder(folder_path: &std::path::Path) -> Result<Vec<ImageFile>, AppError> {
     let mut images = Vec::new();
     let mut entries = fs::read_dir(folder_path).await?;
@@ -887,7 +857,6 @@ async fn collect_images_in_folder(folder_path: &std::path::Path) -> Result<Vec<I
     Ok(images)
 }
 
-/// Collects all images from a folder recursively, flattening the structure
 async fn collect_images_recursive(
     folder_path: &std::path::Path,
     base_path: &std::path::Path,
@@ -900,7 +869,7 @@ async fn collect_images_recursive(
         let metadata = entry.metadata().await?;
 
         if metadata.is_dir() {
-            // Skip hidden folders
+            
             if entry_path
                 .file_name()
                 .and_then(|n| n.to_str())
@@ -937,7 +906,6 @@ async fn collect_images_recursive(
     Ok(images)
 }
 
-/// Uploads a folder as an album, preserving structure
 #[tauri::command]
 pub async fn upload_folder_as_album(
     app: AppHandle,
@@ -960,7 +928,6 @@ pub async fn upload_folder_as_album(
         return Err(AppError::Validation("Invalid album name".into()));
     }
 
-    // Collect images based on mode
     let images = if create_subalbums {
         collect_images_recursive(folder_path, folder_path).await?
     } else {
@@ -972,7 +939,7 @@ pub async fn upload_folder_as_album(
     let mut failed = Vec::new();
 
     for (index, image) in images.iter().enumerate() {
-        // Emit progress
+        
         let _ = app.emit(
             "batch-upload-progress",
             UploadBatchProgress {
@@ -983,7 +950,6 @@ pub async fn upload_folder_as_album(
             },
         );
 
-        // Determine upload path
         let upload_path = if create_subalbums {
             format!("photos/{}/{}", safe_album_name, image.relative_path.replace('\\', "/"))
         } else {
@@ -1000,7 +966,6 @@ pub async fn upload_folder_as_album(
         }
     }
 
-    // Emit completion
     let _ = app.emit(
         "batch-upload-progress",
         UploadBatchProgress {
@@ -1014,7 +979,6 @@ pub async fn upload_folder_as_album(
     Ok(UploadBatchResult { succeeded, failed })
 }
 
-/// Uploads all images from a folder recursively to the root photos folder
 #[tauri::command]
 pub async fn upload_folder_recursive(
     app: AppHandle,
@@ -1030,7 +994,6 @@ pub async fn upload_folder_recursive(
         return Err(AppError::Validation("Invalid folder path".into()));
     }
 
-    // Collect all images recursively
     let images = collect_images_recursive(folder_path, folder_path).await?;
 
     let total_files = images.len();
@@ -1038,7 +1001,7 @@ pub async fn upload_folder_recursive(
     let mut failed = Vec::new();
 
     for (index, image) in images.iter().enumerate() {
-        // Emit progress
+        
         let _ = app.emit(
             "batch-upload-progress",
             UploadBatchProgress {
@@ -1049,7 +1012,6 @@ pub async fn upload_folder_recursive(
             },
         );
 
-        // Upload to root photos folder (flatten structure)
         let safe_name = sanitize_filename(&image.name);
         let upload_path = format!("photos/{}", safe_name);
 
@@ -1063,7 +1025,6 @@ pub async fn upload_folder_recursive(
         }
     }
 
-    // Emit completion
     let _ = app.emit(
         "batch-upload-progress",
         UploadBatchProgress {
@@ -1077,7 +1038,6 @@ pub async fn upload_folder_recursive(
     Ok(UploadBatchResult { succeeded, failed })
 }
 
-/// Helper to upload a single file to GitHub with retry logic
 async fn upload_single_file(
     client: &Client,
     local_path: &str,
@@ -1088,14 +1048,13 @@ async fn upload_single_file(
     let content = fs::read(local_path).await?;
     let encoded = STANDARD.encode(&content);
 
-    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, upload_path);
+    let url = format!("https:
 
     let body = serde_json::json!({
         "message": format!("Upload {}", upload_path),
         "content": encoded
     });
 
-    // Retry with exponential backoff
     let result = retry_with_backoff(
         || async {
             let res = client
@@ -1109,7 +1068,7 @@ async fn upload_single_file(
                 .await?;
 
             if res.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
-                // Respect Retry-After header
+                
                 if let Some(retry_secs) = get_retry_after(res.headers()) {
                     sleep(Duration::from_secs(retry_secs)).await;
                 }
@@ -1140,10 +1099,6 @@ async fn upload_single_file(
     Ok(result)
 }
 
-// ============================================================================
-// Album Listing
-// ============================================================================
-
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Album {
     pub name: String,
@@ -1152,7 +1107,6 @@ pub struct Album {
     pub children: Vec<Album>,
 }
 
-/// Lists all albums (folders) in the photos directory
 #[tauri::command]
 pub async fn list_albums(
     client: State<'_, HttpClient>,
@@ -1161,8 +1115,7 @@ pub async fn list_albums(
 ) -> Result<Vec<Album>, AppError> {
     validate_repo(&repo)?;
 
-    // Get the contents of the photos folder
-    let url = format!("https://api.github.com/repos/{}/contents/photos", repo);
+    let url = format!("https:
 
     let res = client
         .0
@@ -1190,7 +1143,6 @@ pub async fn list_albums(
             let name = item["name"].as_str().unwrap_or("").to_string();
             let path = item["path"].as_str().unwrap_or("").to_string();
 
-            // Recursively get album contents
             let album = get_album_recursive(&client.0, &repo, &token, &path, &name).await?;
             albums.push(album);
         }
@@ -1206,7 +1158,7 @@ async fn get_album_recursive(
     path: &str,
     name: &str,
 ) -> Result<Album, AppError> {
-    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, path);
+    let url = format!("https:
 
     let res = client
         .get(&url)
@@ -1235,7 +1187,7 @@ async fn get_album_recursive(
         let item_name = item["name"].as_str().unwrap_or("");
 
         if item_type == "file" {
-            // Check if it's an image
+            
             let ext = std::path::Path::new(item_name)
                 .extension()
                 .and_then(|e| e.to_str())
@@ -1259,10 +1211,6 @@ async fn get_album_recursive(
     })
 }
 
-// ============================================================================
-// Photo Download and Delete Operations
-// ============================================================================
-
 #[derive(Serialize, Clone)]
 pub struct DownloadProgress {
     pub id: String,
@@ -1271,7 +1219,6 @@ pub struct DownloadProgress {
     pub percent: u8,
 }
 
-/// Downloads a photo from GitHub to local storage
 #[tauri::command]
 pub async fn download_photo(
     app: AppHandle,
@@ -1284,7 +1231,6 @@ pub async fn download_photo(
 ) -> Result<String, AppError> {
     validate_repo(&repo)?;
 
-    // Emit initial progress
     let _ = app.emit("download-progress", DownloadProgress {
         id: download_id.clone(),
         bytes_received: 0,
@@ -1292,8 +1238,7 @@ pub async fn download_photo(
         percent: 0,
     });
 
-    // Get file info from GitHub
-    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, remote_path);
+    let url = format!("https:
     
     let res = client
         .0
@@ -1313,7 +1258,6 @@ pub async fn download_photo(
         .as_str()
         .ok_or_else(|| AppError::Api("No download URL found".into()))?;
 
-    // Download the file content
     let content_res = client
         .0
         .get(download_url)
@@ -1328,7 +1272,6 @@ pub async fn download_photo(
     let total_bytes = content_res.content_length().unwrap_or(0);
     let content = content_res.bytes().await?;
 
-    // Emit progress
     let _ = app.emit("download-progress", DownloadProgress {
         id: download_id.clone(),
         bytes_received: content.len() as u64,
@@ -1336,24 +1279,21 @@ pub async fn download_photo(
         percent: 100,
     });
 
-    // Determine local path
     let filename = remote_path.split('/').last().unwrap_or("photo");
     let local_path = if let Some(dir) = local_dir {
         std::path::Path::new(&dir).join(filename)
     } else {
-        // Use system downloads folder
+        
         let downloads = dirs::download_dir()
             .unwrap_or_else(|| std::path::PathBuf::from("."));
         downloads.join(filename)
     };
 
-    // Write to file
     fs::write(&local_path, &content).await?;
 
     Ok(local_path.to_string_lossy().to_string())
 }
 
-/// Deletes a photo from GitHub repository
 #[tauri::command]
 pub async fn delete_photo(
     client: State<'_, HttpClient>,
@@ -1363,8 +1303,7 @@ pub async fn delete_photo(
 ) -> Result<(), AppError> {
     validate_repo(&repo)?;
 
-    // First, get the file's SHA (required for deletion)
-    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, path);
+    let url = format!("https:
     
     let get_res = client
         .0
@@ -1384,7 +1323,6 @@ pub async fn delete_photo(
         .as_str()
         .ok_or_else(|| AppError::Api("Could not get file SHA".into()))?;
 
-    // Delete the file
     let delete_body = serde_json::json!({
         "message": format!("Delete {}", path),
         "sha": sha
@@ -1409,7 +1347,6 @@ pub async fn delete_photo(
     Ok(())
 }
 
-/// Removes a local file
 #[tauri::command]
 pub async fn remove_local_file(path: String) -> Result<(), AppError> {
     let file_path = std::path::Path::new(&path);
@@ -1426,7 +1363,6 @@ pub async fn remove_local_file(path: String) -> Result<(), AppError> {
     Ok(())
 }
 
-/// Gets detailed info about a local image file
 #[tauri::command]
 pub async fn get_local_image_info(path: String) -> Result<ImageFile, AppError> {
     let file_path = std::path::Path::new(&path);
@@ -1450,11 +1386,6 @@ pub async fn get_local_image_info(path: String) -> Result<ImageFile, AppError> {
     })
 }
 
-// ============================================================================
-// Album Management
-// ============================================================================
-
-/// Deletes an entire album (folder) from GitHub repository
 #[tauri::command]
 pub async fn delete_album(
     client: State<'_, HttpClient>,
@@ -1464,7 +1395,6 @@ pub async fn delete_album(
 ) -> Result<u32, AppError> {
     validate_repo(&repo)?;
 
-    // Get all files in the album recursively
     let files = get_album_files_recursive(&client.0, &repo, &token, &album_path).await?;
     
     if files.is_empty() {
@@ -1473,11 +1403,9 @@ pub async fn delete_album(
 
     let mut deleted_count = 0u32;
 
-    // Delete each file
     for file in files {
-        let url = format!("https://api.github.com/repos/{}/contents/{}", repo, file.path);
-        
-        // Get file SHA
+        let url = format!("https:
+
         let get_res = client
             .0
             .get(&url)
@@ -1488,7 +1416,7 @@ pub async fn delete_album(
             .await?;
 
         if !get_res.status().is_success() {
-            continue; // Skip files that don't exist
+            continue; 
         }
 
         let json: serde_json::Value = get_res.json().await?;
@@ -1497,7 +1425,6 @@ pub async fn delete_album(
             None => continue,
         };
 
-        // Delete the file
         let delete_body = serde_json::json!({
             "message": format!("Delete {} (album cleanup)", file.path),
             "sha": sha
@@ -1532,7 +1459,7 @@ async fn get_album_files_recursive(
     token: &str,
     path: &str,
 ) -> Result<Vec<FileInfo>, AppError> {
-    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, path);
+    let url = format!("https:
 
     let res = client
         .get(&url)
@@ -1564,7 +1491,6 @@ async fn get_album_files_recursive(
     Ok(files)
 }
 
-/// Renames an album by moving all files to a new path
 #[tauri::command]
 pub async fn rename_album(
     client: State<'_, HttpClient>,
@@ -1580,7 +1506,6 @@ pub async fn rename_album(
         return Err(AppError::Validation("Invalid album name".into()));
     }
 
-    // Get parent path
     let parent = std::path::Path::new(&old_path)
         .parent()
         .map(|p| p.to_string_lossy().to_string())
@@ -1592,7 +1517,6 @@ pub async fn rename_album(
         format!("{}/{}", parent, safe_new_name)
     };
 
-    // Get all files in the album
     let files = get_album_files_recursive(&client.0, &repo, &token, &old_path).await?;
     
     if files.is_empty() {
@@ -1602,12 +1526,11 @@ pub async fn rename_album(
     let mut moved_count = 0u32;
 
     for file in files {
-        // Calculate new path
+        
         let relative = file.path.strip_prefix(&old_path).unwrap_or(&file.path);
         let new_file_path = format!("{}{}", new_path, relative);
 
-        // Get file content
-        let url = format!("https://api.github.com/repos/{}/contents/{}", repo, file.path);
+        let url = format!("https:
         let get_res = client
             .0
             .get(&url)
@@ -1625,8 +1548,7 @@ pub async fn rename_album(
         let content = json["content"].as_str().unwrap_or("");
         let sha = json["sha"].as_str().unwrap_or("");
 
-        // Create file at new location
-        let create_url = format!("https://api.github.com/repos/{}/contents/{}", repo, new_file_path);
+        let create_url = format!("https:
         let create_body = serde_json::json!({
             "message": format!("Move {} to {}", file.path, new_file_path),
             "content": content
@@ -1646,7 +1568,6 @@ pub async fn rename_album(
             continue;
         }
 
-        // Delete old file
         let delete_body = serde_json::json!({
             "message": format!("Delete old {} after move", file.path),
             "sha": sha
@@ -1668,7 +1589,6 @@ pub async fn rename_album(
     Ok(moved_count)
 }
 
-/// Downloads and decrypts a secure photo
 #[tauri::command]
 pub async fn download_secure_photo(
     client: State<'_, HttpClient>,
@@ -1679,9 +1599,8 @@ pub async fn download_secure_photo(
 ) -> Result<Vec<u8>, AppError> {
     validate_repo(&repo)?;
 
-    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, remote_path);
-    
-    // 1. Get download URL (or content directly if small enough? No, better use download_url)
+    let url = format!("https:
+
     let res = client
         .0
         .get(&url)
@@ -1700,7 +1619,6 @@ pub async fn download_secure_photo(
         .as_str()
         .ok_or_else(|| AppError::Api("No download URL found".into()))?;
 
-    // 2. Download encrypted content
     let content_res = client
         .0
         .get(download_url)
@@ -1714,37 +1632,24 @@ pub async fn download_secure_photo(
 
     let encrypted_bytes = content_res.bytes().await?;
 
-    // 3. Deserialize EncryptedFileData
-    // Try to deserialize as JSON first. If it fails, maybe it's legacy unencrypted or different format.
-    // For "mandatory" system, we assume it's encrypted. If not, we could fail or fallback?
-    // User requested "mandatory", so we expect encrypted.
     let encrypted_data: EncryptedFileData = serde_json::from_slice(&encrypted_bytes)
         .map_err(|e| AppError::Validation(format!("Invalid encrypted file format: {}", e)))?;
 
-    // 4. Decrypt
-    // We get the compressed bytes (which is serialized CompressedFileData)
     let compressed_bytes = crate::crypto::decrypt_file_data(
         &encrypted_data, 
         None, 
         Some(&keypair_bytes)
     ).map_err(|e| AppError::Validation(format!("Decryption failed: {}", e)))?;
 
-    // 5. Deserialize CompressedFileData
     let compressed_file: crate::compress::CompressedFileData = serde_json::from_slice(&compressed_bytes)
         .map_err(|e| AppError::Validation(format!("Invalid compressed file format: {}", e)))?;
 
-    // 6. Decompress
     let final_image = crate::compress::decompress_file_data(&compressed_file)
         .map_err(|e| AppError::Validation(format!("Decompression failed: {}", e)))?;
 
     Ok(final_image)
 }
 
-// ============================================================================
-// Secure Messaging
-// ============================================================================
-
-/// Uploads a secure text message (note/log)
 #[tauri::command]
 pub async fn upload_secure_message(
     client: State<'_, HttpClient>,
@@ -1761,7 +1666,6 @@ pub async fn upload_secure_message(
         return Err(AppError::Validation("Invalid filename".into()));
     }
 
-    // Use the hybrid encryption function directly
     let encrypted_bytes = encrypt_hybrid(content.into_bytes(), public_bundle)
         .await
         .map_err(|e| AppError::Validation(format!("Encryption failed: {}", e)))?;
@@ -1769,7 +1673,7 @@ pub async fn upload_secure_message(
     let encoded = STANDARD.encode(&encrypted_bytes);
     
     let upload_path = format!("messages/{}.msg", safe_filename);
-    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, upload_path);
+    let url = format!("https:
 
     let body = serde_json::json!({
         "message": format!("Upload secure message {}", safe_filename),
@@ -1800,7 +1704,6 @@ pub async fn upload_secure_message(
     })
 }
 
-/// Downloads and decrypts a secure message
 #[tauri::command]
 pub async fn download_secure_message(
     client: State<'_, HttpClient>,
@@ -1811,17 +1714,15 @@ pub async fn download_secure_message(
 ) -> Result<String, AppError> {
     validate_repo(&repo)?;
     let safe_filename = sanitize_filename(&filename);
-    
-    // Support both with and without .msg extension in input
+
     let remote_path = if safe_filename.ends_with(".msg") {
         format!("messages/{}", safe_filename)
     } else {
         format!("messages/{}.msg", safe_filename)
     };
 
-    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, remote_path);
-    
-    // 1. Get file content (assuming small enough for direct content API)
+    let url = format!("https:
+
     let res = client
         .0
         .get(&url)
@@ -1836,8 +1737,7 @@ pub async fn download_secure_message(
     }
 
     let json: serde_json::Value = res.json().await?;
-    
-    // GitHub API returns content base64 encoded with newlines
+
     let content_b64 = json["content"]
         .as_str()
         .ok_or_else(|| AppError::Api("No content found".into()))?
@@ -1846,7 +1746,6 @@ pub async fn download_secure_message(
     let encrypted_bytes = STANDARD.decode(&content_b64)
         .map_err(|e| AppError::Validation(format!("Base64 decode failed: {}", e)))?;
 
-    // 2. Decrypt using the hybrid decryption function
     let decrypted_bytes = decrypt_hybrid(encrypted_bytes, keypair_bytes)
         .await
         .map_err(|e| AppError::Validation(format!("Decryption failed: {}", e)))?;

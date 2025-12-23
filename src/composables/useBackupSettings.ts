@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 1 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { ref, computed } from 'vue'
 import { load } from '@tauri-apps/plugin-store'
 
@@ -6,12 +12,12 @@ export interface BackupConfig {
   watchFolder: string | null
   autoUpload: boolean
   deleteAfterUpload: boolean
-  syncDeletions: boolean // Delete from local when deleted from remote
+  syncDeletions: boolean 
   targetDriverId: string | null
   fileTypes: string[]
   excludePatterns: string[]
-  minFileSize: number // bytes, 0 = no minimum
-  maxFileSize: number // bytes, 0 = no maximum
+  minFileSize: number 
+  maxFileSize: number 
   lastBackupAt?: number
   totalBackedUp: number
 }

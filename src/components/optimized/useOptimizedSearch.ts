@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 1 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { ref, watch, onUnmounted, type Ref } from 'vue'
 
 export function useOptimizedSearch<T>(
@@ -22,7 +28,6 @@ export function useOptimizedSearch<T>(
   let debounceTimer: number | null = null
   let searchWorker: Worker | null = null
 
-  // Create web worker for heavy search operations
   const createSearchWorker = () => {
     const workerCode = `
       self.onmessage = function(e) {
@@ -54,8 +59,7 @@ export function useOptimizedSearch<T>(
           if (matches) {
             results.push(item);
           }
-          
-          // Yield control periodically for large datasets
+
           if (i % 1000 === 0) {
             self.postMessage({ results: results.slice(), isComplete: false });
           }
@@ -78,7 +82,6 @@ export function useOptimizedSearch<T>(
 
     isSearching.value = true
 
-    // For small datasets, search synchronously
     if (items.value.length < 1000) {
       const searchTerm = caseSensitive ? query : query.toLowerCase()
 
@@ -96,7 +99,6 @@ export function useOptimizedSearch<T>(
       return
     }
 
-    // For large datasets, use web worker
     if (!searchWorker) {
       searchWorker = createSearchWorker()
 
@@ -128,12 +130,10 @@ export function useOptimizedSearch<T>(
     }, debounceMs)
   }
 
-  // Watch for search query changes
   watch(searchQuery, (newQuery) => {
     debouncedSearch(newQuery)
   })
 
-  // Watch for items changes
   watch(items, () => {
     if (searchQuery.value) {
       debouncedSearch(searchQuery.value)
@@ -142,10 +142,8 @@ export function useOptimizedSearch<T>(
     }
   }, { deep: true })
 
-  // Initialize results
   searchResults.value = items.value
 
-  // Cleanup
   onUnmounted(() => {
     if (debounceTimer) {
       clearTimeout(debounceTimer)

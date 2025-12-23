@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { SHORTCUTS } from '../../config'
@@ -68,7 +74,6 @@ function formatSize(bytes?: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-// Watch for photo changes to reset loading state
 watch(() => props.photo, (newPhoto) => {
   if (newPhoto) {
     imageLoading.value = true

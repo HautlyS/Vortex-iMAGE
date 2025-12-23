@@ -1,8 +1,13 @@
+/**
+ * TypeScript Module - 0 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 2 modules
+ */
+
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import Masonry from '../../src/components/Masonry.vue'
 
-// Mock GSAP
 vi.mock('gsap', () => ({
     gsap: {
         to: vi.fn(),
@@ -18,7 +23,6 @@ vi.mock('gsap', () => ({
     }
 }))
 
-// Proper Mock ResizeObserver
 let lastResizeObserverCallback: ResizeObserverCallback | null = null;
 
 class ResizeObserverMock {
@@ -67,7 +71,6 @@ describe('Masonry.vue', () => {
             props: { items }
         })
 
-        // Simulate ResizeObserver triggering size update
         if (lastResizeObserverCallback) {
             lastResizeObserverCallback([{ contentRect: { width: 1000, height: 800 } } as ResizeObserverEntry], {} as ResizeObserver)
         }
@@ -91,11 +94,10 @@ describe('Masonry.vue', () => {
 
         const renderedItems = wrapper.findAll('[data-key]')
         const firstItem = renderedItems[0]
-        // Check absolute positioning class
+        
         const classes = firstItem.attributes('class')
         expect(classes).toContain('absolute')
-        // GSAP applies style inline, but we might not see exact transform values easily in jsdom unless we wait for GSAP.
-        // However, we can check basic rendering existence.
+
     })
 
     it('emits click event', async () => {
@@ -123,10 +125,8 @@ describe('Masonry.vue', () => {
         }
         await wrapper.vm.$nextTick()
 
-        // Trigger double click
         await wrapper.find('[data-key="1"]').trigger('dblclick')
 
-        // Verify event
         expect(wrapper.emitted('itemDblClick')).toBeTruthy()
         expect(wrapper.emitted('itemDblClick')?.[0][0]).toEqual(expect.objectContaining({ id: '1' }))
     })

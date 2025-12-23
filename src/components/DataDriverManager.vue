@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 1 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: ConfirmDialog
+ */
+
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { open } from '@tauri-apps/plugin-dialog'

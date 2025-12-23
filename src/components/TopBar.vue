@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 2 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: HaloSearch, RainbowButton
+ */
+
 <script setup lang="ts">
 import { computed } from 'vue'
 import HaloSearch from './HaloSearch.vue'

@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <template>
   <div 
     ref="containerRef" 
@@ -138,18 +144,15 @@ const scrollTop = ref(0)
 const viewportHeight = ref(window.innerHeight)
 const containerWidth = ref(0)
 
-// Config
-const COLUMN_WIDTH = 300 // Target width
+const COLUMN_WIDTH = 300 
 const GAP = 16
 
-// Measure container
 const resizeObserver = new ResizeObserver((entries) => {
   for (const entry of entries) {
     containerWidth.value = entry.contentRect.width
   }
 })
 
-// Scroll listener
 const handleScroll = (e: Event) => {
   scrollTop.value = (e.target as HTMLElement).scrollTop
 }
@@ -157,12 +160,12 @@ const handleScroll = (e: Event) => {
 onMounted(() => {
   if (containerRef.value) {
     resizeObserver.observe(containerRef.value)
-    // Find scrolling parent
+    
     let parent = containerRef.value.parentElement
     while (parent) {
       if (getComputedStyle(parent).overflowY === 'auto' || getComputedStyle(parent).overflowY === 'scroll') {
         parent.addEventListener('scroll', handleScroll, { passive: true })
-        // Initial values
+        
         scrollTop.value = parent.scrollTop
         viewportHeight.value = parent.clientHeight
         break
@@ -177,7 +180,6 @@ onUnmounted(() => {
     if (containerRef.value) resizeObserver.unobserve(containerRef.value)
 })
 
-// Compute Grid Layout (Full Calculation)
 const layout = computed(() => {
   const width = containerWidth.value
   if (!width) return { items: [], totalHeight: 0 }
@@ -212,20 +214,16 @@ const layout = computed(() => {
 
 const totalHeight = computed(() => layout.value.totalHeight)
 
-// Virtualization
 const BUFFER = 600
 const visibleGrid = computed(() => {
   const start = scrollTop.value - BUFFER
   const end = scrollTop.value + viewportHeight.value + BUFFER
-  
-  // Also optimize: only slice items that are likely in range if sorted by y?
-  // Since items are not strictly sorted by y (columns mix), filter is necessary.
+
   return layout.value.items.filter(item => {
     return (item.y + item.h > start) && (item.y < end)
   })
 })
 
-// Selection Logic
 const isSelected = (id: string) => selected.value.includes(id)
 
 const toggleSelect = (id: string) => {
@@ -235,7 +233,6 @@ const toggleSelect = (id: string) => {
   emit('select', new Set(selected.value))
 }
 
-// Drag Selection
 const isSelecting = ref(false)
 const selectionStart = ref({ x: 0, y: 0 })
 const selectionBox = ref({ x: 0, y: 0, w: 0, h: 0 })
@@ -262,7 +259,6 @@ function onDragSelect(e: MouseEvent) {
   const h = Math.abs(currentY - selectionStart.value.y)
   
   selectionBox.value = { x, y, w, h }
-  
 
   const containerRect = containerRef.value?.getBoundingClientRect()
   if (!containerRect) return
@@ -302,15 +298,12 @@ function stopDragSelect() {
   document.body.style.userSelect = ''
 }
 
-// Touch boilerplate
 const handleTouchStart = (e: TouchEvent) => { void e }
 const handleTouchMove = (e: TouchEvent) => { void e }
 const handleTouchEnd = (item: any, e: TouchEvent) => { void item; void e }
 
-// Animations removed to fix lint errors and simplify virtualization behavior
 watch(visibleGrid, () => {})
 
-// --- Interaction Handlers ---
 const handleItemClick = (item: GridItem) => emit('itemClick', item);
 const handleItemDblClick = (item: GridItem) => emit('itemDblClick', item);
 const handleContextMenu = (item: GridItem, event: MouseEvent) => emit('contextMenu', item, event);

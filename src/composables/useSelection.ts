@@ -1,12 +1,14 @@
+/**
+ * TypeScript Module - 3 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { ref, computed } from 'vue'
 
 const selected = ref<Set<string>>(new Set())
 const lastSelected = ref<string | null>(null)
 
-/**
- * Performs additive selection (Ctrl/Cmd + click)
- * Adds the item to the existing selection
- */
 export function selectAdditive(id: string, currentSelection: Set<string>): Set<string> {
   const newSelection = new Set(currentSelection)
   if (newSelection.has(id)) {
@@ -17,10 +19,6 @@ export function selectAdditive(id: string, currentSelection: Set<string>): Set<s
   return newSelection
 }
 
-/**
- * Performs range selection (Shift + click)
- * Selects all items between anchor and target (inclusive)
- */
 export function selectRange(
   anchorId: string | null,
   targetId: string,
@@ -28,7 +26,7 @@ export function selectRange(
   currentSelection: Set<string>
 ): Set<string> {
   if (!anchorId) {
-    // No anchor, just select the target
+    
     return new Set([targetId])
   }
 
@@ -36,7 +34,7 @@ export function selectRange(
   const targetIndex = allIds.indexOf(targetId)
 
   if (anchorIndex === -1 || targetIndex === -1) {
-    // One of the items not found, just select target
+    
     return new Set([targetId])
   }
 
@@ -66,7 +64,7 @@ export function useSelection() {
     } else if (additive) {
       selected.value = selectAdditive(id, selected.value)
     } else {
-      // Simple selection - replace current selection
+      
       selected.value = new Set([id])
     }
 

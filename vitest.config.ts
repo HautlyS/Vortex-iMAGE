@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 0 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 
@@ -6,8 +12,8 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: true,
-    include: ['src/**/*.{test,spec}.{js,ts}', 'tests/**/*.{test,spec}.{js,ts}'],
-    exclude: ['node_modules/**/*'],
+    include: ['src*.{test,spec}.{js,ts}', 'tests*.{test,spec}.{js,ts}'],
+    exclude: ['node_modules*'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

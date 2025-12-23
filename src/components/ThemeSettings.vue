@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useTheme, ACCENT_COLORS } from '../composables/useTheme'
@@ -214,7 +220,6 @@ label {
   letter-spacing: 0.06em;
 }
 
-/* Presets */
 .presets {
   display: flex;
   gap: 0.5rem;
@@ -237,7 +242,6 @@ label {
   box-shadow: 0 0 0 2px var(--c1), 0 4px 16px rgba(0,0,0,0.4);
 }
 
-/* Color Row */
 .color-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -288,7 +292,6 @@ label {
   border-color: var(--accent-color);
 }
 
-/* Slider */
 .slider {
   width: 100%;
   height: 6px;
@@ -309,7 +312,6 @@ label {
 }
 .slider::-webkit-slider-thumb:hover { transform: scale(1.15); }
 
-/* Radius Options */
 .radius-options {
   display: flex;
   gap: 0.5rem;
@@ -347,7 +349,6 @@ label {
 .radius-preview.soft { border-radius: 8px; }
 .radius-preview.round { border-radius: 50%; }
 
-/* Footer */
 .footer {
   padding: 1rem 1.5rem;
   border-top: 1px solid rgba(255,255,255,0.06);

@@ -1,8 +1,13 @@
+/**
+ * TypeScript Module - 0 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 2 modules
+ */
+
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import * as fc from 'fast-check'
 import { validateRepoName } from '../useRepoManager'
 
-// Mock Tauri APIs
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
 }))
@@ -17,7 +22,6 @@ vi.mock('@tauri-apps/plugin-store', () => ({
   ),
 }))
 
-// Helper to generate valid repo names
 const validRepoNameArb = fc
   .array(fc.constantFrom(...'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.'.split('')), { minLength: 1, maxLength: 100 })
   .map(chars => chars.join(''))
@@ -28,7 +32,6 @@ const validRepoNameArb = fc
     return s.length >= 1 && s.length <= 100
   })
 
-// Helper to generate alphanumeric strings
 const alphanumericArb = (minLength: number, maxLength: number) =>
   fc.array(fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz0123456789'.split('')), { minLength, maxLength })
     .map(chars => chars.join(''))
@@ -40,7 +43,7 @@ describe('useRepoManager', () => {
   })
 
   describe('validateRepoName', () => {
-    // Property 4: Repository Name Validation (additional frontend tests)
+    
     it('accepts valid repository names', () => {
       fc.assert(
         fc.property(validRepoNameArb, (name) => {
@@ -121,10 +124,9 @@ describe('useRepoManager', () => {
     })
   })
 
-  // Property 5: Repository Creation State Update
   describe('Property 5: Repository Creation State Update', () => {
     it('app repo setting matches new repo after creation', async () => {
-      // Test with specific examples instead of property-based to avoid module state issues
+      
       const testCases = [
         { name: 'myrepo', description: 'Test repo', visibility: 'public' as const, owner: 'testuser' },
         { name: 'private-repo', description: '', visibility: 'private' as const, owner: 'anotheruser' },
@@ -156,7 +158,7 @@ describe('useRepoManager', () => {
           full_name: fullName,
           private: testCase.visibility === 'private',
           description: testCase.description,
-          html_url: `https://github.com/${fullName}`,
+          html_url: `https:
           default_branch: 'main',
         })
 
@@ -167,7 +169,6 @@ describe('useRepoManager', () => {
           'test-token'
         )
 
-        // Property 5: app repo setting matches new repo after creation
         expect(result.full_name).toBe(fullName)
         expect(currentRepo.value?.full_name).toBe(fullName)
         expect(savedRepo).toBe(fullName)
@@ -175,7 +176,6 @@ describe('useRepoManager', () => {
     })
   })
 
-  // Property 6: Privacy Sync Bidirectional Consistency
   describe('Property 6: Privacy Sync Bidirectional Consistency', () => {
     it('local and remote privacy match after sync', async () => {
       const testCases = [
@@ -197,7 +197,7 @@ describe('useRepoManager', () => {
           full_name: fullName,
           private: testCase.remotePrivate,
           description: null,
-          html_url: `https://github.com/${fullName}`,
+          html_url: `https:
           default_branch: 'main',
         })
 
@@ -205,7 +205,6 @@ describe('useRepoManager', () => {
         const { syncPrivacy, currentRepo } = useRepoManager()
         const result = await syncPrivacy(fullName, 'test-token')
 
-        // Property 6: local and remote privacy match after sync
         expect(result).toBe(testCase.remotePrivate)
         expect(currentRepo.value?.private).toBe(testCase.remotePrivate)
       }
@@ -229,13 +228,12 @@ describe('useRepoManager', () => {
         const { useRepoManager } = await import('../useRepoManager')
         const { updateVisibility, currentRepo } = useRepoManager()
 
-        // First set up current repo
         currentRepo.value = {
           name: testCase.repoName,
           full_name: fullName,
           private: testCase.initialPrivate,
           description: null,
-          html_url: `https://github.com/${fullName}`,
+          html_url: `https:
           default_branch: 'main',
         }
 
@@ -244,13 +242,12 @@ describe('useRepoManager', () => {
           full_name: fullName,
           private: testCase.newPrivate,
           description: null,
-          html_url: `https://github.com/${fullName}`,
+          html_url: `https:
           default_branch: 'main',
         })
 
         const result = await updateVisibility(fullName, testCase.newPrivate, 'test-token')
 
-        // Property 6: local state matches remote after update
         expect(result.private).toBe(testCase.newPrivate)
         expect(currentRepo.value?.private).toBe(testCase.newPrivate)
       }

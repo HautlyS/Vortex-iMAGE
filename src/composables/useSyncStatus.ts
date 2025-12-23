@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 1 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 2 modules
+ */
+
 import { ref } from 'vue'
 import { useGitHubAuth, isDevMode } from './useGitHubAuth'
 import { useUploadToast } from './useUploadToast'

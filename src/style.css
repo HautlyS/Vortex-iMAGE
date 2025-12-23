@@ -1,12 +1,10 @@
+/* style.css - Core functionality module */
+
 @import "tailwindcss";
 @import './mobile.css';
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   iMAGE - iOS DESIGN SYSTEM (Apple App Store Style)
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 :root {
-  /* ─── iOS System Colors ─── */
+  
   --systemRed: #ff3b30;
   --systemOrange: #ff9500;
   --systemYellow: #ffcc00;
@@ -20,8 +18,7 @@
   --systemPink: #ff2d55;
   --systemBrown: #a2845e;
   --systemGray: #8e8e93;
-  
-  /* ─── Primary Colors (Light Mode Base) ─── */
+
   --systemPrimary: rgba(0, 0, 0, 0.85);
   --systemPrimary-onLight: rgba(0, 0, 0, 0.85);
   --systemPrimary-onDark: rgba(255, 255, 255, 0.85);
@@ -31,56 +28,46 @@
   --systemTertiary: rgba(0, 0, 0, 0.25);
   --systemQuaternary: rgba(0, 0, 0, 0.1);
   --systemQuinary: rgba(0, 0, 0, 0.05);
-  
-  /* ─── Gray Scale ─── */
+
   --systemGray2: #aeaeb2;
   --systemGray3: #c7c7cc;
   --systemGray4: #d1d1d6;
   --systemGray5: #e5e5ea;
   --systemGray6: #f2f2f7;
-  
-  /* ─── Key Color (Accent) ─── */
+
   --keyColor: #007aff;
   --keyColor-rgb: 0, 122, 255;
-  
-  /* ─── Backgrounds ─── */
+
   --pageBG: #ffffff;
   --pageBg: #f5f5f7;
   --pageBg-rgb: 245, 245, 247;
   --shelfBG: rgba(0, 0, 0, 0.05);
   --footerBg: #f2f2f2;
   --genericJoeColor: #ebebeb;
-  
-  /* ─── Materials ─── */
+
   --systemStandardThinMaterialSover: rgba(245, 245, 245, 0.48);
   --systemStandardMediumMaterialSover: rgba(245, 245, 245, 0.6);
   --systemStandardThickMaterialSover: rgba(245, 245, 245, 0.72);
   --systemStandardUltrathickMaterialSover: rgba(245, 245, 245, 0.84);
-  
-  /* ─── Dividers ─── */
+
   --labelDivider: rgba(0, 0, 0, 0.15);
   --defaultLine: var(--systemGray4);
-  
-  /* ─── Shadows ─── */
+
   --shadow-small: 0 3px 9px rgba(0, 0, 0, 0.08);
   --shadow-medium: 0 3px 20px rgba(0, 0, 0, 0.08);
   --dialogShadowColor: rgba(0, 0, 0, 0.25);
-  
-  /* ─── Border Radius (iOS Style) ─── */
+
   --global-border-radius-xsmall: 5px;
   --global-border-radius-small: 9px;
   --global-border-radius-medium: 12px;
   --global-border-radius-large: 17px;
   --global-border-radius-xlarge: 24px;
-  
-  /* ─── Typography ─── */
+
   --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', 'Helvetica Neue', Arial, sans-serif;
-  
-  /* ─── Layout ─── */
+
   --bodyGutter: 25px;
   --moduleGutter: 30px;
-  
-  /* ─── Animation ─── */
+
   --duration-fast: 150ms;
   --duration-normal: 280ms;
   --duration-slow: 450ms;
@@ -89,10 +76,6 @@
   
   color-scheme: light dark;
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   DARK MODE (iOS Style)
-   ═══════════════════════════════════════════════════════════════════════════ */
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -144,10 +127,6 @@
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   BASE RESET
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -173,10 +152,6 @@ body {
   line-height: 1.47;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   SCROLLBAR (iOS Style - Thin)
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
@@ -194,10 +169,6 @@ body {
   outline: 4px solid rgba(var(--keyColor-rgb), 0.6);
   outline-offset: 1px;
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS BUTTONS
-   ═══════════════════════════════════════════════════════════════════════════ */
 
 .btn,
 button {
@@ -220,7 +191,6 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* Get Button (iOS App Store Style) */
 .get-button,
 .btn-primary {
   border-radius: 1000px;
@@ -242,7 +212,6 @@ button:disabled {
   background-color: rgba(var(--keyColor-rgb), 0.08);
 }
 
-/* Blue Filled Button */
 .btn-filled,
 .get-button.blue {
   background-color: var(--keyColor);
@@ -254,7 +223,6 @@ button:disabled {
   background-color: color-mix(in srgb, var(--keyColor), #000 8%);
 }
 
-/* Secondary Button */
 .btn-secondary {
   background: var(--systemQuinary);
   color: var(--systemPrimary);
@@ -266,7 +234,6 @@ button:disabled {
   background: var(--systemQuaternary);
 }
 
-/* Ghost Button */
 .btn-ghost {
   background: transparent;
   color: var(--keyColor);
@@ -278,7 +245,6 @@ button:disabled {
   background: rgba(var(--keyColor-rgb), 0.08);
 }
 
-/* Icon Button */
 .btn-icon {
   width: 44px;
   height: 44px;
@@ -291,10 +257,6 @@ button:disabled {
 .btn-icon:hover:not(:disabled) {
   background: var(--systemQuaternary);
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS INPUTS
-   ═══════════════════════════════════════════════════════════════════════════ */
 
 .input,
 input[type="text"],
@@ -331,16 +293,11 @@ input::placeholder {
   color: var(--systemTertiary);
 }
 
-/* Search Input (iOS Style) */
 .search-input {
   background: var(--systemGray6);
   border-radius: var(--global-border-radius-small);
   padding-left: 36px;
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS CARDS
-   ═══════════════════════════════════════════════════════════════════════════ */
 
 .card {
   background: var(--pageBG);
@@ -354,7 +311,6 @@ input::placeholder {
   transform: translateY(-2px);
 }
 
-/* Glass Card */
 .card-glass {
   background: var(--systemStandardThickMaterialSover);
   backdrop-filter: blur(20px) saturate(180%);
@@ -362,10 +318,6 @@ input::placeholder {
   border: 0.5px solid var(--labelDivider);
   border-radius: var(--global-border-radius-large);
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS BADGES
-   ═══════════════════════════════════════════════════════════════════════════ */
 
 .badge {
   display: inline-flex;
@@ -396,10 +348,6 @@ input::placeholder {
   color: var(--systemOrange);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS SEGMENTED CONTROL
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 .segmented-control {
   display: inline-flex;
   background: var(--systemGray6);
@@ -422,10 +370,6 @@ input::placeholder {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS LIST / TABLE
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 .list-item {
   display: flex;
   align-items: center;
@@ -444,10 +388,6 @@ input::placeholder {
   overflow: hidden;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS MODAL / DIALOG
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 .modal-backdrop {
   background: rgba(0, 0, 0, 0.45);
 }
@@ -460,10 +400,6 @@ input::placeholder {
     0 0 0 0.5px rgba(0, 0, 0, 0.2),
     0 8px 40px var(--dialogShadowColor);
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS NAVIGATION
-   ═══════════════════════════════════════════════════════════════════════════ */
 
 .nav-bar {
   background: var(--systemStandardThickMaterialSover);
@@ -488,10 +424,6 @@ input::placeholder {
 .nav-item.active {
   color: var(--keyColor);
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   TRANSITIONS (iOS Style)
-   ═══════════════════════════════════════════════════════════════════════════ */
 
 .fade-enter-active,
 .fade-leave-active {
@@ -525,10 +457,6 @@ input::placeholder {
   transform: scale(0.96);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   UTILITY CLASSES
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 .text-primary { color: var(--systemPrimary); }
 .text-secondary { color: var(--systemSecondary); }
 .text-tertiary { color: var(--systemTertiary); }
@@ -552,10 +480,6 @@ input::placeholder {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS TYPOGRAPHY
-   ═══════════════════════════════════════════════════════════════════════════ */
 
 .large-title {
   font-size: 34px;
@@ -624,10 +548,6 @@ input::placeholder {
   line-height: 1.18;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS TOGGLE / SWITCH
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 .toggle {
   display: inline-block;
   height: 24px;
@@ -673,10 +593,6 @@ input::placeholder {
 .toggle input:checked + .slider:before {
   transform: translateX(16px);
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS LOADING SPINNER (Apple Style)
-   ═══════════════════════════════════════════════════════════════════════════ */
 
 .loading-spinner {
   display: flex;
@@ -745,7 +661,6 @@ input::placeholder {
   100% { opacity: 1; }
 }
 
-/* Simple circular spinner alternative */
 .spinner-circle {
   width: 20px;
   height: 20px;
@@ -758,10 +673,6 @@ input::placeholder {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS ARTWORK / IMAGE COMPONENT
-   ═══════════════════════════════════════════════════════════════════════════ */
 
 .artwork {
   background-color: var(--genericJoeColor);
@@ -794,10 +705,6 @@ input::placeholder {
   border-radius: 22.5%;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS APP ICON STYLES
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 .app-icon {
   aspect-ratio: 1;
   border-radius: 22.5%;
@@ -815,10 +722,6 @@ input::placeholder {
 .app-icon--small { width: 40px; }
 .app-icon--medium { width: 64px; }
 .app-icon--large { width: 128px; }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS SHELF / HORIZONTAL SCROLL
-   ═══════════════════════════════════════════════════════════════════════════ */
 
 .shelf {
   position: relative;
@@ -865,7 +768,6 @@ input::placeholder {
   scroll-snap-align: start;
 }
 
-/* Shelf navigation arrows */
 .shelf__nav {
   position: absolute;
   top: 50%;
@@ -906,10 +808,6 @@ input::placeholder {
   fill: var(--systemSecondary);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS LOCKUP (Card with Image + Text)
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 .lockup {
   display: flex;
   flex-direction: column;
@@ -941,10 +839,6 @@ input::placeholder {
   line-height: 1.3;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS PROGRESS BAR
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 .progress {
   height: 4px;
   background: var(--systemGray5);
@@ -968,10 +862,6 @@ input::placeholder {
   border-radius: 4px;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS STAR RATING
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 .star-rating {
   display: inline-flex;
   align-items: center;
@@ -989,10 +879,6 @@ input::placeholder {
   font-size: 13px;
   color: var(--systemSecondary);
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS SEARCH BAR
-   ═══════════════════════════════════════════════════════════════════════════ */
 
 .search-bar {
   position: relative;
@@ -1052,10 +938,6 @@ input::placeholder {
   display: flex;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS DIVIDER
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 .divider {
   height: 0.5px;
   background: var(--labelDivider);
@@ -1065,10 +947,6 @@ input::placeholder {
 .divider--inset {
   margin-left: 16px;
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS ACTION SHEET
-   ═══════════════════════════════════════════════════════════════════════════ */
 
 .action-sheet {
   position: fixed;
@@ -1121,10 +999,6 @@ input::placeholder {
   font-weight: 600;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS TOOLTIP / POPOVER
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 .tooltip {
   position: absolute;
   padding: 8px 12px;
@@ -1146,10 +1020,6 @@ input::placeholder {
   opacity: 1;
   transform: translateY(0);
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS SKELETON LOADING
-   ═══════════════════════════════════════════════════════════════════════════ */
 
 .skeleton {
   background: var(--genericJoeColor);
@@ -1175,10 +1045,6 @@ input::placeholder {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS CONTEXT MENU
-   ═══════════════════════════════════════════════════════════════════════════ */
 
 .context-menu {
   position: fixed;
@@ -1237,10 +1103,6 @@ input::placeholder {
   margin: 6px 0;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS PILL TABS
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 .pill-tabs {
   display: inline-flex;
   gap: 8px;
@@ -1270,10 +1132,6 @@ input::placeholder {
   color: var(--systemPrimary);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS CHIP / TAG
-   ═══════════════════════════════════════════════════════════════════════════ */
 
 .chip {
   display: inline-flex;
@@ -1317,10 +1175,6 @@ input::placeholder {
   justify-content: center;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS EMPTY STATE
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -1355,10 +1209,6 @@ input::placeholder {
   margin-top: 20px;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS AVATAR
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 .avatar {
   border-radius: 50%;
   overflow: hidden;
@@ -1381,10 +1231,6 @@ input::placeholder {
 .avatar--bordered {
   box-shadow: 0 0 0 2px var(--pageBG), 0 0 0 3px var(--systemGray4);
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   iOS GRADIENT BACKGROUNDS (App Store Style)
-   ═══════════════════════════════════════════════════════════════════════════ */
 
 .gradient-bg {
   position: relative;
@@ -1417,11 +1263,6 @@ input::placeholder {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   LEGACY COMPATIBILITY (for existing components)
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-/* Map old variables to new iOS system */
 :root {
   --accent-color: var(--keyColor);
   --accent-rgb: var(--keyColor-rgb);

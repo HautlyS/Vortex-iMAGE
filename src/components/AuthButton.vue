@@ -1,14 +1,19 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <script setup lang="ts">
 import { useGitHubAuth } from '../composables/useGitHubAuth'
 
 const { user, loading, userCode, error, startLogin, logout } = useGitHubAuth()
 
-// Copy code to clipboard with haptic feedback
 async function copyCode() {
   if (!userCode.value) return
   try {
     await navigator.clipboard.writeText(userCode.value)
-    // Trigger haptic feedback on iOS if available
+    
     if ('vibrate' in navigator) {
       navigator.vibrate(10)
     }
@@ -72,7 +77,6 @@ async function copyCode() {
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
-/* User Card - iOS Style */
 .user-card {
   display: flex;
   align-items: center;
@@ -130,7 +134,6 @@ async function copyCode() {
 
 .btn-logout svg { width: 18px; height: 18px; }
 
-/* Code Card - iOS Style */
 .code-card {
   padding: 24px 20px;
   background: var(--pageBG);
@@ -201,7 +204,6 @@ async function copyCode() {
   animation: spin 0.8s linear infinite;
 }
 
-/* Login Button - iOS Get Button Style */
 .btn-login {
   width: 100%;
   display: flex;

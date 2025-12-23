@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 1 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 
@@ -86,7 +92,6 @@ export function useCompression() {
     })
   }
 
-  // File compression with settings
   async function compressFile(
     data: Uint8Array,
     filename: string,
@@ -111,7 +116,6 @@ export function useCompression() {
     })
   }
 
-  // Create compression settings helper
   function createCompressionSettings(options: {
     enabled?: boolean
     algorithm?: CompressionAlgorithm

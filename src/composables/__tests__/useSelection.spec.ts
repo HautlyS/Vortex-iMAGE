@@ -1,15 +1,16 @@
+/**
+ * TypeScript Module - 0 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 2 modules
+ */
+
 import { describe, it, expect } from 'vitest'
 import * as fc from 'fast-check'
 import { selectAdditive, selectRange, useSelection } from '../useSelection'
 
 describe('useSelection', () => {
   describe('selectAdditive', () => {
-    /**
-     * Feature: photo-manager-enhancement, Property 19: Additive Selection Accumulation
-     * For any existing selection and any new item clicked with Ctrl/Cmd held,
-     * the new selection SHALL be the union of the previous selection and the new item.
-     * Validates: Requirements 7.1
-     */
+    
     it('Property 19: additive selection adds new item to existing selection', () => {
       fc.assert(
         fc.property(
@@ -21,10 +22,10 @@ describe('useSelection', () => {
             const result = selectAdditive(newId, currentSelection)
 
             if (wasSelected) {
-              // If item was already selected, it should be removed (toggle behavior)
+              
               return !result.has(newId)
             } else {
-              // If item was not selected, it should be added
+              
               return result.has(newId)
             }
           }
@@ -42,7 +43,6 @@ describe('useSelection', () => {
             const currentSelection = new Set(existingIds)
             const result = selectAdditive(newId, currentSelection)
 
-            // All previously selected items (except the toggled one) should still be selected
             for (const id of existingIds) {
               if (id !== newId) {
                 if (!result.has(id)) return false
@@ -70,22 +70,16 @@ describe('useSelection', () => {
   })
 
   describe('selectRange', () => {
-    /**
-     * Feature: photo-manager-enhancement, Property 20: Range Selection Completeness
-     * For any anchor item and target item in an ordered list, shift-clicking the target
-     * SHALL select all items between anchor and target (inclusive), regardless of click order.
-     * Validates: Requirements 7.2
-     */
+    
     it('Property 20: range selection includes all items between anchor and target', () => {
       fc.assert(
         fc.property(
           fc.array(fc.string({ minLength: 1, maxLength: 10 }), { minLength: 2, maxLength: 20 }),
           (allIds) => {
-            // Ensure unique IDs
+            
             const uniqueIds = [...new Set(allIds)]
-            if (uniqueIds.length < 2) return true // Skip if not enough unique items
+            if (uniqueIds.length < 2) return true 
 
-            // Pick random anchor and target indices
             const anchorIndex = Math.floor(Math.random() * uniqueIds.length)
             let targetIndex = Math.floor(Math.random() * uniqueIds.length)
             if (targetIndex === anchorIndex) {
@@ -97,7 +91,6 @@ describe('useSelection', () => {
 
             const result = selectRange(anchorId, targetId, uniqueIds, new Set())
 
-            // All items between anchor and target should be selected
             const start = Math.min(anchorIndex, targetIndex)
             const end = Math.max(anchorIndex, targetIndex)
 
@@ -114,13 +107,11 @@ describe('useSelection', () => {
     it('Property 20: range selection works regardless of direction', () => {
       const allIds = ['a', 'b', 'c', 'd', 'e']
 
-      // Forward selection (anchor before target)
       const forward = selectRange('b', 'd', allIds, new Set())
       expect(forward.has('b')).toBe(true)
       expect(forward.has('c')).toBe(true)
       expect(forward.has('d')).toBe(true)
 
-      // Backward selection (anchor after target)
       const backward = selectRange('d', 'b', allIds, new Set())
       expect(backward.has('b')).toBe(true)
       expect(backward.has('c')).toBe(true)

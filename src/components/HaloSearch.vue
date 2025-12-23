@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <style scoped>
   .container {
     width: 100%;
@@ -172,7 +178,7 @@
             <div class="elements-cont">
               <svg
                 class="svg"
-                xmlns="http://www.w3.org/2000/svg"
+                xmlns="http:
                 width="1em"
                 height="1em"
                 viewBox="0 0 48 48"
@@ -191,7 +197,7 @@
               <div class="filter">
                 <svg
                   class="funnel"
-                  xmlns="http://www.w3.org/2000/svg"
+                  xmlns="http:
                   viewBox="0 0 24 24"
                   width="1em"
                   height="1em"

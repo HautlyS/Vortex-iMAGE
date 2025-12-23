@@ -1,4 +1,8 @@
-
+/**
+ * TypeScript Module - 1 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 0 modules
+ */
 
 export interface DynamicSize {
   width: number
@@ -23,7 +27,6 @@ export function useDynamicMasonry(baseWidth = 280, baseHeight = 320) {
     const hash = item.id.split('').reduce((a: number, c: string) => a + c.charCodeAt(0), 0)
     const random = (hash + index) % 1000 / 1000
 
-    // Determine size type based on weighted probability
     let cumulative = 0
     let sizeType: keyof typeof sizeVariants = 'medium'
 
@@ -35,18 +38,15 @@ export function useDynamicMasonry(baseWidth = 280, baseHeight = 320) {
       }
     }
 
-    // Special patterns for visual interest
     const isHighlight = index % 7 === 0 || sizeType === 'hero'
     const isGrouped = index % 5 === 0 && sizeType === 'small'
 
-    // Calculate dimensions based on original aspect ratio
     const originalAspect = item.width && item.height ? item.width / item.height : 1
     const scale = sizeVariants[sizeType].scale
 
     let width = baseWidth * scale
     let height = baseHeight * scale
 
-    // Adjust for aspect ratio while maintaining size category
     if (sizeType === 'wide') {
       width = baseWidth * 1.8
       height = baseHeight * 0.8
@@ -54,10 +54,10 @@ export function useDynamicMasonry(baseWidth = 280, baseHeight = 320) {
       width = baseWidth * 0.8
       height = baseHeight * 1.6
     } else {
-      // Maintain aspect ratio within size bounds
-      if (originalAspect > 1.5) { // Wide image
+      
+      if (originalAspect > 1.5) { 
         height = width / originalAspect
-      } else if (originalAspect < 0.7) { // Tall image
+      } else if (originalAspect < 0.7) { 
         width = height * originalAspect
       }
     }
@@ -81,24 +81,22 @@ export function useDynamicMasonry(baseWidth = 280, baseHeight = 320) {
     items.forEach((item, index) => {
       const size = calculateDynamicSize(item, index)
 
-      // Find best column (shortest for normal items, specific logic for special items)
       let targetColumn = 0
 
       if (size.type === 'hero') {
-        // Hero images prefer left columns
+        
         targetColumn = columnHeights.slice(0, Math.ceil(columns / 2))
           .reduce((minIdx, height, idx, arr) => height < arr[minIdx] ? idx : minIdx, 0)
       } else if (size.group) {
-        // Grouped items try to stay together
+        
         const groupColumn = index % columns
         targetColumn = groupColumn
       } else {
-        // Normal items go to shortest column
+        
         targetColumn = columnHeights.reduce((minIdx, height, idx) =>
           height < columnHeights[minIdx] ? idx : minIdx, 0)
       }
 
-      // Handle column overflow for wide items
       if (size.type === 'wide' && targetColumn + 1 >= columns) {
         targetColumn = Math.max(0, columns - 2)
       }
@@ -108,7 +106,6 @@ export function useDynamicMasonry(baseWidth = 280, baseHeight = 320) {
 
       positions.push({ x, y, item, size })
 
-      // Update column heights
       const itemWidth = size.width
       const affectedColumns = Math.ceil(itemWidth / (baseWidth + gap))
 

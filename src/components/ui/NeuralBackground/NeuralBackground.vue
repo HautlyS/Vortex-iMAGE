@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <template>
   <canvas
     ref="canvasRef"
@@ -82,7 +88,6 @@ const fragmentShader = `
       return res.x + res.y;
   }
 
-  // HSL to RGB conversion
   vec3 hsl2rgb(vec3 c) {
       vec3 rgb = clamp(abs(mod(c.x*6.0+vec3(0.0,4.0,2.0),6.0)-3.0)-1.0, 0.0, 1.0);
       return c.z + c.y * (rgb - 0.5) * (1.0 - abs(2.0 * c.z - 1.0));
@@ -107,17 +112,14 @@ const fragmentShader = `
       noise = max(.0, noise - .5);
       noise *= (1. - length(vUv - .5));
 
-      // Convert hue from degrees to 0-1 range
       float normalizedHue = u_hue / 360.0;
-      
-      // Create HSL color with animation
+
       vec3 hsl = vec3(
           normalizedHue + 0.1 * sin(3.0 * u_scroll_progress + 1.5),
           u_saturation,
           u_chroma * 0.5 + 0.2 * sin(2.0 * u_scroll_progress)
       );
 
-      // Convert to RGB
       color = hsl2rgb(hsl);
       color = color * noise;
 
@@ -192,7 +194,6 @@ function resizeCanvas() {
 
   renderer.setSize(width, height);
 
-  // Update ratio uniform
   if (mesh.program && mesh.program.uniforms.u_ratio) {
     mesh.program.uniforms.u_ratio.value = width / height;
   }
@@ -209,11 +210,9 @@ function render() {
 
   const currentTime = performance.now();
 
-  // Smooth pointer interpolation
   pointer.x += (pointer.tX - pointer.x) * 0.2;
   pointer.y += (pointer.tY - pointer.y) * 0.2;
 
-  // Update uniforms
   if (mesh.program && mesh.program.uniforms) {
     const uniforms = mesh.program.uniforms;
 
@@ -250,7 +249,6 @@ function handleClick(e: MouseEvent) {
   updateMousePosition(e.clientX, e.clientY);
 }
 
-// Watch for prop changes and update uniforms
 watch(
   () => props.hue,
   (newHue) => {
@@ -303,7 +301,6 @@ onUnmounted(() => {
   window.removeEventListener("touchmove", handleTouchMove);
   window.removeEventListener("click", handleClick);
 
-  // Clean up OGL resources
   if (rendererRef.value) {
     rendererRef.value = null;
   }

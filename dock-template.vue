@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <!-- Replace your existing template structure with this: -->
 <template>
   <ErrorBoundary>

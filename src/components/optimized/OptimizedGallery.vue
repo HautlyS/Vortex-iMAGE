@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 1 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: VirtualMasonry
+ */
+
 <template>
   <div class="optimized-gallery">
     <!-- Dynamic Masonry Gallery -->
@@ -53,7 +59,6 @@ const handleItemDblClick = (item: any) => {
   emit('item-dbl-click', item as GalleryItem)
 }
 
-// Layout settings
 const baseSizeMode = ref<'compact' | 'normal' | 'large'>('normal')
 const layoutSeed = ref(Date.now())
 

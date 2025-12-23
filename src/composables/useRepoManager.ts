@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 2 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 2 modules
+ */
+
 import { ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { load } from '@tauri-apps/plugin-store'
@@ -23,11 +29,6 @@ const error = ref<string | null>(null)
 const currentRepo = ref<RepoInfo | null>(null)
 let initialized = false
 
-/**
- * Validates repository name format (mirrors Rust validation)
- * Valid: alphanumeric, hyphens, underscores, dots
- * Length: 1-100 characters
- */
 export function validateRepoName(name: string): { valid: boolean; error?: string } {
   if (!name || name.length === 0) {
     return { valid: false, error: 'Repository name is required' }
@@ -37,7 +38,6 @@ export function validateRepoName(name: string): { valid: boolean; error?: string
     return { valid: false, error: 'Repository name must be 100 characters or less' }
   }
 
-  // Check for valid characters
   const validChars = /^[a-zA-Z0-9._-]+$/
   if (!validChars.test(name)) {
     return {
@@ -46,12 +46,10 @@ export function validateRepoName(name: string): { valid: boolean; error?: string
     }
   }
 
-  // Cannot start or end with dot or hyphen
   if (name.startsWith('.') || name.startsWith('-') || name.endsWith('.') || name.endsWith('-')) {
     return { valid: false, error: 'Repository name cannot start or end with a dot or hyphen' }
   }
 
-  // Cannot contain consecutive dots
   if (name.includes('..')) {
     return { valid: false, error: 'Repository name cannot contain consecutive dots' }
   }
@@ -68,13 +66,13 @@ export function useRepoManager() {
       const savedToken = await store.get<string>('token')
 
       if (savedRepo && savedToken) {
-        // Fetch current repo info from GitHub
+        
         const info = await getRepoInfo(savedRepo, savedToken)
         currentRepo.value = info
       }
       initialized = true
     } catch {
-      // Silent fail - repo may not exist yet
+      
     }
   }
 
@@ -84,7 +82,7 @@ export function useRepoManager() {
       await store.set('repo', repoFullName)
       await store.save()
     } catch {
-      // Silent fail
+      
     }
   }
 
@@ -105,7 +103,6 @@ export function useRepoManager() {
         private: config.visibility === 'private',
       })
 
-      // Update app state with new repo (Property 5)
       currentRepo.value = result
       await saveRepoSetting(result.full_name)
 
@@ -146,7 +143,6 @@ export function useRepoManager() {
         private: isPrivate,
       })
 
-      // Update local state to match remote (Property 6)
       if (currentRepo.value && currentRepo.value.full_name === repo) {
         currentRepo.value = result
       }
@@ -165,10 +161,9 @@ export function useRepoManager() {
     error.value = null
 
     try {
-      // Fetch current remote state
+      
       const remoteInfo = await getRepoInfo(repo, token)
 
-      // Update local state to match remote (Property 6)
       currentRepo.value = remoteInfo
 
       return remoteInfo.private

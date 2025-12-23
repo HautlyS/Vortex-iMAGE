@@ -1,4 +1,4 @@
-/* Add these styles to your App.vue <style> section */
+/* dock-styles.css - Core functionality module */
 
 .app-dock {
   display: flex;
@@ -14,7 +14,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding-bottom: 6rem; /* Space for dock */
+  padding-bottom: 6rem; 
 }
 
 .header-dock {
@@ -35,7 +35,6 @@
   background: var(--void);
 }
 
-/* Responsive dock */
 @media (max-width: 768px) {
   .main-dock {
     padding-bottom: 5rem;

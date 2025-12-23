@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 1 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: SecureImage
+ */
+
 <script setup lang="ts">
 import { ref } from 'vue'
 import SecureImage from './SecureImage.vue'
@@ -82,7 +88,6 @@ const imageLoaded = ref(false)
   cursor: pointer;
 }
 
-/* iOS Artwork Component */
 .artwork {
   position: relative;
   aspect-ratio: 1;
@@ -121,7 +126,6 @@ const imageLoaded = ref(false)
   pointer-events: none;
 }
 
-/* Skeleton loading (iOS style) */
 .skeleton {
   position: absolute;
   inset: 0;
@@ -141,7 +145,6 @@ const imageLoaded = ref(false)
   100% { transform: translateX(100%); }
 }
 
-/* Badge (iOS pill style) */
 .card-badge {
   position: absolute;
   top: 8px;
@@ -157,7 +160,6 @@ const imageLoaded = ref(false)
   z-index: 2;
 }
 
-/* Favorite button (iOS style) */
 .card-fav {
   position: absolute;
   top: 8px;
@@ -199,7 +201,6 @@ const imageLoaded = ref(false)
   height: 16px;
 }
 
-/* Metadata (iOS lockup style) */
 .card-meta {
   padding: 0 2px;
 }
@@ -225,7 +226,6 @@ const imageLoaded = ref(false)
   text-overflow: ellipsis;
 }
 
-/* Selection indicator */
 .card-selected {
   position: absolute;
   top: 8px;
@@ -247,7 +247,6 @@ const imageLoaded = ref(false)
   height: 14px;
 }
 
-/* Selected state */
 .photo-card.selected .artwork {
   box-shadow: 0 0 0 3px var(--keyColor);
 }

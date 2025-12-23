@@ -1,7 +1,12 @@
+/**
+ * TypeScript Module - 0 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import * as fc from 'fast-check'
 
-// Mock Tauri APIs
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
 }))
@@ -24,21 +29,15 @@ interface FileProgress {
   percent: number
 }
 
-/**
- * Calculates overall progress from individual file progress
- */
 function calculateOverallProgress(files: FileProgress[]): number {
   if (files.length === 0) return 0
   const totalPercent = files.reduce((sum, f) => sum + f.percent, 0)
   return Math.round(totalPercent / files.length)
 }
 
-/**
- * Calculates upload speed
- */
 function calculateSpeed(totalBytesUploaded: number, elapsedMs: number): number {
   if (elapsedMs === 0) return 0
-  return Math.round((totalBytesUploaded / elapsedMs) * 1000) // bytes per second
+  return Math.round((totalBytesUploaded / elapsedMs) * 1000) 
 }
 
 describe('Upload Progress Properties', () => {
@@ -46,7 +45,6 @@ describe('Upload Progress Properties', () => {
     vi.clearAllMocks()
   })
 
-  // Property 27: Upload Progress Individual Tracking
   describe('Property 27: Upload Progress Individual Tracking', () => {
     it('each file has unique progress entry', () => {
       fc.assert(
@@ -60,7 +58,7 @@ describe('Upload Progress Properties', () => {
             { minLength: 1, maxLength: 50 }
           ),
           (filesData) => {
-            // Create progress entries with unique IDs
+            
             const files: FileProgress[] = filesData.map((f, i) => ({
               id: `file_${i}`,
               name: f.name,
@@ -69,15 +67,12 @@ describe('Upload Progress Properties', () => {
               percent: f.percentComplete,
             }))
 
-            // Property: Number of progress entries equals number of files
             expect(files.length).toBe(filesData.length)
 
-            // Property: Each file has unique ID
             const ids = files.map((f) => f.id)
             const uniqueIds = new Set(ids)
             expect(uniqueIds.size).toBe(files.length)
 
-            // Property: Each file has independent progress value
             for (const file of files) {
               expect(file.percent).toBeGreaterThanOrEqual(0)
               expect(file.percent).toBeLessThanOrEqual(100)
@@ -103,14 +98,11 @@ describe('Upload Progress Properties', () => {
               percent: p,
             }))
 
-            // Property: Changing one file's progress doesn't affect others
             const originalPercents = files.map((f) => f.percent)
 
-            // Simulate updating first file
             files[0].percent = 100
             files[0].bytesUploaded = files[0].totalBytes
 
-            // Other files should be unchanged
             for (let i = 1; i < files.length; i++) {
               expect(files[i].percent).toBe(originalPercents[i])
             }
@@ -123,7 +115,6 @@ describe('Upload Progress Properties', () => {
     })
   })
 
-  // Property 28: Upload Progress Calculation Correctness
   describe('Property 28: Upload Progress Calculation Correctness', () => {
     it('overall percentage equals average of individual percentages', () => {
       fc.assert(
@@ -154,8 +145,8 @@ describe('Upload Progress Properties', () => {
     it('speed calculation is correct', () => {
       fc.assert(
         fc.property(
-          fc.nat({ max: 100000000 }), // bytes uploaded
-          fc.integer({ min: 1, max: 60000 }), // elapsed ms (1ms to 60s, must be > 0)
+          fc.nat({ max: 100000000 }), 
+          fc.integer({ min: 1, max: 60000 }), 
           (bytesUploaded, elapsedMs) => {
             const speed = calculateSpeed(bytesUploaded, elapsedMs)
             const expectedSpeed = Math.round((bytesUploaded / elapsedMs) * 1000)

@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 2 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: PipelineEditor, ConfirmDialog
+ */
+
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useCrypto } from '../composables/useCrypto'
@@ -39,7 +45,6 @@ const activeTab = ref<'keypair' | 'compression' | 'pipeline'>('keypair')
 const showPipelineEditor = ref(false)
 const showDeleteConfirm = ref(false)
 
-// Keypair management
 const keypairPassword = ref('')
 const confirmPassword = ref('')
 const unlockPassword = ref('')

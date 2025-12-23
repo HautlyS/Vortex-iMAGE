@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 1 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { ref, onMounted } from 'vue'
 
 export type Platform = 'desktop' | 'android' | 'ios' | 'web'
@@ -8,7 +14,7 @@ const isTouch = ref(false)
 
 export function usePlatform() {
   onMounted(async () => {
-    // Check user agent for platform detection
+    
     const ua = navigator.userAgent.toLowerCase()
     
     if (/android/.test(ua)) {
@@ -25,10 +31,8 @@ export function usePlatform() {
       isMobile.value = false
     }
 
-    // Check for touch support
     isTouch.value = 'ontouchstart' in window || navigator.maxTouchPoints > 0
 
-    // Listen for resize to update mobile state
     const handleResize = () => {
       isMobile.value = window.innerWidth <= 768 || /android|iphone|ipad|ipod/.test(ua)
     }

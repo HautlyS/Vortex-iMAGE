@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <script setup lang="ts">
 import { ref, onErrorCaptured, onMounted, onUnmounted } from 'vue'
 
@@ -17,8 +23,7 @@ function addError(message: string) {
     id: Math.random().toString(36).slice(2)
   }
   errors.value = [error, ...errors.value].slice(0, MAX_ERRORS)
-  
-  // Auto-dismiss after 5s
+
   setTimeout(() => dismissError(error.id), 5000)
 }
 
@@ -26,13 +31,11 @@ function dismissError(id: string) {
   errors.value = errors.value.filter(e => e.id !== id)
 }
 
-// Capture Vue errors
 onErrorCaptured((err) => {
   addError(err.message || 'Erro desconhecido')
   return false
 })
 
-// Global error handlers
 function handleGlobalError(event: ErrorEvent) {
   addError(event.message || 'Erro inesperado')
 }
@@ -133,7 +136,6 @@ onUnmounted(() => {
   height: 100%;
 }
 
-/* Animations */
 .error-toast-enter-active {
   animation: slide-in 0.3s ease-out;
 }

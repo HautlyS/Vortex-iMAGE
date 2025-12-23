@@ -1,6 +1,6 @@
-//! Data Processing Pipeline Module
-//! Supports layered compression and encryption operations
-//! Each layer can be independently configured and stacked
+//! Rust Module - 14 functions, 7 structs
+//! Core functionality: Backend operations and data processing
+//! External crates: 6 dependencies
 
 use serde::{Deserialize, Serialize};
 use crate::compress::{
@@ -13,33 +13,31 @@ use crate::crypto::{
 };
 use crate::github::AppError;
 
-/// Type of operation in the pipeline
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum PipelineOperation {
-    /// Compression layer
+    
     Compress {
         algorithm: String,
         level: i32,
     },
-    /// Password-based encryption
+    
     EncryptPassword {
-        /// Password is provided at runtime, not stored
+        
         #[serde(skip)]
         password: Option<String>,
     },
-    /// Hybrid post-quantum encryption
+    
     EncryptHybridPQ {
-        /// Recipient's public bundle for encryption
+        
         recipient_bundle: Option<PublicBundle>,
     },
-    /// BLAKE3 hash (for integrity, appended as metadata)
+    
     Hash,
-    /// Base64 encode (for text-safe transport)
+    
     Base64Encode,
 }
 
-/// A single layer in the processing pipeline
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PipelineLayer {
     pub id: String,
@@ -48,7 +46,6 @@ pub struct PipelineLayer {
     pub order: u32,
 }
 
-/// Complete pipeline configuration
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PipelineConfig {
     pub id: String,
@@ -59,7 +56,6 @@ pub struct PipelineConfig {
     pub updated_at: u64,
 }
 
-/// Result of pipeline processing
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PipelineResult {
     pub data: Vec<u8>,
@@ -69,7 +65,6 @@ pub struct PipelineResult {
     pub checksum: Vec<u8>,
 }
 
-/// Result of a single layer operation
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LayerResult {
     pub layer_id: String,
@@ -80,7 +75,6 @@ pub struct LayerResult {
     pub error: Option<String>,
 }
 
-/// Metadata stored with processed data for reversal
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PipelineMetadata {
     pub version: u8,
@@ -117,7 +111,6 @@ impl Default for PipelineConfig {
     }
 }
 
-/// Runtime context for pipeline execution
 pub struct PipelineContext {
     pub passwords: std::collections::HashMap<String, String>,
     pub keypair: Option<HybridKeypair>,
@@ -132,7 +125,6 @@ impl Default for PipelineContext {
     }
 }
 
-/// Process data through the pipeline (forward direction)
 pub fn process_pipeline(
     data: &[u8],
     config: &PipelineConfig,
@@ -144,8 +136,7 @@ pub fn process_pipeline(
     let mut current_data = data.to_vec();
     let mut layers_applied = Vec::new();
     let mut layer_metadata = Vec::new();
-    
-    // Sort layers by order
+
     let mut sorted_layers: Vec<_> = config.layers.iter()
         .filter(|l| l.enabled)
         .collect();
@@ -182,8 +173,7 @@ pub fn process_pipeline(
             }
         }
     }
-    
-    // Prepend metadata for reversal
+
     let metadata = PipelineMetadata {
         version: 1,
         layers: layer_metadata,
@@ -193,8 +183,7 @@ pub fn process_pipeline(
     
     let metadata_json = serde_json::to_vec(&metadata)
         .map_err(|e| PipelineError::Serialization(e.to_string()))?;
-    
-    // Format: [metadata_len: 4 bytes][metadata][data]
+
     let mut final_data = Vec::with_capacity(4 + metadata_json.len() + current_data.len());
     final_data.extend_from_slice(&(metadata_json.len() as u32).to_le_bytes());
     final_data.extend_from_slice(&metadata_json);
@@ -212,7 +201,6 @@ pub fn process_pipeline(
     })
 }
 
-/// Reverse pipeline processing (decrypt/decompress)
 pub fn reverse_pipeline(
     data: &[u8],
     context: &PipelineContext,
@@ -220,8 +208,7 @@ pub fn reverse_pipeline(
     if data.len() < 4 {
         return Err(PipelineError::InvalidData("Data too short".into()));
     }
-    
-    // Extract metadata
+
     let metadata_len = u32::from_le_bytes(data[..4].try_into().unwrap()) as usize;
     if data.len() < 4 + metadata_len {
         return Err(PipelineError::InvalidData("Invalid metadata length".into()));
@@ -232,8 +219,7 @@ pub fn reverse_pipeline(
     
     let mut current_data = data[4 + metadata_len..].to_vec();
     let mut layers_applied = Vec::new();
-    
-    // Reverse the layers (process in reverse order)
+
     for layer_meta in metadata.layers.iter().rev() {
         let input_size = current_data.len();
         
@@ -264,8 +250,7 @@ pub fn reverse_pipeline(
             }
         }
     }
-    
-    // Verify checksum
+
     let final_checksum = hash_data(&current_data).to_vec();
     if final_checksum != metadata.original_checksum {
         return Err(PipelineError::ChecksumMismatch);
@@ -334,7 +319,7 @@ fn apply_layer(
         }
         
         PipelineOperation::Hash => {
-            // Hash doesn't modify data, just records the hash
+            
             let hash = hash_data(data);
             Ok((data.to_vec(), LayerMetadata {
                 operation_type: "hash".to_string(),
@@ -368,7 +353,7 @@ fn reverse_layer(
         }
         
         "encrypt_password" => {
-            // Find password from context (try all passwords)
+            
             for password in context.passwords.values() {
                 if let Ok(decrypted) = decrypt_with_password(data, password.as_bytes()) {
                     return Ok(decrypted);
@@ -389,7 +374,7 @@ fn reverse_layer(
         }
         
         "hash" => {
-            // Hash layer doesn't modify data
+            
             Ok(data.to_vec())
         }
         
@@ -447,13 +432,9 @@ impl std::fmt::Display for PipelineError {
 
 impl std::error::Error for PipelineError {}
 
-// ============================================================================
-// Preset Pipelines
-// ============================================================================
-
 pub fn get_preset_pipelines() -> Vec<PipelineConfig> {
     vec![
-        // Fast compression only
+        
         PipelineConfig {
             id: "preset-fast-compress".to_string(),
             name: "Fast Compression".to_string(),
@@ -472,7 +453,7 @@ pub fn get_preset_pipelines() -> Vec<PipelineConfig> {
             created_at: 0,
             updated_at: 0,
         },
-        // Maximum compression
+        
         PipelineConfig {
             id: "preset-max-compress".to_string(),
             name: "Maximum Compression".to_string(),
@@ -491,7 +472,7 @@ pub fn get_preset_pipelines() -> Vec<PipelineConfig> {
             created_at: 0,
             updated_at: 0,
         },
-        // Password encryption
+        
         PipelineConfig {
             id: "preset-password-encrypt".to_string(),
             name: "Password Protected".to_string(),
@@ -516,7 +497,7 @@ pub fn get_preset_pipelines() -> Vec<PipelineConfig> {
             created_at: 0,
             updated_at: 0,
         },
-        // Post-quantum secure
+        
         PipelineConfig {
             id: "preset-pq-secure".to_string(),
             name: "Post-Quantum Secure".to_string(),
@@ -541,7 +522,7 @@ pub fn get_preset_pipelines() -> Vec<PipelineConfig> {
             created_at: 0,
             updated_at: 0,
         },
-        // Maximum security (layered)
+        
         PipelineConfig {
             id: "preset-max-security".to_string(),
             name: "Maximum Security".to_string(),
@@ -581,11 +562,6 @@ pub fn get_preset_pipelines() -> Vec<PipelineConfig> {
     ]
 }
 
-// ============================================================================
-// Tauri Commands
-// ============================================================================
-
-/// Process data through a pipeline
 #[tauri::command]
 pub async fn pipeline_process(
     data: Vec<u8>,
@@ -606,7 +582,6 @@ pub async fn pipeline_process(
         .map_err(|e| AppError::Validation(e.to_string()))
 }
 
-/// Reverse pipeline processing
 #[tauri::command]
 pub async fn pipeline_reverse(
     data: Vec<u8>,
@@ -626,24 +601,21 @@ pub async fn pipeline_reverse(
         .map_err(|e| AppError::Validation(e.to_string()))
 }
 
-/// Get preset pipeline configurations
 #[tauri::command]
 pub fn pipeline_get_presets() -> Vec<PipelineConfig> {
     get_preset_pipelines()
 }
 
-/// Validate a pipeline configuration
 #[tauri::command]
 pub fn pipeline_validate(config: PipelineConfig) -> Result<bool, AppError> {
-    // Check for duplicate layer IDs
+    
     let mut ids = std::collections::HashSet::new();
     for layer in &config.layers {
         if !ids.insert(&layer.id) {
             return Err(AppError::Validation(format!("Duplicate layer ID: {}", layer.id)));
         }
     }
-    
-    // Check for valid operations
+
     for layer in &config.layers {
         match &layer.operation {
             PipelineOperation::Compress { algorithm, level } => {
@@ -661,7 +633,6 @@ pub fn pipeline_validate(config: PipelineConfig) -> Result<bool, AppError> {
     Ok(true)
 }
 
-/// Estimate pipeline result size
 #[tauri::command]
 pub fn pipeline_estimate(
     original_size: usize,
@@ -684,16 +655,16 @@ pub fn pipeline_estimate(
                 (ratio, format!("Compress ({})", algorithm))
             }
             PipelineOperation::EncryptPassword { .. } => {
-                (1.05, "Password Encryption".to_string()) // Slight overhead
+                (1.05, "Password Encryption".to_string()) 
             }
             PipelineOperation::EncryptHybridPQ { .. } => {
-                (1.1, "PQ Encryption".to_string()) // More overhead for PQ
+                (1.1, "PQ Encryption".to_string()) 
             }
             PipelineOperation::Hash => {
                 (1.0, "Hash".to_string())
             }
             PipelineOperation::Base64Encode => {
-                (1.33, "Base64 Encode".to_string()) // 33% size increase
+                (1.33, "Base64 Encode".to_string()) 
             }
         };
         

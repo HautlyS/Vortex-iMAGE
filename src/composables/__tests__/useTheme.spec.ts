@@ -1,8 +1,13 @@
+/**
+ * TypeScript Module - 0 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 2 modules
+ */
+
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import * as fc from 'fast-check'
 import { getContrastRatio, meetsWCAGAA, ACCENT_COLORS } from '../useTheme'
 
-// Mock Tauri APIs
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
 }))
@@ -17,7 +22,6 @@ vi.mock('@tauri-apps/plugin-store', () => ({
   ),
 }))
 
-// Helper to generate valid hex colors
 const hexColorArb = fc
   .array(fc.integer({ min: 0, max: 255 }), { minLength: 3, maxLength: 3 })
   .map(([r, g, b]) => `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`)
@@ -89,13 +93,11 @@ describe('useTheme', () => {
     })
 
     it('large text has lower threshold than normal text', () => {
-      // A color pair that passes large text but might fail normal text
-      // Gray on dark gray
+
       const foreground = '#888888'
       const background = '#333333'
       const ratio = getContrastRatio(foreground, background)
 
-      // If ratio is between 3 and 4.5, it passes large but fails normal
       if (ratio >= 3 && ratio < 4.5) {
         expect(meetsWCAGAA(foreground, background, true)).toBe(true)
         expect(meetsWCAGAA(foreground, background, false)).toBe(false)
@@ -103,7 +105,6 @@ describe('useTheme', () => {
     })
   })
 
-  // Property 24: Theme Persistence Round-Trip
   describe('Property 24: Theme Persistence Round-Trip', () => {
     it('theme config survives serialization round-trip', () => {
       fc.assert(
@@ -115,7 +116,7 @@ describe('useTheme', () => {
             glow: fc.boolean(),
           }),
           (config) => {
-            // Simulate save/load by JSON serialization
+            
             const serialized = JSON.stringify(config)
             const deserialized = JSON.parse(serialized)
 
@@ -148,14 +149,13 @@ describe('useTheme', () => {
     })
   })
 
-  // Property 25: Theme Accessibility Contrast
   describe('Property 25: Theme Accessibility Contrast', () => {
     it('all predefined accent colors meet WCAG AA on dark background', () => {
-      const darkBackground = '#0a0a0b' // App background color
+      const darkBackground = '#0a0a0b' 
 
       for (const accent of ACCENT_COLORS) {
         const ratio = getContrastRatio(accent.color, darkBackground)
-        // All accent colors should have at least 3:1 contrast for large text/UI elements
+        
         expect(ratio).toBeGreaterThanOrEqual(3)
       }
     })
@@ -171,16 +171,15 @@ describe('useTheme', () => {
       const darkBackground = '#0a0a0b'
       const mutedText = '#a1a1aa'
 
-      // Muted text should at least meet large text requirements
       expect(meetsWCAGAA(mutedText, darkBackground, true)).toBe(true)
     })
 
     it('accent colors provide sufficient contrast for interactive elements', () => {
-      const darkBackground = '#1a1a1c' // Card/panel background
+      const darkBackground = '#1a1a1c' 
 
       for (const accent of ACCENT_COLORS) {
         const ratio = getContrastRatio(accent.color, darkBackground)
-        // Interactive elements need at least 3:1 contrast
+        
         expect(ratio).toBeGreaterThanOrEqual(3)
       }
     })

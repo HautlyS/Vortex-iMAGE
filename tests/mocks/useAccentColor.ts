@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 1 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { ref } from 'vue'
 
 const getMockState = () => (window as any).__MOCK_ACCENT__ || {}
@@ -18,7 +24,7 @@ export function useAccentColor() {
         init: async () => { },
         setAccent: (name: string) => {
             accent.value = name
-            // @ts-ignore
+            
             accentHex.value = colors[name] || '#00f0ff'
         }
     }

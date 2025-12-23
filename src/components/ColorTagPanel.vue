@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useColorTags, type ColorTagDefinition } from '../composables/useColorTags'
@@ -32,7 +38,7 @@ function startEditing(tag: ColorTagDefinition) {
 }
 
 function saveEdit() {
-  // Tags use predefined names, editing is disabled
+  
   editingTagId.value = null
   editingName.value = ''
 }
@@ -258,7 +264,6 @@ function handleKeydown(e: KeyboardEvent) {
   height: 0.875rem;
 }
 
-/* Edit Mode */
 .tag-edit {
   display: flex;
   align-items: center;

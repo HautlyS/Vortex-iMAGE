@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 
@@ -59,7 +65,6 @@ onUnmounted(() => { if (interval) clearInterval(interval) })
   z-index: -2;
 }
 
-/* Low intensity */
 .glitch.low.active::before {
   animation: glitch-1 0.2s linear;
   opacity: 0.8;
@@ -69,7 +74,6 @@ onUnmounted(() => { if (interval) clearInterval(interval) })
   opacity: 0.8;
 }
 
-/* Medium intensity */
 .glitch.medium.active::before {
   animation: glitch-1 0.3s linear;
   opacity: 0.9;
@@ -79,7 +83,6 @@ onUnmounted(() => { if (interval) clearInterval(interval) })
   opacity: 0.9;
 }
 
-/* High intensity */
 .glitch.high::before,
 .glitch.high::after {
   opacity: 0.7;

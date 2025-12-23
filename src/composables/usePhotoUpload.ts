@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 1 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useGitHubAuth, isDevMode } from './useGitHubAuth'
 
@@ -33,21 +39,19 @@ export interface Photo {
   size?: number
 }
 
-// Mock photos for dev mode - generate 50 varied images
 const MOCK_PHOTOS: Photo[] = Array.from({ length: 50 }, (_, i) => {
   const heights = [400, 500, 600, 700, 800]
   const h = heights[i % heights.length]
   const names = ['sunset', 'mountain', 'city', 'forest', 'ocean', 'desert', 'autumn', 'snow', 'beach', 'night', 'waterfall', 'flower', 'lake', 'canyon', 'aurora', 'wildlife', 'architecture', 'portrait', 'street', 'abstract']
   return {
     name: `${names[i % names.length]}-${i + 1}.jpg`,
-    url: `https://picsum.photos/seed/photo${i}/800/${h}`,
+    url: `https:
     sha: `mock-sha-${i + 1}`,
     size: 150000 + Math.floor(Math.random() * 200000),
     path: i < 10 ? 'viagens' : i < 20 ? 'viagens/2024' : i < 30 ? 'familia' : undefined
   }
 })
 
-// Global shared state
 const queue = ref<UploadItem[]>([])
 const photos = ref<Photo[]>(isDevMode ? [...MOCK_PHOTOS] : [])
 const isUploading = ref(false)
@@ -71,7 +75,7 @@ export function usePhotoUpload() {
 
   onMounted(async () => {
     if (isDevMode) {
-      // Already have mock photos
+      
       return
     }
 
@@ -98,7 +102,7 @@ export function usePhotoUpload() {
 
   async function selectFiles() {
     if (isDevMode) {
-      // Mock file selection - add random photos
+      
       const mockFiles = [
         `photo-${Date.now()}-1.jpg`,
         `photo-${Date.now()}-2.jpg`,
@@ -148,7 +152,7 @@ export function usePhotoUpload() {
         next.progress = 0
 
         if (isDevMode) {
-          // Mock upload with progress
+          
           for (let p = 0; p <= 100; p += 20) {
             next.progress = p
             await new Promise(r => setTimeout(r, 200))
@@ -156,11 +160,10 @@ export function usePhotoUpload() {
           next.status = 'success'
           next.progress = 100
 
-          // Add mock photo
           const seed = Math.floor(Math.random() * 1000)
           photos.value.unshift({
             name: next.name,
-            url: `https://picsum.photos/seed/img${seed}/800/600`,
+            url: `https:
             sha: `mock-sha-${seed}`,
             size: Math.floor(Math.random() * 200000) + 150000
           })
@@ -188,7 +191,7 @@ export function usePhotoUpload() {
 
           photos.value.unshift({
             name: filename,
-            url: `https://raw.githubusercontent.com/${repo.value}/main/photos/${filename}`,
+            url: `https:
             sha: result.sha,
             path: `photos/${filename}`
           })
@@ -236,7 +239,7 @@ export function usePhotoUpload() {
 
   async function loadPhotos(folder?: string) {
     if (isDevMode) {
-      // Already have mock photos
+      
       loadingPhotos.value = true
       await new Promise(r => setTimeout(r, 300))
       loadingPhotos.value = false

@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 2 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 0 modules
+ */
+
 export interface ColorTag {
   id: string
   name: string

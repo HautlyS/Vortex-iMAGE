@@ -1,6 +1,11 @@
+/**
+ * TypeScript Module - 2 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { ref, onUnmounted } from 'vue'
 
-// Check if running in dev mock mode OR in browser without Tauri
 const isTauriAvailable = typeof window !== 'undefined' && !!(window as any).__TAURI__
 export const isDevMode = import.meta.env.DEV && (import.meta.env.VITE_MOCK_AUTH === 'true' || !isTauriAvailable)
 
@@ -30,7 +35,7 @@ interface KeypairResult {
 }
 
 const token = ref<string | null>(isDevMode ? 'mock-token-dev' : null)
-const user = ref<GitHubUser | null>(isDevMode ? { login: 'dev-user', avatar_url: 'https://avatars.githubusercontent.com/u/0?v=4' } : null)
+const user = ref<GitHubUser | null>(isDevMode ? { login: 'dev-user', avatar_url: 'https:
 const repo = ref<string>(isDevMode ? 'dev-user/photos' : '')
 const publicBundle = ref<PublicBundle | null>(null)
 const keypairBytes = ref<number[] | null>(null)
@@ -57,7 +62,7 @@ export function useGitHubAuth() {
   onUnmounted(clearPolling)
 
   async function init() {
-    // In dev mode, already initialized with mock data
+    
     if (isDevMode) return
 
     try {
@@ -67,7 +72,6 @@ export function useGitHubAuth() {
       token.value = await store.get<string>('token') || null
       repo.value = await store.get<string>('repo') || ''
 
-      // Load keys
       const storedKeypair = await store.get<number[]>('keypair_bytes')
       const storedBundle = await store.get<PublicBundle>('public_bundle')
 
@@ -75,7 +79,7 @@ export function useGitHubAuth() {
         keypairBytes.value = storedKeypair
         publicBundle.value = storedBundle
       } else if (token.value) {
-        // If logged in but no keys, generate them
+        
         await rotateKeys()
       }
 
@@ -115,11 +119,11 @@ export function useGitHubAuth() {
 
   async function startLogin() {
     if (isDevMode) {
-      // Mock instant login
+      
       loading.value = true
       await new Promise(r => setTimeout(r, 500))
       token.value = 'mock-token-dev'
-      user.value = { login: 'dev-user', avatar_url: 'https://avatars.githubusercontent.com/u/0?v=4' }
+      user.value = { login: 'dev-user', avatar_url: 'https:
       repo.value = 'dev-user/photos'
       publicBundle.value = {
         pq_encap: Array(1184).fill(0),
@@ -131,7 +135,6 @@ export function useGitHubAuth() {
       return
     }
 
-    // Check loading BEFORE clearing to prevent race condition
     if (loading.value) return
     loading.value = true
     clearPolling()
@@ -161,7 +164,6 @@ export function useGitHubAuth() {
             token.value = t
             user.value = await invoke<GitHubUser>('get_user', { token: t })
 
-            // Generate keys on new login
             if (!keypairBytes.value) {
               await rotateKeys()
             }
@@ -192,8 +194,6 @@ export function useGitHubAuth() {
     clearPolling()
     token.value = null
     user.value = null
-    // We don't necessarily clear keys on logout to allow decryption of existing local checks
-    // but strict security might require it. For now, keep them to avoid data loss feeling.
 
     if (isDevMode) return
 

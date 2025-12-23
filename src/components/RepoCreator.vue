@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRepoManager, validateRepoName } from '../composables/useRepoManager'
@@ -41,11 +47,10 @@ async function handleSubmit() {
       token.value
     )
 
-    // Auto-configure the app with the new repo
     setRepo(result.full_name)
     emit('created', result.full_name)
   } catch {
-    // Error is handled by the composable
+    
   }
 }
 </script>
@@ -243,7 +248,6 @@ async function handleSubmit() {
   padding: 1.5rem;
 }
 
-/* Form Groups */
 .form-group {
   margin-bottom: 1.25rem;
 }
@@ -303,7 +307,6 @@ async function handleSubmit() {
   margin-top: 0.375rem;
 }
 
-/* Visibility Options */
 .visibility-options {
   display: flex;
   gap: 0.75rem;
@@ -363,7 +366,6 @@ async function handleSubmit() {
   color: #71717a;
 }
 
-/* Error Message */
 .error-message {
   display: flex;
   align-items: center;
@@ -383,7 +385,6 @@ async function handleSubmit() {
   flex-shrink: 0;
 }
 
-/* Actions */
 .dialog-actions {
   display: flex;
   justify-content: flex-end;

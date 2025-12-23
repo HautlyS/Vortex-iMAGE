@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 22 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: SpaceLoader, AuthButton, NeuralBackground...
+ */
+
 <script setup lang="ts">
 import { ref, onMounted, watch, computed, onUnmounted, nextTick } from 'vue'
 import { useGitHubAuth } from './composables/useGitHubAuth'
@@ -51,7 +57,6 @@ interface Album {
   coverUrl?: string
 }
 
-// Core composables
 const { token, repo, init, setRepo } = useGitHubAuth()
 const { photos, loadingPhotos, loadPhotos, addToQueue, queue } = usePhotoUpload()
 const { addTransfer, updateProgress, setStatus: setTransferStatus } = useUploadToast()
@@ -66,13 +71,11 @@ const { loadConfig: loadBackupConfig } = useBackupSettings()
 const { dockApps, activeApps, toggleApp, setActiveApp } = useDockApps()
 const { createTimeout } = useTimeout()
 
-// Navigation composable
 const {
   currentView, selectedAlbumPath, selectedTagId,
   navigateToAlbum, navigateToView, setCurrentPhotoName
 } = useNavigation()
 
-// Mobile composables
 const { isMobile } = useMobileDetection()
 const {
   mobileSearchOpen, searchPullDistance, searchOpacity, pullDistance, isPulling,
@@ -81,7 +84,6 @@ const {
   handleTouchStart, handleTouchMove, handleTouchEnd
 } = useMobileSearch()
 
-// App state
 const loading = ref(true)
 const repoInput = ref('')
 const isDragging = ref(false)
@@ -106,7 +108,6 @@ const albums = ref<Album[]>([])
 const loadingAlbums = ref(false)
 const photoLoadError = ref<string | null>(null)
 
-// Wrapper functions for mobile search handlers
 function handleSearchTouchMoveWrapper(e: TouchEvent) {
   const hasResults = !!(searchQuery.value && filteredPhotos.value.length > 0)
   _handleSearchTouchMove(e, hasResults)
@@ -128,7 +129,6 @@ function setupSearchOverlayListeners() {
   })
 }
 
-// Debounce search - with cleanup
 const searchTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
 watch(searchQuery, (newQuery) => {
   if (searchTimeout.value) clearTimeout(searchTimeout.value)
@@ -141,36 +141,33 @@ onUnmounted(() => {
   if (searchTimeout.value) clearTimeout(searchTimeout.value)
 })
 
-// Filtered photos based on current view
 const filteredPhotos = computed(() => {
   let result = photos.value as Photo[]
-  
-  // Filter by search (debounced)
+
   if (debouncedSearchQuery.value) {
     const q = debouncedSearchQuery.value.toLowerCase()
     result = result.filter(p => p.name.toLowerCase().includes(q))
   }
-  
-  // Filter by view - load from different repository folders
+
   if (currentView.value === 'favorites') {
-    // Show favorited photos from all folders, not a separate folder
+    
     result = result.filter(p => isFavorite(p.sha))
   } else if (currentView.value === 'trash') {
-    // Load from trash folder
+    
     loadPhotos('trash')
     result = []
   } else if (currentView.value === 'tags' && selectedTagId.value) {
     const taggedIds = getItemsByTag(selectedTagId.value)
     result = result.filter(p => taggedIds.includes(p.sha))
   } else if (currentView.value === 'albums' && selectedAlbumPath.value) {
-    // Load from albums folder
+    
     loadPhotos(`albums/${selectedAlbumPath.value}`)
     result = result.filter(p => {
       if (!p.path) return false
       return p.path.startsWith(selectedAlbumPath.value!)
     })
   } else if (currentView.value === 'photos') {
-    // Load from photos folder (default)
+    
     loadPhotos('photos')
   }
   
@@ -181,7 +178,6 @@ const uploadProgress = computed(() => {
   return queue.value.filter(u => u.status === 'uploading' || u.status === 'pending').length
 })
 
-// Storage stats
 const storageStats = computed(() => {
   const totalBytes = photos.value.reduce((acc, p) => acc + (p.size || 0), 0)
   const gb = totalBytes / (1024 * 1024 * 1024)
@@ -201,7 +197,6 @@ const dockAppsWithBadges = computed(() => {
   }))
 })
 
-// Load albums from GitHub
 async function loadAlbums() {
   if (!token.value || !repo.value) return
   loadingAlbums.value = true
@@ -217,8 +212,7 @@ async function loadAlbums() {
 onMounted(async () => {
   injectCSSVariables()
   document.documentElement.classList.add('matrix-effects', 'glass-morphism', 'glow-effects')
-  
-  // Setup keyboard shortcuts
+
   document.addEventListener('keydown', handleKeydown)
   
   await Promise.all([init(), initAccent(), loadTheme(), loadFavorites(), loadTags(), loadPreviewSize(), loadDrivers(), loadBackupConfig()])
@@ -232,7 +226,6 @@ onMounted(async () => {
   } catch {}
 })
 
-// Cleanup on unmount
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
 })
@@ -245,18 +238,15 @@ watch([token, repo], () => {
   }
 })
 
-// Sync upload queue with toast notifications - optimized with computed tracking
 const queueStatusMap = new Map<string, UploadStatus>()
 
-// Use computed for better performance tracking
 const queueItems = computed(() => 
   queue.value.map(i => ({ id: i.id, status: i.status, progress: i.progress, name: i.name, error: i.error }))
 )
 
 watch(queueItems, (items) => {
   const activeIds = new Set(items.map(i => i.id))
-  
-  // Cleanup completed items no longer in queue
+
   for (const [id, status] of queueStatusMap) {
     if (!activeIds.has(id) && (status === 'success' || status === 'failed')) {
       queueStatusMap.delete(id)
@@ -282,7 +272,6 @@ watch(queueItems, (items) => {
   }
 }, { deep: false })
 
-// Save view mode when changed
 watch(viewMode, async (mode) => {
   try {
     const { load } = await import('@tauri-apps/plugin-store')
@@ -292,7 +281,6 @@ watch(viewMode, async (mode) => {
   } catch {}
 })
 
-// Keyboard shortcuts
 import { SHORTCUTS } from './config'
 function handleKeydown(e: KeyboardEvent) {
   const { selectAll: selectAllKey, favorite: favKey, escape: escKey } = SHORTCUTS
@@ -332,8 +320,6 @@ async function handleUploadClick() {
   }
 }
 
-
-
 function onDrop(e: DragEvent) {
   isDragging.value = false
   const paths: string[] = []
@@ -342,7 +328,7 @@ function onDrop(e: DragEvent) {
     if (path) paths.push(path)
   }
   if (paths.length === 1) {
-    // Check if it's a folder (simple heuristic: no extension)
+    
     const isFolder = !paths[0].includes('.') || paths[0].split('/').pop()?.indexOf('.') === -1
     if (isFolder) {
       pendingFolderPath.value = paths[0]
@@ -394,7 +380,6 @@ function handleRepoCreated(repoName: string) {
   setRepo(repoName)
 }
 
-// Data Driver handlers
 function handleDriverChanged(driver: DataDriver) {
   showDataDrivers.value = false
   if (driver.type === 'github') {
@@ -402,19 +387,16 @@ function handleDriverChanged(driver: DataDriver) {
   }
 }
 
-// Local image import handler
 async function handleLocalImport(imagePaths: string[], _targetDriverId: string) {
   showLocalBrowser.value = false
-  void _targetDriverId // suppress unused warning
-  // Add images to upload queue
+  void _targetDriverId 
+  
   addToQueue(imagePaths)
 }
 
-// Navigation handlers
 function navigateTo(view: NavView) {
   navigateToView(view, true)
-  
-  // Update active apps for dock
+
   setActiveApp(view)
 }
 
@@ -448,11 +430,11 @@ function handleDockAppClick(appId: string) {
       setActiveApp('albums')
       break
     case 'search':
-      // Focus search or toggle mobile search
+      
       if (isMobile.value) {
         toggleMobileSearch()
       } else {
-        // Focus desktop search input
+        
         const searchInput = document.querySelector('.desktop-search input') as HTMLInputElement
         if (searchInput) {
           searchInput.focus()
@@ -461,7 +443,7 @@ function handleDockAppClick(appId: string) {
       toggleApp('search')
       break
     case 'trash':
-      // Navigate to trash view (show deleted items)
+      
       navigateToView('trash')
       setActiveApp('trash')
       break
@@ -1017,7 +999,6 @@ async function retryLoadPhotos() {
   align-items: center;
 }
 
-/* ===== MOBILE HEADER ===== */
 .mobile-header {
   display: flex;
   align-items: center;
@@ -1041,7 +1022,6 @@ async function retryLoadPhotos() {
   .desktop-header { display: flex; }
 }
 
-/* ===== DESKTOP HEADER ===== */
 .desktop-header {
   display: none;
   align-items: center;
@@ -1049,7 +1029,6 @@ async function retryLoadPhotos() {
   width: 100%;
 }
 
-/* Left Section */
 .header-section-left {
   display: flex;
   align-items: center;
@@ -1100,7 +1079,6 @@ async function retryLoadPhotos() {
   margin-left: 0.25rem;
 }
 
-/* Center Section */
 .header-section-center {
   flex: 1;
   display: flex;
@@ -1148,7 +1126,6 @@ async function retryLoadPhotos() {
   background: transparent;
 }
 
-/* Right Section */
 .header-section-right {
   display: flex;
   align-items: center;
@@ -1172,7 +1149,6 @@ async function retryLoadPhotos() {
   border-radius: 9999px;
 }
 
-/* Shared Button Styles */
 .nav-btn {
   display: flex;
   align-items: center;
@@ -1215,7 +1191,6 @@ async function retryLoadPhotos() {
   cursor: not-allowed;
 }
 
-/* View Toggle */
 .view-toggle {
   display: flex;
   background: transparent;
@@ -1277,7 +1252,6 @@ async function retryLoadPhotos() {
   pointer-events: none;
 }
 
-/* Drag Overlay */
 .drag-overlay {
   position: fixed;
   inset: 0;
@@ -1315,7 +1289,6 @@ async function retryLoadPhotos() {
 .drag-content h3 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
 .drag-content p { color: var(--text-muted); }
 
-/* Sidebar */
 .sidebar {
   width: var(--sidebar-width);
   background: rgba(var(--surface-1-rgb, 14, 14, 20), var(--glass-opacity, 0.8));
@@ -1469,10 +1442,8 @@ async function retryLoadPhotos() {
   border-top: 1px solid var(--border-subtle); 
 }
 
-/* Main */
 .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 
-/* Header */
 .header {
   display: flex;
   align-items: center;
@@ -1539,7 +1510,6 @@ async function retryLoadPhotos() {
 .search-clear:hover { background: rgba(var(--surface-4-rgb, 44, 44, 58), 0.9); color: var(--text-primary); }
 .search-clear svg { width: 0.875rem; height: 0.875rem; }
 
-/* Apple Store style buttons */
 .btn-upload {
   display: inline-flex;
   align-items: center;
@@ -1584,7 +1554,6 @@ async function retryLoadPhotos() {
   justify-content: center;
 }
 
-/* Settings Panel */
 .settings-panel {
   padding: 1rem 1.5rem;
   background: rgba(var(--surface-1-rgb, 14, 14, 20), 0.5);
@@ -1625,10 +1594,8 @@ async function retryLoadPhotos() {
 .btn-new:hover { background: rgba(var(--surface-3-rgb, 32, 32, 44), 0.8); color: var(--text-primary); }
 .btn-new svg { width: 1rem; height: 1rem; }
 
-/* Content */
 .content { flex: 1; overflow-y: auto; padding: 1.75rem; background: transparent; }
 
-/* Login Vortex */
 .login-vortex {
   position: absolute;
   inset: 0;
@@ -1656,7 +1623,6 @@ async function retryLoadPhotos() {
   width: 280px;
 }
 
-/* Empty State */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -1740,7 +1706,6 @@ async function retryLoadPhotos() {
 }
 .btn-secondary svg { width: 1.125rem; height: 1.125rem; }
 
-/* Floating Breadcrumb Navigation */
 .floating-breadcrumb {
   position: fixed;
   bottom: 24px;
@@ -1777,7 +1742,6 @@ async function retryLoadPhotos() {
   }
 }
 
-/* Smaller upload button glow */
 .upload-btn-small {
   box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.25) !important;
 }
@@ -1786,7 +1750,6 @@ async function retryLoadPhotos() {
   box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.35) !important;
 }
 
-/* Neural Background */
 .neural-grid {
   width: 100%;
   height: 100%;
@@ -1802,7 +1765,6 @@ async function retryLoadPhotos() {
   100% { transform: translate(50px, 50px); }
 }
 
-/* Transitions */
 .fade-enter-active, .fade-leave-active { transition: opacity var(--duration-normal) var(--ease-out); }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 .slide-enter-active, .slide-leave-active { transition: all var(--duration-normal) var(--ease-out); }
@@ -1812,18 +1774,15 @@ async function retryLoadPhotos() {
 .toast-enter-from { opacity: 0; transform: translate(-50%, 20px); }
 .toast-leave-to { opacity: 0; transform: translate(-50%, 10px); }
 
-/* Dock fade transition */
 .dock-fade-enter-active { transition: opacity 0.3s ease-out, transform 0.3s ease-out; }
 .dock-fade-leave-active { transition: opacity 0.2s ease-out, transform 0.2s ease-out; }
 .dock-fade-enter-from { opacity: 0; transform: translateY(20px); }
 .dock-fade-leave-to { opacity: 0; transform: translateY(20px); }
 
-/* Pull indicator - hidden on desktop */
 .pull-indicator {
   display: none;
 }
 
-/* Mobile Search */
 .mobile-search-fab {
   display: none;
 }
@@ -1837,7 +1796,7 @@ async function retryLoadPhotos() {
 }
 
 @media (max-width: 768px) {
-  /* Pull to reveal indicator */
+  
   .pull-indicator {
     display: flex;
     position: fixed;
@@ -2248,8 +2207,7 @@ async function retryLoadPhotos() {
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  
-  /* Mobile search transitions - bounce effect */
+
   .mobile-search-enter-active {
     animation: search-overlay-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
@@ -2296,7 +2254,6 @@ async function retryLoadPhotos() {
   }
 }
 
-/* Mobile Upload Button */
 .mobile-upload-container {
   position: fixed;
   bottom: 130px;
@@ -2418,7 +2375,6 @@ async function retryLoadPhotos() {
   animation: none;
 }
 
-/* Error Toast */
 .error-toast {
   position: fixed;
   bottom: 1.75rem;
@@ -2456,7 +2412,6 @@ async function retryLoadPhotos() {
 .error-toast button:hover { background: rgba(255, 255, 255, 0.2); }
 .error-toast button svg { width: 1rem; height: 1rem; }
 
-/* Custom Cursor */
 .cursor-area {
   width: 100%;
   min-height: 100vh;
@@ -2466,7 +2421,6 @@ async function retryLoadPhotos() {
   filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.6));
 }
 
-/* Hide on touch devices */
 @media (hover: none), (max-width: 768px) {
   .cursor-pointer {
     display: none !important;

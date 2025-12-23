@@ -1,38 +1,38 @@
+/**
+ * TypeScript Module - 9 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { ref, computed, watch } from 'vue'
 import { load } from '@tauri-apps/plugin-store'
 
 export interface ThemeConfig {
-  // Colors
+  
   accentColor: string
   accentSecondary: string
-  
-  // Effects
+
   matrixEffects: boolean
   scanlines: boolean
   glow: boolean
-  glowIntensity: number // 0-100
-  
-  // UI Customization
+  glowIntensity: number 
+
   borderRadius: 'sharp' | 'soft' | 'round'
   glassMorphism: boolean
-  glassOpacity: number // 0-100
-  
-  // Animations
+  glassOpacity: number 
+
   animationSpeed: 'instant' | 'fast' | 'normal' | 'slow'
   reduceMotion: boolean
-  
-  // Typography
+
   fontFamily: 'inter' | 'system' | 'mono'
   fontSize: 'compact' | 'normal' | 'large'
-  
-  // Anarchy Mode - Full Chaos
+
   anarchyMode: boolean
-  anarchyHue: number // 0-360 for hue rotation
+  anarchyHue: number 
   anarchyNoise: boolean
   anarchyGlitch: boolean
 }
 
-// Predefined accent colors with complementary pairs
 export const ACCENT_COLORS = [
   { id: 'cyber', color: '#00f0ff', secondary: '#b026ff', name: 'Cyber' },
   { id: 'neon', color: '#ff2d6a', secondary: '#b026ff', name: 'Neon Pink' },
@@ -46,14 +46,12 @@ export const ACCENT_COLORS = [
   { id: 'void', color: '#b026ff', secondary: '#ff2d6a', name: 'Void' },
 ]
 
-// Border radius presets - 2026 liquid design
 export const BORDER_RADIUS = {
   sharp: { sm: '4px', md: '6px', lg: '8px', xl: '12px', full: '6px' },
   soft: { sm: '8px', md: '12px', lg: '18px', xl: '24px', full: '16px' },
   round: { sm: '12px', md: '18px', lg: '26px', xl: '36px', full: '9999px' },
 }
 
-// Animation speed presets
 export const ANIMATION_SPEEDS = {
   instant: { fast: '0ms', normal: '0ms', slow: '0ms' },
   fast: { fast: '100ms', normal: '150ms', slow: '200ms' },
@@ -61,7 +59,6 @@ export const ANIMATION_SPEEDS = {
   slow: { fast: '250ms', normal: '400ms', slow: '600ms' },
 }
 
-// Font presets
 export const FONT_FAMILIES = {
   inter: "'Inter', system-ui, sans-serif",
   system: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
@@ -97,9 +94,6 @@ const DEFAULT_THEME: ThemeConfig = {
 const theme = ref<ThemeConfig>({ ...DEFAULT_THEME })
 let initialized = false
 
-/**
- * Calculates contrast ratio between two colors
- */
 export function getContrastRatio(color1: string, color2: string): number {
   const lum1 = getLuminance(color1)
   const lum2 = getLuminance(color2)
@@ -130,14 +124,10 @@ export function meetsWCAGAA(foreground: string, background: string, isLargeText 
   return isLargeText ? ratio >= 3 : ratio >= 4.5
 }
 
-/**
- * Applies all theme CSS variables to document
- */
 function applyTheme(config: ThemeConfig) {
   const root = document.documentElement
   const style = root.style
 
-  // Primary accent color
   style.setProperty('--accent-color', config.accentColor)
   style.setProperty('--accent-secondary', config.accentSecondary)
   
@@ -154,12 +144,10 @@ function applyTheme(config: ThemeConfig) {
     style.setProperty('--accent-secondary-rgb', `${rgb2.r}, ${rgb2.g}, ${rgb2.b}`)
   }
 
-  // Glass opacity (0.4 to 0.95 range)
   const glassOpacity = config.glassOpacity / 100
   style.setProperty('--glass-opacity', String(glassOpacity))
   style.setProperty('--glass-bg', `rgba(14, 14, 20, ${glassOpacity})`)
 
-  // Border radius
   const radius = BORDER_RADIUS[config.borderRadius]
   style.setProperty('--radius-sm', radius.sm)
   style.setProperty('--radius-md', radius.md)
@@ -167,13 +155,11 @@ function applyTheme(config: ThemeConfig) {
   style.setProperty('--radius-xl', radius.xl)
   style.setProperty('--radius-full', radius.full)
 
-  // Animation speeds
   const speeds = config.reduceMotion ? ANIMATION_SPEEDS.instant : ANIMATION_SPEEDS[config.animationSpeed]
   style.setProperty('--duration-fast', speeds.fast)
   style.setProperty('--duration-normal', speeds.normal)
   style.setProperty('--duration-slow', speeds.slow)
 
-  // Typography
   style.setProperty('--font-family', FONT_FAMILIES[config.fontFamily])
   const sizes = FONT_SIZES[config.fontSize]
   style.setProperty('--font-size-base', sizes.base)
@@ -181,15 +167,12 @@ function applyTheme(config: ThemeConfig) {
   style.setProperty('--font-size-lg', sizes.lg)
   style.setProperty('--font-size-xl', sizes.xl)
 
-  // Glow intensity
   style.setProperty('--glow-intensity', `${config.glowIntensity}%`)
 
-  // Anarchy mode
   if (config.anarchyMode) {
     style.setProperty('--anarchy-hue', `${config.anarchyHue}deg`)
   }
 
-  // Toggle classes
   root.classList.toggle('matrix-effects', config.matrixEffects)
   root.classList.toggle('scanlines', config.scanlines)
   root.classList.toggle('glow-effects', config.glow)
@@ -198,12 +181,10 @@ function applyTheme(config: ThemeConfig) {
   root.classList.toggle('anarchy-mode', config.anarchyMode)
   root.classList.toggle('anarchy-noise', config.anarchyNoise)
   root.classList.toggle('anarchy-glitch', config.anarchyGlitch)
-  
-  // Font class
+
   root.classList.remove('font-inter', 'font-system', 'font-mono')
   root.classList.add(`font-${config.fontFamily}`)
-  
-  // Size class
+
   root.classList.remove('size-compact', 'size-normal', 'size-large')
   root.classList.add(`size-${config.fontSize}`)
 }
@@ -233,9 +214,9 @@ export function useTheme() {
         theme.value = { ...DEFAULT_THEME, ...savedTheme }
       }
     } catch {
-      // Use default theme
+      
     }
-    // Always apply theme, even if loading fails
+    
     applyTheme(theme.value)
     initialized = true
   }
@@ -246,7 +227,7 @@ export function useTheme() {
       await store.set('theme', theme.value)
       await store.save()
     } catch {
-      // Silent fail
+      
     }
   }
 

@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useTheme } from '../composables/useTheme'
@@ -14,7 +20,6 @@ const emit = defineEmits<{
 
 const { accentColor } = useTheme()
 
-// Touch feedback helper
 function triggerHaptic() {
   if ('vibrate' in navigator) {
     navigator.vibrate(10)
@@ -206,7 +211,6 @@ function handleClick(item: typeof navItems.value[0]) {
     opacity: 0.7;
   }
 
-  /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
     .mobile-nav-item,
     .nav-icon {

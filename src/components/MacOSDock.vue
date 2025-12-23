@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 1 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: GlassSurface
+ */
+
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { cn } from '../lib/utils'
@@ -161,7 +167,6 @@ const contentWidth = computed(() => {
   }
   return (props.apps.length * (config.value.baseIconSize + baseSpacing.value)) - baseSpacing.value
 })
-
 
 </script>
 

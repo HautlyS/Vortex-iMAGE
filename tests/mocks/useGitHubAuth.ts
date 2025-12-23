@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 1 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { ref } from 'vue'
 
 const getMockState = () => (window as any).__MOCK_AUTH__ || {}
@@ -9,13 +15,12 @@ const error = ref<string | null>(null)
 const repo = ref<string>('test/repo')
 
 export function useGitHubAuth() {
-    // refresh from window
+    
     const state = getMockState()
     console.log('[MockAuth] State from window:', state)
     user.value = state.user || null
     userCode.value = state.userCode || null
 
-        // Expose setters for testing reactivity
         ; (window as any).__SET_MOCK_USER__ = (u: any) => { user.value = u }
         ; (window as any).__SET_MOCK_CODE__ = (c: string) => { userCode.value = c }
 

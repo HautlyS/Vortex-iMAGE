@@ -1,3 +1,7 @@
-// playwright/index.ts
-// Import styles and any global setup here
+/**
+ * TypeScript Module - 0 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 0 modules
+ */
+
 import '../src/style.css';

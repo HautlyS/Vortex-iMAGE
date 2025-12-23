@@ -1,4 +1,7 @@
-// Prevents additional console window on Windows in release, DO NOT REMOVE!!
+//! Rust Module - 1 functions, 0 structs
+//! Core functionality: Backend operations and data processing
+//! External crates: 0 dependencies
+
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {

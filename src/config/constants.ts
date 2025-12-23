@@ -1,18 +1,16 @@
 /**
- * Centralized configuration constants for iMAGE
- * Eliminates magic numbers and hardcoded values throughout the app
+ * TypeScript Module - 14 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 0 modules
  */
 
-// ============================================================================
-// Breakpoints - Responsive Design
-// ============================================================================
 export const BREAKPOINTS = {
-  xs: 320,   // Small phones
-  sm: 480,   // Large phones
-  md: 768,   // Tablets
-  lg: 1024,  // Small laptops
-  xl: 1280,  // Desktops
-  xxl: 1536, // Large screens
+  xs: 320,   
+  sm: 480,   
+  md: 768,   
+  lg: 1024,  
+  xl: 1280,  
+  xxl: 1536, 
 } as const
 
 export const MEDIA_QUERIES = {
@@ -23,9 +21,6 @@ export const MEDIA_QUERIES = {
   reducedMotion: '(prefers-reduced-motion: reduce)',
 } as const
 
-// ============================================================================
-// Layout Dimensions
-// ============================================================================
 export const LAYOUT = {
   sidebar: {
     width: 240,
@@ -46,9 +41,6 @@ export const LAYOUT = {
   },
 } as const
 
-// ============================================================================
-// Photo Gallery
-// ============================================================================
 export const GALLERY = {
   preview: {
     minSize: 100,
@@ -70,9 +62,6 @@ export const GALLERY = {
   },
 } as const
 
-// ============================================================================
-// Upload Configuration
-// ============================================================================
 export const UPLOAD = {
   maxRetries: 3,
   retryDelayMs: 2000,
@@ -83,9 +72,6 @@ export const UPLOAD = {
   defaultQuality: 85,
 } as const
 
-// ============================================================================
-// Animation Timings
-// ============================================================================
 export const ANIMATION = {
   fast: 150,
   normal: 250,
@@ -95,9 +81,6 @@ export const ANIMATION = {
   easeInOut: 'cubic-bezier(0.65, 0, 0.35, 1)',
 } as const
 
-// ============================================================================
-// Touch & Interaction
-// ============================================================================
 export const TOUCH = {
   minTarget: 44,
   comfortableTarget: 48,
@@ -106,13 +89,10 @@ export const TOUCH = {
   swipeThreshold: 50,
 } as const
 
-// ============================================================================
-// Polling & Timeouts
-// ============================================================================
 export const TIMING = {
   oauth: {
     pollIntervalMs: 5000,
-    expirationMs: 900000, // 15 minutes
+    expirationMs: 900000, 
   },
   debounce: {
     search: 300,
@@ -128,9 +108,6 @@ export const TIMING = {
   },
 } as const
 
-// ============================================================================
-// Z-Index Layers
-// ============================================================================
 export const Z_INDEX = {
   base: 0,
   dropdown: 10,
@@ -147,9 +124,6 @@ export const Z_INDEX = {
   max: 9999,
 } as const
 
-// ============================================================================
-// Color Tags (Predefined)
-// ============================================================================
 export const COLOR_TAGS = [
   { id: 'red', name: 'Vermelho', color: '#ef4444' },
   { id: 'orange', name: 'Laranja', color: '#f97316' },
@@ -161,27 +135,18 @@ export const COLOR_TAGS = [
   { id: 'gray', name: 'Cinza', color: '#6b7280' },
 ] as const
 
-// ============================================================================
-// Image Extensions
-// ============================================================================
 export const IMAGE_EXTENSIONS = [
   'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 
   'tiff', 'tif', 'svg', 'ico', 'heic', 'heif', 'avif'
 ] as const
 
-// ============================================================================
-// GitHub API
-// ============================================================================
 export const GITHUB = {
   clientId: 'Ov23lijNSMM1i93CQdfQ',
-  apiBase: 'https://api.github.com',
+  apiBase: 'https:
   uploadTimeout: 120000,
   lfsUploadTimeout: 300000,
 } as const
 
-// ============================================================================
-// Keyboard Shortcuts
-// ============================================================================
 export const SHORTCUTS = {
   selectAll: { key: 'a', ctrl: true },
   delete: { key: 'Delete' },
@@ -191,9 +156,6 @@ export const SHORTCUTS = {
   upload: { key: 'u', ctrl: true },
 } as const
 
-// ============================================================================
-// Accessibility
-// ============================================================================
 export const A11Y = {
   focusRingWidth: 2,
   focusRingOffset: 2,
@@ -201,7 +163,6 @@ export const A11Y = {
   largeTextContrastRatio: 3,
 } as const
 
-// Type exports for TypeScript
 export type Breakpoint = keyof typeof BREAKPOINTS
 export type ColorTagId = typeof COLOR_TAGS[number]['id']
 export type ImageExtension = typeof IMAGE_EXTENSIONS[number]

@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 
@@ -11,7 +17,6 @@ const loaded = ref(false)
 const isVisible = ref(true)
 const containerRef = ref<HTMLElement | null>(null)
 
-// Intersection observer for performance
 let observer: IntersectionObserver | null = null
 
 onMounted(() => {

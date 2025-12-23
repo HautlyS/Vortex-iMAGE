@@ -1,3 +1,7 @@
+//! Rust Module - 1 functions, 0 structs
+//! Core functionality: Backend operations and data processing
+//! External crates: 4 dependencies
+
 mod github;
 mod compress;
 mod crypto;
@@ -41,25 +45,25 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
-            // OAuth & User
+            
             start_oauth,
             poll_oauth,
             get_user,
-            // Photo Upload
+            
             upload_photo,
             list_photos,
-            // Repository Management
+            
             create_repo,
             get_repo_info,
             update_repo_visibility,
-            // Folder/Album Operations
+            
             scan_folder,
             upload_folder_as_album,
             upload_folder_recursive,
             list_albums,
             delete_album,
             rename_album,
-            // Photo Operations
+            
             download_photo,
             download_secure_photo,
             upload_secure_message,
@@ -67,7 +71,7 @@ pub fn run() {
             delete_photo,
             remove_local_file,
             get_local_image_info,
-            // Compression
+            
             compress_data,
             compress_data_strict,
             compress_data_auto,
@@ -77,34 +81,34 @@ pub fn run() {
             compress_file,
             decompress_file,
             get_compression_recommendation,
-            // Cryptography - Password-based
+            
             generate_keypair,
             encrypt_data_password,
             decrypt_data_password,
             hash_data_blake3,
             get_crypto_info,
-            // Cryptography - Keypair management
+            
             encrypt_keypair,
             decrypt_keypair,
-            // Cryptography - Hybrid PQ encryption
+            
             encrypt_hybrid,
             decrypt_hybrid,
-            // Cryptography - Signatures
+            
             sign_data,
             verify_signature,
             verify_signature_with_keypair,
-            // Cryptography - Session keys
+            
             derive_session_keys,
-            // Cryptography - Secure token storage
+            
             secure_store_token,
             secure_retrieve_token,
-            // Cryptography - File encryption
+            
             encrypt_file,
             decrypt_file,
-            // Cryptography - Backend info
+            
             check_pqcrypto_backend,
             require_optimized_backend,
-            // Pipeline processing
+            
             pipeline_process,
             pipeline_reverse,
             pipeline_get_presets,

@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 1 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { ref, onUnmounted } from 'vue'
 
 export function useTimeout() {
@@ -45,7 +51,6 @@ export function useTimeout() {
     clearAllIntervals()
   }
 
-  // Auto-cleanup on unmount
   onUnmounted(clearAll)
 
   return {

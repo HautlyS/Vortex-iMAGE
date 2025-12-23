@@ -1,24 +1,6 @@
-//! Cryptography Module - Post-Quantum Secure
-//! 
-//! Platform-specific implementations:
-//! 
-//! ## Default (iOS + all platforms):
-//! Uses pure-Rust implementations that work on ALL platforms:
-//! - Kyber1024 for key encapsulation (pqc_kyber crate)
-//! - Dilithium3 for digital signatures (pqc_dilithium crate)
-//! 
-//! ## With `pqcrypto-backend` feature (Android/Desktop only):
-//! Uses pqcrypto C bindings with optimized assembly:
-//! - ML-KEM-1024 via pqcrypto-mlkem
-//! - Dilithium3 via pqcrypto-dilithium
-//! 
-//! Common across all:
-//! - X25519 for classical key exchange (hybrid mode)
-//! - Ed25519 for classical signatures (hybrid mode)
-//! - ChaCha20-Poly1305 for symmetric encryption
-//!
-//! The pure-Rust pqc_kyber and pqc_dilithium crates have NO assembly dependencies,
-//! making them compatible with iOS ARM builds.
+//! Rust Module - 50 functions, 11 structs
+//! Core functionality: Backend operations and data processing
+//! External crates: 16 dependencies
 
 use chacha20poly1305::{aead::{Aead, KeyInit}, ChaCha20Poly1305, Nonce};
 use serde::{Deserialize, Serialize};
@@ -28,19 +10,12 @@ use ed25519_dalek::{SigningKey, VerifyingKey, Signer, Verifier, Signature};
 use hkdf::Hkdf;
 use sha2::Sha512;
 
-// ============================================================================
-// Conditional PQ Crypto Imports
-// ============================================================================
-
-// Pure-Rust Kyber - DEFAULT for all platforms including iOS
 #[cfg(not(feature = "pqcrypto-backend"))]
 use pqc_kyber::{keypair as kyber_keypair, encapsulate, decapsulate, KYBER_PUBLICKEYBYTES, KYBER_SECRETKEYBYTES, KYBER_CIPHERTEXTBYTES};
 
-// Pure-Rust Dilithium - DEFAULT for all platforms including iOS
 #[cfg(not(feature = "pqcrypto-backend"))]
 use pqc_dilithium::{Keypair as DilithiumKeypair, verify as dilithium_verify, PUBLICKEYBYTES as DIL_PUBLICKEYBYTES, SECRETKEYBYTES as DIL_SECRETKEYBYTES};
 
-// pqcrypto C bindings - OPTIONAL for Android/Desktop (faster, but has assembly)
 #[cfg(feature = "pqcrypto-backend")]
 use pqcrypto_mlkem::mlkem1024;
 #[cfg(feature = "pqcrypto-backend")]
@@ -77,49 +52,36 @@ impl Serialize for CryptoError {
     }
 }
 
-
-// ============================================================================
-// Hybrid Keypair - Pure Rust PQ + Classical Crypto
-// ============================================================================
-
-/// Hybrid keypair combining post-quantum and classical cryptography
-/// - ML-KEM-1024 for key encapsulation (PQ-secure)
-/// - X25519 for classical key exchange (defense in depth)
-/// - ML-DSA-65 for signatures (PQ-secure)
-/// - Ed25519 for classical signatures (defense in depth)
 #[derive(Clone)]
 pub struct HybridKeypair {
-    // ML-KEM (Kyber) keys - post-quantum key encapsulation
-    pub pq_encap_key: Vec<u8>,      // Public encapsulation key
-    pub pq_decap_key: Vec<u8>,      // Secret decapsulation key
-    // X25519 keys - classical ECDH
+    
+    pub pq_encap_key: Vec<u8>,      
+    pub pq_decap_key: Vec<u8>,      
+    
     pub x25519_secret: [u8; 32],
     pub x25519_public: [u8; 32],
-    // ML-DSA (Dilithium) keys - post-quantum signatures
-    pub pq_signing_key: Vec<u8>,    // Secret signing key
-    pub pq_verifying_key: Vec<u8>,  // Public verifying key
-    // Ed25519 keys - classical signatures
+    
+    pub pq_signing_key: Vec<u8>,    
+    pub pq_verifying_key: Vec<u8>,  
+    
     pub ed_signing_key: [u8; 32],
     pub ed_verifying_key: [u8; 32],
 }
 
-/// Public bundle for sharing with others
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct PublicBundle {
-    pub pq_encap: Vec<u8>,      // ML-KEM encapsulation key
-    pub x25519: [u8; 32],       // X25519 public key
-    pub pq_verify: Vec<u8>,     // ML-DSA verifying key
-    pub ed_verify: [u8; 32],    // Ed25519 verifying key
+    pub pq_encap: Vec<u8>,      
+    pub x25519: [u8; 32],       
+    pub pq_verify: Vec<u8>,     
+    pub ed_verify: [u8; 32],    
 }
 
-/// Encapsulated key for key exchange
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EncapsulatedKey {
-    pub pq_ciphertext: Vec<u8>,      // ML-KEM ciphertext
-    pub x25519_ephemeral: [u8; 32],  // X25519 ephemeral public key
+    pub pq_ciphertext: Vec<u8>,      
+    pub x25519_ephemeral: [u8; 32],  
 }
 
-/// Encrypted payload with all necessary data for decryption
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EncryptedPayload {
     pub nonce: [u8; 12],
@@ -127,29 +89,20 @@ pub struct EncryptedPayload {
     pub encap: EncapsulatedKey,
 }
 
-
-// ============================================================================
-// HybridKeypair Implementation - Conditional PQ Crypto
-// ============================================================================
-
 impl HybridKeypair {
-    /// Generate a new hybrid keypair with both PQ and classical keys
+    
     #[cfg(not(feature = "pqcrypto-backend"))]
     pub fn generate() -> Result<Self, CryptoError> {
         let mut rng = rand::thread_rng();
-        
-        // Generate Kyber1024 keypair (post-quantum key encapsulation) - Pure Rust
+
         let kyber_keys = kyber_keypair(&mut rng)
             .map_err(|_| CryptoError::KeyGeneration("Kyber keypair generation failed".into()))?;
-        
-        // Generate X25519 keypair (classical ECDH)
+
         let x_secret = StaticSecret::random_from_rng(&mut rng);
         let x_public = X25519Public::from(&x_secret);
-        
-        // Generate Dilithium3 keypair (post-quantum signatures) - Pure Rust
+
         let dil_keys = DilithiumKeypair::generate();
-        
-        // Generate Ed25519 keypair (classical signatures)
+
         let ed_sign_key = SigningKey::generate(&mut rng);
         let ed_verify_key = ed_sign_key.verifying_key();
         
@@ -165,22 +118,17 @@ impl HybridKeypair {
         })
     }
 
-    /// Generate a new hybrid keypair - pqcrypto backend (Android/Desktop)
     #[cfg(feature = "pqcrypto-backend")]
     pub fn generate() -> Result<Self, CryptoError> {
         let mut rng = rand::thread_rng();
-        
-        // Generate ML-KEM-1024 keypair using pqcrypto
+
         let (pq_encap, pq_decap) = mlkem1024::keypair();
-        
-        // Generate X25519 keypair (classical ECDH)
+
         let x_secret = StaticSecret::random_from_rng(&mut rng);
         let x_public = X25519Public::from(&x_secret);
-        
-        // Generate Dilithium3 keypair using pqcrypto
+
         let (pq_verify, pq_sign) = dilithium3::keypair();
-        
-        // Generate Ed25519 keypair (classical signatures)
+
         let ed_sign_key = SigningKey::generate(&mut rng);
         let ed_verify_key = ed_sign_key.verifying_key();
         
@@ -196,7 +144,6 @@ impl HybridKeypair {
         })
     }
 
-    /// Get the public bundle for sharing
     pub fn public_bundle(&self) -> PublicBundle {
         PublicBundle {
             pq_encap: self.pq_encap_key.clone(),
@@ -206,24 +153,19 @@ impl HybridKeypair {
         }
     }
 
-    /// Sign data using hybrid signatures - Pure Rust (Dilithium3 + Ed25519)
     #[cfg(not(feature = "pqcrypto-backend"))]
     pub fn sign(&self, data: &[u8]) -> Vec<u8> {
-        // Dilithium3 signature - reconstruct keypair using transmute
-        // SAFETY: Keypair is repr(C) with public: [u8; PUBLICKEYBYTES], secret: [u8; SECRETKEYBYTES]
+
         let mut keypair_bytes = [0u8; DIL_PUBLICKEYBYTES + DIL_SECRETKEYBYTES];
         keypair_bytes[..DIL_PUBLICKEYBYTES].copy_from_slice(&self.pq_verifying_key[..DIL_PUBLICKEYBYTES]);
         keypair_bytes[DIL_PUBLICKEYBYTES..].copy_from_slice(&self.pq_signing_key[..DIL_SECRETKEYBYTES]);
-        
-        // SAFETY: The Keypair struct layout is { public: [u8; PUBLICKEYBYTES], secret: [u8; SECRETKEYBYTES] }
+
         let dil_keys: DilithiumKeypair = unsafe { std::mem::transmute(keypair_bytes) };
         let pq_sig = dil_keys.sign(data);
-        
-        // Ed25519 signature
+
         let ed_sign_key = SigningKey::from_bytes(&self.ed_signing_key);
         let ed_sig = ed_sign_key.sign(data);
-        
-        // Combine signatures: [pq_sig_len (4 bytes)][pq_sig][ed_sig]
+
         let mut combined = Vec::with_capacity(4 + pq_sig.len() + 64);
         combined.extend_from_slice(&(pq_sig.len() as u32).to_le_bytes());
         combined.extend_from_slice(&pq_sig);
@@ -231,19 +173,16 @@ impl HybridKeypair {
         combined
     }
 
-    /// Sign data using hybrid signatures - pqcrypto backend (Dilithium3 + Ed25519)
     #[cfg(feature = "pqcrypto-backend")]
     pub fn sign(&self, data: &[u8]) -> Vec<u8> {
-        // Dilithium3 signature using pqcrypto
+        
         let pq_sign_key = dilithium3::SecretKey::from_bytes(&self.pq_signing_key)
             .expect("invalid dilithium secret key");
         let pq_sig = dilithium3::detached_sign(data, &pq_sign_key);
-        
-        // Ed25519 signature
+
         let ed_sign_key = SigningKey::from_bytes(&self.ed_signing_key);
         let ed_sig = ed_sign_key.sign(data);
-        
-        // Combine signatures: [pq_sig_len (4 bytes)][pq_sig][ed_sig]
+
         let pq_sig_bytes = pq_sig.as_bytes();
         let mut combined = Vec::with_capacity(4 + pq_sig_bytes.len() + 64);
         combined.extend_from_slice(&(pq_sig_bytes.len() as u32).to_le_bytes());
@@ -252,28 +191,24 @@ impl HybridKeypair {
         combined
     }
 
-    /// Verify a hybrid signature - Pure Rust
     #[cfg(not(feature = "pqcrypto-backend"))]
     pub fn verify(&self, data: &[u8], signature: &[u8]) -> Result<(), CryptoError> {
         if signature.len() < 68 {
             return Err(CryptoError::SignatureInvalid);
         }
-        
-        // Parse combined signature
+
         let pq_sig_len = u32::from_le_bytes(signature[..4].try_into().unwrap()) as usize;
         if signature.len() < 4 + pq_sig_len + 64 {
             return Err(CryptoError::SignatureInvalid);
         }
         let pq_sig_bytes = &signature[4..4 + pq_sig_len];
         let ed_sig_bytes = &signature[4 + pq_sig_len..4 + pq_sig_len + 64];
-        
-        // Verify Dilithium3 signature
+
         let mut pk = [0u8; DIL_PUBLICKEYBYTES];
         pk.copy_from_slice(&self.pq_verifying_key[..DIL_PUBLICKEYBYTES]);
         dilithium_verify(pq_sig_bytes, data, &pk)
             .map_err(|_| CryptoError::SignatureInvalid)?;
-        
-        // Verify Ed25519 signature
+
         let ed_verify_key = VerifyingKey::from_bytes(&self.ed_verifying_key)
             .map_err(|_| CryptoError::SignatureInvalid)?;
         let ed_sig_arr: [u8; 64] = ed_sig_bytes.try_into()
@@ -285,30 +220,26 @@ impl HybridKeypair {
         Ok(())
     }
 
-    /// Verify a hybrid signature - pqcrypto backend
     #[cfg(feature = "pqcrypto-backend")]
     pub fn verify(&self, data: &[u8], signature: &[u8]) -> Result<(), CryptoError> {
         if signature.len() < 68 {
             return Err(CryptoError::SignatureInvalid);
         }
-        
-        // Parse combined signature
+
         let pq_sig_len = u32::from_le_bytes(signature[..4].try_into().unwrap()) as usize;
         if signature.len() < 4 + pq_sig_len + 64 {
             return Err(CryptoError::SignatureInvalid);
         }
         let pq_sig_bytes = &signature[4..4 + pq_sig_len];
         let ed_sig_bytes = &signature[4 + pq_sig_len..4 + pq_sig_len + 64];
-        
-        // Verify Dilithium3 signature using pqcrypto
+
         let pq_verify_key = dilithium3::PublicKey::from_bytes(&self.pq_verifying_key)
             .map_err(|_| CryptoError::SignatureInvalid)?;
         let pq_sig = dilithium3::DetachedSignature::from_bytes(pq_sig_bytes)
             .map_err(|_| CryptoError::SignatureInvalid)?;
         dilithium3::verify_detached_signature(&pq_sig, data, &pq_verify_key)
             .map_err(|_| CryptoError::SignatureInvalid)?;
-        
-        // Verify Ed25519 signature
+
         let ed_verify_key = VerifyingKey::from_bytes(&self.ed_verifying_key)
             .map_err(|_| CryptoError::SignatureInvalid)?;
         let ed_sig_arr: [u8; 64] = ed_sig_bytes.try_into()
@@ -321,8 +252,6 @@ impl HybridKeypair {
     }
 }
 
-
-/// Check if pqcrypto backend is available
 pub fn is_pqcrypto_backend() -> bool {
     #[cfg(feature = "pqcrypto-backend")]
     { true }
@@ -330,7 +259,6 @@ pub fn is_pqcrypto_backend() -> bool {
     { false }
 }
 
-/// Require pqcrypto backend or return NotSupported
 pub fn require_pqcrypto_backend() -> Result<(), CryptoError> {
     if !is_pqcrypto_backend() {
         return Err(CryptoError::NotSupported);
@@ -338,29 +266,25 @@ pub fn require_pqcrypto_backend() -> Result<(), CryptoError> {
     Ok(())
 }
 
-// ============================================================================
-// Serialization for HybridKeypair
-// ============================================================================
-
 impl HybridKeypair {
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut out = Vec::new();
-        // PQ encapsulation key
+        
         out.extend_from_slice(&(self.pq_encap_key.len() as u32).to_le_bytes());
         out.extend_from_slice(&self.pq_encap_key);
-        // PQ decapsulation key
+        
         out.extend_from_slice(&(self.pq_decap_key.len() as u32).to_le_bytes());
         out.extend_from_slice(&self.pq_decap_key);
-        // X25519 keys
+        
         out.extend_from_slice(&self.x25519_secret);
         out.extend_from_slice(&self.x25519_public);
-        // PQ signing key
+        
         out.extend_from_slice(&(self.pq_signing_key.len() as u32).to_le_bytes());
         out.extend_from_slice(&self.pq_signing_key);
-        // PQ verifying key
+        
         out.extend_from_slice(&(self.pq_verifying_key.len() as u32).to_le_bytes());
         out.extend_from_slice(&self.pq_verifying_key);
-        // Ed25519 keys
+        
         out.extend_from_slice(&self.ed_signing_key);
         out.extend_from_slice(&self.ed_verifying_key);
         out
@@ -368,40 +292,34 @@ impl HybridKeypair {
 
     pub fn from_bytes(data: &[u8]) -> Result<Self, CryptoError> {
         let mut offset = 0;
-        
-        // PQ encapsulation key
+
         let pq_encap_len = u32::from_le_bytes(data[offset..offset+4].try_into().unwrap()) as usize;
         offset += 4;
         let pq_encap_key = data[offset..offset+pq_encap_len].to_vec();
         offset += pq_encap_len;
-        
-        // PQ decapsulation key
+
         let pq_decap_len = u32::from_le_bytes(data[offset..offset+4].try_into().unwrap()) as usize;
         offset += 4;
         let pq_decap_key = data[offset..offset+pq_decap_len].to_vec();
         offset += pq_decap_len;
-        
-        // X25519 keys
+
         let x25519_secret: [u8; 32] = data[offset..offset+32].try_into()
             .map_err(|_| CryptoError::KeyExchange("invalid x25519 secret".into()))?;
         offset += 32;
         let x25519_public: [u8; 32] = data[offset..offset+32].try_into()
             .map_err(|_| CryptoError::KeyExchange("invalid x25519 public".into()))?;
         offset += 32;
-        
-        // PQ signing key
+
         let pq_sign_len = u32::from_le_bytes(data[offset..offset+4].try_into().unwrap()) as usize;
         offset += 4;
         let pq_signing_key = data[offset..offset+pq_sign_len].to_vec();
         offset += pq_sign_len;
-        
-        // PQ verifying key
+
         let pq_verify_len = u32::from_le_bytes(data[offset..offset+4].try_into().unwrap()) as usize;
         offset += 4;
         let pq_verifying_key = data[offset..offset+pq_verify_len].to_vec();
         offset += pq_verify_len;
-        
-        // Ed25519 keys
+
         let ed_signing_key: [u8; 32] = data[offset..offset+32].try_into()
             .map_err(|_| CryptoError::KeyExchange("invalid ed25519 signing key".into()))?;
         offset += 32;
@@ -430,34 +348,26 @@ impl HybridKeypair {
     }
 }
 
-
-// ============================================================================
-// PublicBundle Implementation
-// ============================================================================
-
 impl PublicBundle {
-    /// Verify a hybrid signature using this public bundle - Pure Rust
+    
     #[cfg(not(feature = "pqcrypto-backend"))]
     pub fn verify(&self, data: &[u8], signature: &[u8]) -> Result<(), CryptoError> {
         if signature.len() < 68 {
             return Err(CryptoError::SignatureInvalid);
         }
-        
-        // Parse combined signature
+
         let pq_sig_len = u32::from_le_bytes(signature[..4].try_into().unwrap()) as usize;
         if signature.len() < 4 + pq_sig_len + 64 {
             return Err(CryptoError::SignatureInvalid);
         }
         let pq_sig_bytes = &signature[4..4 + pq_sig_len];
         let ed_sig_bytes = &signature[4 + pq_sig_len..4 + pq_sig_len + 64];
-        
-        // Verify Dilithium3 signature
+
         let mut pk = [0u8; DIL_PUBLICKEYBYTES];
         pk.copy_from_slice(&self.pq_verify[..DIL_PUBLICKEYBYTES]);
         dilithium_verify(pq_sig_bytes, data, &pk)
             .map_err(|_| CryptoError::SignatureInvalid)?;
-        
-        // Verify Ed25519 signature
+
         let ed_verify_key = VerifyingKey::from_bytes(&self.ed_verify)
             .map_err(|_| CryptoError::SignatureInvalid)?;
         let ed_sig_arr: [u8; 64] = ed_sig_bytes.try_into()
@@ -469,30 +379,26 @@ impl PublicBundle {
         Ok(())
     }
 
-    /// Verify a hybrid signature using this public bundle - pqcrypto backend
     #[cfg(feature = "pqcrypto-backend")]
     pub fn verify(&self, data: &[u8], signature: &[u8]) -> Result<(), CryptoError> {
         if signature.len() < 68 {
             return Err(CryptoError::SignatureInvalid);
         }
-        
-        // Parse combined signature
+
         let pq_sig_len = u32::from_le_bytes(signature[..4].try_into().unwrap()) as usize;
         if signature.len() < 4 + pq_sig_len + 64 {
             return Err(CryptoError::SignatureInvalid);
         }
         let pq_sig_bytes = &signature[4..4 + pq_sig_len];
         let ed_sig_bytes = &signature[4 + pq_sig_len..4 + pq_sig_len + 64];
-        
-        // Verify Dilithium3 signature using pqcrypto
+
         let pq_verify_key = dilithium3::PublicKey::from_bytes(&self.pq_verify)
             .map_err(|_| CryptoError::SignatureInvalid)?;
         let pq_sig = dilithium3::DetachedSignature::from_bytes(pq_sig_bytes)
             .map_err(|_| CryptoError::SignatureInvalid)?;
         dilithium3::verify_detached_signature(&pq_sig, data, &pq_verify_key)
             .map_err(|_| CryptoError::SignatureInvalid)?;
-        
-        // Verify Ed25519 signature
+
         let ed_verify_key = VerifyingKey::from_bytes(&self.ed_verify)
             .map_err(|_| CryptoError::SignatureInvalid)?;
         let ed_sig_arr: [u8; 64] = ed_sig_bytes.try_into()
@@ -505,11 +411,6 @@ impl PublicBundle {
     }
 }
 
-// ============================================================================
-// Hybrid Encryption/Decryption - Kyber + X25519
-// ============================================================================
-
-/// Derive a symmetric key from hybrid shared secrets
 fn derive_hybrid_key(pq_ss: &[u8], x25519_ss: &[u8]) -> [u8; 32] {
     let mut hasher = blake3::Hasher::new();
     hasher.update(b"vortex-hybrid-pq-v1");
@@ -518,32 +419,26 @@ fn derive_hybrid_key(pq_ss: &[u8], x25519_ss: &[u8]) -> [u8; 32] {
     *hasher.finalize().as_bytes()
 }
 
-/// Encrypt data for a recipient using hybrid PQ + classical key exchange - Pure Rust
 #[cfg(not(feature = "pqcrypto-backend"))]
 pub fn encrypt(data: &[u8], recipient: &PublicBundle) -> Result<EncryptedPayload, CryptoError> {
     let mut rng = rand::thread_rng();
-    
-    // Kyber encapsulation
+
     let mut pk = [0u8; KYBER_PUBLICKEYBYTES];
     pk.copy_from_slice(&recipient.pq_encap[..KYBER_PUBLICKEYBYTES]);
     let (pq_ciphertext, pq_shared_secret) = encapsulate(&pk, &mut rng)
         .map_err(|_| CryptoError::KeyExchange("Kyber encapsulation failed".into()))?;
-    
-    // X25519 key exchange
+
     let x_ephemeral = StaticSecret::random_from_rng(&mut rng);
     let x_ephemeral_pub = X25519Public::from(&x_ephemeral);
     let x_recipient = X25519Public::from(recipient.x25519);
     let x_ss = x_ephemeral.diffie_hellman(&x_recipient);
-    
-    // Derive symmetric key from both shared secrets
+
     let key = derive_hybrid_key(&pq_shared_secret, x_ss.as_bytes());
     let cipher = ChaCha20Poly1305::new(&key.into());
-    
-    // Generate random nonce
+
     let mut nonce_bytes = [0u8; 12];
     rand::RngCore::fill_bytes(&mut rng, &mut nonce_bytes);
-    
-    // Encrypt
+
     let ciphertext = cipher.encrypt(Nonce::from_slice(&nonce_bytes), data)
         .map_err(|_| CryptoError::Encrypt)?;
     
@@ -557,31 +452,25 @@ pub fn encrypt(data: &[u8], recipient: &PublicBundle) -> Result<EncryptedPayload
     })
 }
 
-/// Encrypt data for a recipient - pqcrypto backend
 #[cfg(feature = "pqcrypto-backend")]
 pub fn encrypt(data: &[u8], recipient: &PublicBundle) -> Result<EncryptedPayload, CryptoError> {
     let mut rng = rand::thread_rng();
-    
-    // ML-KEM encapsulation using pqcrypto
+
     let pq_encap_key = mlkem1024::PublicKey::from_bytes(&recipient.pq_encap)
         .map_err(|_| CryptoError::KeyExchange("invalid ML-KEM public key".into()))?;
     let (pq_shared_secret, pq_ciphertext) = mlkem1024::encapsulate(&pq_encap_key);
-    
-    // X25519 key exchange
+
     let x_ephemeral = StaticSecret::random_from_rng(&mut rng);
     let x_ephemeral_pub = X25519Public::from(&x_ephemeral);
     let x_recipient = X25519Public::from(recipient.x25519);
     let x_ss = x_ephemeral.diffie_hellman(&x_recipient);
-    
-    // Derive symmetric key from both shared secrets
+
     let key = derive_hybrid_key(pq_shared_secret.as_bytes(), x_ss.as_bytes());
     let cipher = ChaCha20Poly1305::new(&key.into());
-    
-    // Generate random nonce
+
     let mut nonce_bytes = [0u8; 12];
     rand::RngCore::fill_bytes(&mut rng, &mut nonce_bytes);
-    
-    // Encrypt
+
     let ciphertext = cipher.encrypt(Nonce::from_slice(&nonce_bytes), data)
         .map_err(|_| CryptoError::Encrypt)?;
     
@@ -595,59 +484,46 @@ pub fn encrypt(data: &[u8], recipient: &PublicBundle) -> Result<EncryptedPayload
     })
 }
 
-/// Decrypt data using hybrid PQ + classical key exchange - Pure Rust
 #[cfg(not(feature = "pqcrypto-backend"))]
 pub fn decrypt(payload: &EncryptedPayload, keypair: &HybridKeypair) -> Result<Vec<u8>, CryptoError> {
-    // Kyber decapsulation
+    
     let mut ct = [0u8; KYBER_CIPHERTEXTBYTES];
     ct.copy_from_slice(&payload.encap.pq_ciphertext[..KYBER_CIPHERTEXTBYTES]);
     let mut sk = [0u8; KYBER_SECRETKEYBYTES];
     sk.copy_from_slice(&keypair.pq_decap_key[..KYBER_SECRETKEYBYTES]);
     let pq_shared_secret = decapsulate(&ct, &sk)
         .map_err(|_| CryptoError::KeyExchange("Kyber decapsulation failed".into()))?;
-    
-    // X25519 key exchange
+
     let x_secret = StaticSecret::from(keypair.x25519_secret);
     let x_ephemeral = X25519Public::from(payload.encap.x25519_ephemeral);
     let x_ss = x_secret.diffie_hellman(&x_ephemeral);
-    
-    // Derive symmetric key
+
     let key = derive_hybrid_key(&pq_shared_secret, x_ss.as_bytes());
     let cipher = ChaCha20Poly1305::new(&key.into());
-    
-    // Decrypt
+
     cipher.decrypt(Nonce::from_slice(&payload.nonce), payload.ciphertext.as_ref())
         .map_err(|_| CryptoError::Decrypt("authentication failed".into()))
 }
 
-/// Decrypt data - pqcrypto backend
 #[cfg(feature = "pqcrypto-backend")]
 pub fn decrypt(payload: &EncryptedPayload, keypair: &HybridKeypair) -> Result<Vec<u8>, CryptoError> {
-    // ML-KEM decapsulation using pqcrypto
+    
     let pq_decap_key = mlkem1024::SecretKey::from_bytes(&keypair.pq_decap_key)
         .map_err(|_| CryptoError::KeyExchange("invalid ML-KEM secret key".into()))?;
     let pq_ciphertext = mlkem1024::Ciphertext::from_bytes(&payload.encap.pq_ciphertext)
         .map_err(|_| CryptoError::KeyExchange("invalid ML-KEM ciphertext".into()))?;
     let pq_shared_secret = mlkem1024::decapsulate(&pq_ciphertext, &pq_decap_key);
-    
-    // X25519 key exchange
+
     let x_secret = StaticSecret::from(keypair.x25519_secret);
     let x_ephemeral = X25519Public::from(payload.encap.x25519_ephemeral);
     let x_ss = x_secret.diffie_hellman(&x_ephemeral);
-    
-    // Derive symmetric key
+
     let key = derive_hybrid_key(pq_shared_secret.as_bytes(), x_ss.as_bytes());
     let cipher = ChaCha20Poly1305::new(&key.into());
-    
-    // Decrypt
+
     cipher.decrypt(Nonce::from_slice(&payload.nonce), payload.ciphertext.as_ref())
         .map_err(|_| CryptoError::Decrypt("authentication failed".into()))
 }
-
-
-// ============================================================================
-// Session Keys (HKDF-SHA512)
-// ============================================================================
 
 #[derive(Clone)]
 pub struct SessionKeys {
@@ -674,10 +550,6 @@ impl SessionKeys {
         Ok(Self { encryption_key, hmac_key, iv })
     }
 }
-
-// ============================================================================
-// Simple Symmetric Encryption (for local data)
-// ============================================================================
 
 pub fn encrypt_with_password(data: &[u8], password: &[u8]) -> Result<Vec<u8>, CryptoError> {
     use argon2::Argon2;
@@ -728,10 +600,6 @@ pub fn decrypt_with_password(data: &[u8], password: &[u8]) -> Result<Vec<u8>, Cr
 pub fn hash_data(data: &[u8]) -> [u8; 32] {
     *blake3::hash(data).as_bytes()
 }
-
-// ============================================================================
-// Secure Token Storage
-// ============================================================================
 
 fn get_machine_key() -> [u8; 32] {
     let mut hasher = blake3::Hasher::new();
@@ -793,11 +661,6 @@ pub fn decrypt_token(data: &[u8]) -> Result<String, CryptoError> {
     String::from_utf8(plaintext)
         .map_err(|_| CryptoError::Decrypt("invalid token data".into()))
 }
-
-
-// ============================================================================
-// Per-Item Encryption Settings
-// ============================================================================
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EncryptionSettings {
@@ -900,11 +763,6 @@ pub fn decrypt_file_data(
         }
     }
 }
-
-
-// ============================================================================
-// Tauri Commands
-// ============================================================================
 
 use crate::github::AppError;
 

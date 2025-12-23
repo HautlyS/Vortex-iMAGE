@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useSyncStatus, type SyncStatus } from '../composables/useSyncStatus'
@@ -26,15 +32,11 @@ const buttonRef = ref<HTMLElement | null>(null)
 function updatePosition() {
   if (!buttonRef.value) return
   const rect = buttonRef.value.getBoundingClientRect()
-  // Position above the button, centered horiziontally relative to button
+  
   let left = rect.left + (rect.width / 2)
-  
-  // Basic boundary check could be added here, but for now just lifting it out of overflow:hidden container
-  // Actually, let's put it *above* typically, so:
-  // top = rect.top - projectedHeight
-  
+
   menuStyle.value = {
-    top: `${rect.top}px`, // We will use transform to translate Y up 100% + gap
+    top: `${rect.top}px`, 
     left: `${left}px`
   }
 }
@@ -58,9 +60,6 @@ function closeMenu() {
   showMenu.value = false
 }
 
-// Close menu when clicking outside
-
-// Add/remove click listener
 import { onUnmounted, watch, nextTick } from 'vue'
 
 watch(showMenu, (isOpen) => {
@@ -77,7 +76,7 @@ watch(showMenu, (isOpen) => {
 })
 
 function handleClickOutside(e: MouseEvent) {
-  // Check if click is inside menu
+  
   const menuEl = document.querySelector('.sync-menu')
   if (menuEl && menuEl.contains(e.target as Node)) return
   
@@ -206,12 +205,11 @@ onUnmounted(() => {
   height: 1rem;
 }
 
-/* Menu */
 .sync-menu {
   position: fixed;
   top: 0;
   left: 0;
-  margin-top: -10px; /* Gap */
+  margin-top: -10px; 
   transform: translate(-50%, -100%);
   width: 220px;
   background: rgba(17, 17, 19, 0.98);
@@ -294,7 +292,6 @@ onUnmounted(() => {
   color: var(--accent-color, #818cf8);
 }
 
-/* Transitions */
 .menu-enter-active {
   transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }

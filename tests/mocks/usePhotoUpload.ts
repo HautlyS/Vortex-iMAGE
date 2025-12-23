@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 1 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { ref } from 'vue'
 
 const getMockState = () => (window as any).__MOCK_PHOTOS__ || {}
@@ -7,7 +13,7 @@ const queue = ref<any[]>(getMockState().queue || [])
 const isUploading = ref(false)
 
 export function usePhotoUpload() {
-    // Refresh from window
+    
     const state = getMockState()
     photos.value = state.photos || []
     if (state.queue) queue.value = state.queue

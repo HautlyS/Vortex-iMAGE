@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 1 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { ref, computed } from 'vue'
 import { load } from '@tauri-apps/plugin-store'
 
@@ -7,7 +13,7 @@ export interface DataDriver {
   id: string
   type: DriverType
   name: string
-  path: string // For GitHub: owner/repo, For local: folder path
+  path: string 
   isActive: boolean
   createdAt: number
   lastSyncAt?: number
@@ -52,8 +58,7 @@ export function useDataDriver() {
       if (saved && Array.isArray(saved)) {
         drivers.value = saved
       }
-      
-      // Migrate existing repo to driver if needed
+
       const existingRepo = await store.get<string>('repo')
       if (existingRepo && !drivers.value.some(d => d.path === existingRepo)) {
         const githubDriver: DataDriver = {
@@ -127,8 +132,7 @@ export function useDataDriver() {
     const index = drivers.value.findIndex(d => d.id === driverId)
     if (index !== -1) {
       drivers.value.splice(index, 1)
-      
-      // If removing active driver, switch to another
+
       if (activeDriverId.value === driverId) {
         activeDriverId.value = drivers.value[0]?.id || null
       }
@@ -140,11 +144,10 @@ export function useDataDriver() {
   async function setActiveDriver(driverId: string): Promise<void> {
     const driver = drivers.value.find(d => d.id === driverId)
     if (driver) {
-      // Update isActive flags
+      
       drivers.value.forEach(d => d.isActive = d.id === driverId)
       activeDriverId.value = driverId
-      
-      // If GitHub driver, also update the legacy repo setting for compatibility
+
       if (driver.type === 'github') {
         const store = await load('settings.json')
         await store.set('repo', driver.path)

@@ -1,13 +1,18 @@
+/**
+ * TypeScript Module - 1 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { ref } from 'vue'
 
 export interface ImageMetadata {
-  // Basic Info
+  
   fileName: string
   fileSize: number
   fileType: string
   dimensions?: { width: number; height: number }
-  
-  // EXIF Data
+
   camera?: {
     make?: string
     model?: string
@@ -22,8 +27,7 @@ export interface ImageMetadata {
     whiteBalance?: string
     flash?: string
   }
-  
-  // Date & Location
+
   dateTime?: {
     original?: Date
     digitized?: Date
@@ -35,8 +39,7 @@ export interface ImageMetadata {
     altitude?: number
     address?: string
   }
-  
-  // Additional
+
   software?: string
   copyright?: string
   artist?: string
@@ -48,10 +51,6 @@ export interface ImageMetadata {
 const loading = ref(false)
 const error = ref<string | null>(null)
 
-
-/**
- * Extract metadata from an image file or URL
- */
 async function extractMetadata(source: File | string): Promise<ImageMetadata | null> {
   loading.value = true
   error.value = null
@@ -64,7 +63,7 @@ async function extractMetadata(source: File | string): Promise<ImageMetadata | n
       blob = source
       fileName = source.name
     } else {
-      // Fetch from URL
+      
       const response = await fetch(source)
       blob = await response.blob()
       fileName = source.split('/').pop() || 'unknown'
@@ -75,14 +74,12 @@ async function extractMetadata(source: File | string): Promise<ImageMetadata | n
       fileSize: blob.size,
       fileType: blob.type || 'image/unknown',
     }
-    
-    // Get image dimensions
+
     const dimensions = await getImageDimensions(blob)
     if (dimensions) {
       metadata.dimensions = dimensions
     }
-    
-    // Try to extract EXIF data
+
     const exifData = await extractExifData(blob)
     if (exifData) {
       Object.assign(metadata, exifData)
@@ -97,9 +94,6 @@ async function extractMetadata(source: File | string): Promise<ImageMetadata | n
   }
 }
 
-/**
- * Get image dimensions from blob
- */
 async function getImageDimensions(blob: Blob): Promise<{ width: number; height: number } | null> {
   return new Promise((resolve) => {
     const img = new Image()
@@ -119,18 +113,13 @@ async function getImageDimensions(blob: Blob): Promise<{ width: number; height: 
   })
 }
 
-/**
- * Extract EXIF data from image blob
- * Uses a simple binary parser for common EXIF tags
- */
 async function extractExifData(blob: Blob): Promise<Partial<ImageMetadata> | null> {
   try {
     const buffer = await blob.arrayBuffer()
     const view = new DataView(buffer)
-    
-    // Check for JPEG
+
     if (view.getUint16(0) !== 0xFFD8) {
-      return null // Not a JPEG
+      return null 
     }
     
     let offset = 2
@@ -143,15 +132,13 @@ async function extractExifData(blob: Blob): Promise<Partial<ImageMetadata> | nul
       }
       
       const marker = view.getUint8(offset + 1)
-      
-      // APP1 marker (EXIF)
+
       if (marker === 0xE1) {
         const segmentLength = view.getUint16(offset + 2)
         const exifData = parseExifSegment(view, offset + 4, segmentLength - 2)
         return exifData
       }
-      
-      // Skip other segments
+
       if (marker >= 0xE0 && marker <= 0xEF) {
         const segmentLength = view.getUint16(offset + 2)
         offset += 2 + segmentLength
@@ -166,11 +153,8 @@ async function extractExifData(blob: Blob): Promise<Partial<ImageMetadata> | nul
   }
 }
 
-/**
- * Parse EXIF segment
- */
 function parseExifSegment(view: DataView, start: number, _length: number): Partial<ImageMetadata> | null {
-  // Check for "Exif\0\0" header
+  
   const exifHeader = String.fromCharCode(
     view.getUint8(start),
     view.getUint8(start + 1),
@@ -192,11 +176,10 @@ function parseExifSegment(view: DataView, start: number, _length: number): Parti
   }
   
   try {
-    // Read IFD0 offset
+    
     const ifd0Offset = view.getUint32(tiffStart + 4, littleEndian)
     const ifd0Start = tiffStart + ifd0Offset
-    
-    // Parse IFD0 entries
+
     const numEntries = view.getUint16(ifd0Start, littleEndian)
     
     for (let i = 0; i < numEntries; i++) {
@@ -207,44 +190,40 @@ function parseExifSegment(view: DataView, start: number, _length: number): Parti
       const valueOffset = entryOffset + 8
       
       switch (tag) {
-        case 0x010F: // Make
+        case 0x010F: 
           result.camera!.make = readString(view, tiffStart, valueOffset, count, littleEndian)
           break
-        case 0x0110: // Model
+        case 0x0110: 
           result.camera!.model = readString(view, tiffStart, valueOffset, count, littleEndian)
           break
-        case 0x0132: // DateTime
+        case 0x0132: 
           const dateStr = readString(view, tiffStart, valueOffset, count, littleEndian)
           if (dateStr) {
             result.dateTime!.modified = parseExifDate(dateStr)
           }
           break
-        case 0x0112: // Orientation
+        case 0x0112: 
           result.orientation = type === 3 
             ? view.getUint16(valueOffset, littleEndian)
             : view.getUint32(valueOffset, littleEndian)
           break
-        case 0x8769: // ExifIFD pointer
+        case 0x8769: 
           const exifOffset = view.getUint32(valueOffset, littleEndian)
           parseExifIFD(view, tiffStart + exifOffset, tiffStart, littleEndian, result)
           break
-        case 0x8825: // GPS IFD pointer
+        case 0x8825: 
           const gpsOffset = view.getUint32(valueOffset, littleEndian)
           parseGpsIFD(view, tiffStart + gpsOffset, tiffStart, littleEndian, result)
           break
       }
     }
   } catch {
-    // Partial data is fine
+    
   }
   
   return result
 }
 
-
-/**
- * Parse EXIF IFD for camera settings
- */
 function parseExifIFD(
   view: DataView, 
   ifdStart: number, 
@@ -263,63 +242,60 @@ function parseExifIFD(
       const valueOffset = entryOffset + 8
       
       switch (tag) {
-        case 0x829A: // ExposureTime
+        case 0x829A: 
           const expNum = view.getUint32(tiffStart + view.getUint32(valueOffset, littleEndian), littleEndian)
           const expDen = view.getUint32(tiffStart + view.getUint32(valueOffset, littleEndian) + 4, littleEndian)
           result.settings!.shutterSpeed = expDen > expNum ? `1/${Math.round(expDen/expNum)}` : `${expNum/expDen}s`
           break
-        case 0x829D: // FNumber
+        case 0x829D: 
           const fNum = view.getUint32(tiffStart + view.getUint32(valueOffset, littleEndian), littleEndian)
           const fDen = view.getUint32(tiffStart + view.getUint32(valueOffset, littleEndian) + 4, littleEndian)
           result.settings!.aperture = `f/${(fNum/fDen).toFixed(1)}`
           break
-        case 0x8827: // ISO
+        case 0x8827: 
           result.settings!.iso = type === 3 
             ? view.getUint16(valueOffset, littleEndian)
             : view.getUint32(valueOffset, littleEndian)
           break
-        case 0x920A: // FocalLength
+        case 0x920A: 
           const flNum = view.getUint32(tiffStart + view.getUint32(valueOffset, littleEndian), littleEndian)
           const flDen = view.getUint32(tiffStart + view.getUint32(valueOffset, littleEndian) + 4, littleEndian)
           result.settings!.focalLength = `${Math.round(flNum/flDen)}mm`
           break
-        case 0x9003: // DateTimeOriginal
+        case 0x9003: 
           const origDateStr = readString(view, tiffStart, valueOffset, count, littleEndian)
           if (origDateStr) {
             result.dateTime!.original = parseExifDate(origDateStr)
           }
           break
-        case 0x9004: // DateTimeDigitized
+        case 0x9004: 
           const digDateStr = readString(view, tiffStart, valueOffset, count, littleEndian)
           if (digDateStr) {
             result.dateTime!.digitized = parseExifDate(digDateStr)
           }
           break
-        case 0xA402: // ExposureMode
+        case 0xA402: 
           const expMode = view.getUint16(valueOffset, littleEndian)
           result.settings!.exposureMode = ['Auto', 'Manual', 'Auto Bracket'][expMode] || 'Unknown'
           break
-        case 0xA403: // WhiteBalance
+        case 0xA403: 
           const wb = view.getUint16(valueOffset, littleEndian)
           result.settings!.whiteBalance = wb === 0 ? 'Auto' : 'Manual'
           break
-        case 0x9209: // Flash
+        case 0x9209: 
           const flash = view.getUint16(valueOffset, littleEndian)
           result.settings!.flash = (flash & 1) ? 'Fired' : 'Did not fire'
           break
-        case 0xA434: // LensModel
+        case 0xA434: 
           result.camera!.lens = readString(view, tiffStart, valueOffset, count, littleEndian)
           break
       }
     }
   } catch {
-    // Partial data is fine
+    
   }
 }
 
-/**
- * Parse GPS IFD for location data
- */
 function parseGpsIFD(
   view: DataView, 
   ifdStart: number, 
@@ -340,19 +316,19 @@ function parseGpsIFD(
       const valueOffset = entryOffset + 8
       
       switch (tag) {
-        case 0x0001: // GPSLatitudeRef
+        case 0x0001: 
           latRef = String.fromCharCode(view.getUint8(valueOffset))
           break
-        case 0x0002: // GPSLatitude
+        case 0x0002: 
           lat = readRational3(view, tiffStart + view.getUint32(valueOffset, littleEndian), littleEndian)
           break
-        case 0x0003: // GPSLongitudeRef
+        case 0x0003: 
           lonRef = String.fromCharCode(view.getUint8(valueOffset))
           break
-        case 0x0004: // GPSLongitude
+        case 0x0004: 
           lon = readRational3(view, tiffStart + view.getUint32(valueOffset, littleEndian), littleEndian)
           break
-        case 0x0006: // GPSAltitude
+        case 0x0006: 
           const altNum = view.getUint32(tiffStart + view.getUint32(valueOffset, littleEndian), littleEndian)
           const altDen = view.getUint32(tiffStart + view.getUint32(valueOffset, littleEndian) + 4, littleEndian)
           result.location!.altitude = altNum / altDen
@@ -367,13 +343,10 @@ function parseGpsIFD(
       result.location!.longitude = (lon[0] + lon[1]/60 + lon[2]/3600) * (lonRef === 'W' ? -1 : 1)
     }
   } catch {
-    // Partial data is fine
+    
   }
 }
 
-/**
- * Read string from EXIF data
- */
 function readString(
   view: DataView, 
   tiffStart: number, 
@@ -395,9 +368,6 @@ function readString(
   return str.trim()
 }
 
-/**
- * Read 3 rational values (for GPS coordinates)
- */
 function readRational3(view: DataView, offset: number, littleEndian: boolean): number[] {
   const result: number[] = []
   for (let i = 0; i < 3; i++) {
@@ -408,11 +378,8 @@ function readRational3(view: DataView, offset: number, littleEndian: boolean): n
   return result
 }
 
-/**
- * Parse EXIF date string to Date object
- */
 function parseExifDate(dateStr: string): Date | undefined {
-  // Format: "YYYY:MM:DD HH:MM:SS"
+  
   const match = dateStr.match(/(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})/)
   if (match) {
     return new Date(
@@ -427,9 +394,6 @@ function parseExifDate(dateStr: string): Date | undefined {
   return undefined
 }
 
-/**
- * Format file size for display
- */
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -437,9 +401,6 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
 }
 
-/**
- * Format date for display
- */
 function formatDate(date: Date | undefined): string {
   if (!date) return '-'
   return date.toLocaleDateString('pt-BR', {
@@ -451,9 +412,6 @@ function formatDate(date: Date | undefined): string {
   })
 }
 
-/**
- * Format GPS coordinates for display
- */
 function formatCoordinates(lat?: number, lon?: number): string {
   if (lat === undefined || lon === undefined) return '-'
   const latDir = lat >= 0 ? 'N' : 'S'

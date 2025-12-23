@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 1 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { ref, computed } from 'vue'
 
 export type TransferStatus = 'pending' | 'uploading' | 'downloading' | 'completed' | 'failed'
@@ -33,7 +39,7 @@ export function useUploadToast() {
   )
 
   function addTransfer(id: string, fileName: string, type: TransferType): void {
-    // Cancel any pending auto-dismiss
+    
     if (autoDismissTimer) {
       clearTimeout(autoDismissTimer)
       autoDismissTimer = null
@@ -65,8 +71,7 @@ export function useUploadToast() {
       if (error) transfer.error = error
       if (status === 'completed') transfer.progress = 100
     }
-    
-    // Check if all transfers are done and schedule auto-dismiss
+
     checkAutoDismiss()
   }
 
@@ -117,7 +122,7 @@ export function useUploadToast() {
 
   function checkAutoDismiss(): void {
     if (allCompleted.value && !hasFailures.value) {
-      // Auto-dismiss after 3 seconds if all completed successfully
+      
       autoDismissTimer = setTimeout(() => {
         clearAll()
       }, 3000)

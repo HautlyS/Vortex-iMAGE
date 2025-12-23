@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 4 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import { ref, computed, watch } from 'vue'
 
 export interface ColorTag {
@@ -21,7 +27,6 @@ export const PREDEFINED_COLORS: ColorTag[] = [
 
 export const COLORS = PREDEFINED_COLORS
 
-// Global state
 const photoTags = ref<Record<string, string>>({})
 const isLoaded = ref(false)
 let store: any = null
@@ -66,7 +71,7 @@ export function useColorTagStore() {
   const getPhotoTag = (photoId: string) => COLORS.find(c => c.id === photoTags.value[photoId]) || null
   const getPhotosByTag = (tagId: string) => Object.entries(photoTags.value).filter(([, c]) => c === tagId).map(([id]) => id)
   const clearAllTags = () => { photoTags.value = {} }
-  const renameTag = () => {} // No-op for predefined tags
+  const renameTag = () => {} 
   const tagItems = (ids: string[], colorId: string) => ids.forEach(id => { photoTags.value[id] = colorId })
   const getItemsByTag = getPhotosByTag
   const loadTags = init

@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 1 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: GlassSurface
+ */
+
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useTheme, ACCENT_COLORS } from '../composables/useTheme'
@@ -8,7 +14,7 @@ import { useDataDriver } from '../composables/useDataDriver'
 import GlassSurface from './GlassSurface.vue'
 
 defineProps<{
-  visible?: boolean // Added for v-if consistency
+  visible?: boolean 
 }>()
 
 const emit = defineEmits<{ close: [] }>()
@@ -23,27 +29,21 @@ const gliderStyle = computed(() => {
     transform: `translateX(${index * 100}%)`
   }
 })
-// ... imports and basic setup ...
-// Theme
+
 const { theme, setAccentPreset, setAccentColor, setBorderRadius, setGlassOpacity, setReduceMotion, setMatrixEffects, setGlassMorphism, setGlow, resetTheme } = useTheme()
 const customColor = ref(theme.value.accentColor)
 const currentPreset = computed(() => ACCENT_COLORS.find(c => c.color === theme.value.accentColor)?.id || 'custom')
 
-// Auth
 const { token, logout } = useGitHubAuth()
 
-// Crypto
 const { hasStoredKeypair, isUnlocked, cryptoInfo, initialize: initCrypto } = useCrypto()
 const cryptoStatus = computed(() => hasStoredKeypair.value ? (isUnlocked.value ? 'Desbloqueado' : 'Bloqueado') : 'Não configurado')
 
-// Compression
 const { availableAlgorithms, initialize: initCompression, getAlgorithmInfo } = useCompression()
 const compressionInfo = computed(() => availableAlgorithms.value.map(a => ({ algo: a, info: getAlgorithmInfo(a) })))
 
-// Data Drivers
 const { githubDrivers, loadDrivers } = useDataDriver()
 
-// Keyboard
 function handleKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') emit('close')
 }
@@ -315,7 +315,7 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
 .settings-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4); /* Lighter bg so blur shines */
+  background: rgba(0, 0, 0, 0.4); 
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -353,7 +353,6 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
   margin-bottom: 2rem;
 }
 
-/* Tabs */
 .tabs {
   display: flex;
   flex-direction: column;
@@ -408,13 +407,12 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
   justify-content: center;
 }
 
-/* Content Area */
 .panel-content {
   display: flex;
   flex-direction: column;
   padding: 2rem 2.5rem;
   background: rgba(255,255,255,0.01);
-  min-width: 0; /* Prevent overflow */
+  min-width: 0; 
 }
 
 .content-header {
@@ -439,7 +437,6 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
   flex: 1;
 }
 
-/* Sections */
 .section {
   margin-bottom: 2.5rem;
 }
@@ -453,7 +450,6 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
   margin-bottom: 1rem;
 }
 
-/* Color Presets */
 .color-presets {
   display: flex;
   flex-wrap: wrap;
@@ -463,7 +459,7 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
 .color-preset {
   width: 3rem;
   height: 3rem;
-  border-radius: 50%; /* Default round, controlled by theme elsewhere but fixed here for color selection */
+  border-radius: 50%; 
   border: none;
   background: transparent;
   cursor: pointer;
@@ -492,7 +488,6 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
   border-color: transparent;
 }
 
-/* Custom Color */
 .color-custom {
   width: 3rem;
   height: 3rem;
@@ -519,7 +514,6 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
   cursor: pointer;
 }
 
-/* Premium Slider */
 .control-row {
   display: flex;
   align-items: center;
@@ -564,7 +558,6 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
   font-size: 0.875rem;
 }
 
-/* Segment Control */
 .segment-control {
   display: flex;
   background: rgba(0,0,0,0.2);
@@ -604,7 +597,6 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
   z-index: 1;
 }
 
-/* Premium Card */
 .premium-card {
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.05);
@@ -733,7 +725,6 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
   margin-top: 0.25rem;
 }
 
-/* Toggles */
 .toggle-item {
   display: flex;
   justify-content: space-between;
@@ -781,7 +772,6 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
   transform: translateX(20px);
 }
 
-/* Divider & Reset */
 .section-divider {
   height: 1px;
   background: rgba(255,255,255,0.05);
@@ -823,7 +813,6 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
   transform: rotate(90deg);
 }
 
-/* Animation */
 .settings-enter-active, .settings-leave-active {
   transition: opacity 0.3s;
 }
@@ -847,7 +836,6 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
   opacity: 0;
 }
 
-/* Mobile Responsive */
 @media (max-width: 768px) {
   .settings-overlay {
     padding: 0;
@@ -932,7 +920,6 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
   }
 }
 
-/* iOS safe area handling */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .settings-panel {
     padding-bottom: env(safe-area-inset-bottom);

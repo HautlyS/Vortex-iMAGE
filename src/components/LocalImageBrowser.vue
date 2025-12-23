@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { open } from '@tauri-apps/plugin-dialog'
@@ -91,7 +97,7 @@ function formatSize(bytes: number): string {
 }
 
 function getImageUrl(path: string): string {
-  // Use Tauri's convertFileSrc for proper asset loading
+  
   return convertFileSrc(path)
 }
 </script>

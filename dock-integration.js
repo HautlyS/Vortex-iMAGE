@@ -1,11 +1,14 @@
-// Add these imports to your existing App.vue
+/**
+ * TypeScript Module - 0 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 1 modules
+ */
+
 import MacOSDock from './components/MacOSDock.vue'
 import { useDockApps } from './composables/useDockApps'
 
-// Add to your script setup
 const { dockApps, activeApps, toggleApp, setActiveApp } = useDockApps()
 
-// Add dock app handler
 function handleDockAppClick(appId: string) {
   switch (appId) {
     case 'photos':
@@ -27,7 +30,7 @@ function handleDockAppClick(appId: string) {
       showLocalBrowser.value = true
       break
     case 'search':
-      // Toggle search visibility
+      
       const searchInput = document.querySelector('.search-bar input') as HTMLInputElement
       if (searchInput) searchInput.focus()
       toggleApp('search')
@@ -48,7 +51,6 @@ function handleDockAppClick(appId: string) {
   }
 }
 
-// Add upload progress badge
 const dockAppsWithBadges = computed(() => {
   return dockApps.value.map(app => ({
     ...app,

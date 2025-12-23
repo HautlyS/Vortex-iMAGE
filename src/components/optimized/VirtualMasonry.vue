@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <template>
   <div class="masonry-wrapper">
     <div 
@@ -139,7 +145,6 @@ const favorites = ref(new Set<string>())
 const customScales = reactive<Record<string, number>>({})
 const customOrder = ref<string[]>([])
 
-// Drag state
 const dragItem = ref<LayoutItem | null>(null)
 const dropIndex = ref<number>(-1)
 const dragOffset = ref({ x: 0, y: 0 })
@@ -170,27 +175,24 @@ const onDragMove = (e: MouseEvent) => {
     x: e.clientX - dragOffset.value.x,
     y: e.clientY - dragOffset.value.y + scrollTop.value
   }
-  
-  // Find insertion position based on drag position
+
   const centerX = dragPos.value.x + dragItem.value.w / 2
   const centerY = dragPos.value.y + dragItem.value.h / 2
-  
-  // Find closest position in layout order
+
   let bestIdx = -1
   let minDist = Infinity
   
   for (let i = 0; i < layout.value.length; i++) {
     const item = layout.value[i]
     if (item.id === dragItem.value.id) continue
-    
-    // Check distance to item center
+
     const itemCenterX = item.x + item.w / 2
     const itemCenterY = item.y + item.h / 2
     const dist = Math.hypot(centerX - itemCenterX, centerY - itemCenterY)
     
     if (dist < minDist) {
       minDist = dist
-      // Insert before or after based on position
+      
       const insertBefore = centerY < itemCenterY || (Math.abs(centerY - itemCenterY) < item.h / 2 && centerX < itemCenterX)
       bestIdx = insertBefore ? i : i + 1
     }
@@ -205,11 +207,11 @@ const onDragEnd = () => {
     const fromIdx = items.findIndex(i => i.id === dragItem.value!.id)
     
     if (fromIdx !== -1 && dropIndex.value !== fromIdx) {
-      // Remove from old position
+      
       const [moved] = items.splice(fromIdx, 1)
-      // Adjust target index if needed
+      
       const targetIdx = dropIndex.value > fromIdx ? dropIndex.value - 1 : dropIndex.value
-      // Insert at new position
+      
       items.splice(targetIdx, 0, moved)
       
       customOrder.value = items.map(i => i.id)
@@ -249,8 +251,7 @@ const getDropIndicatorStyle = () => {
   
   const targetItem = layout.value[Math.min(dropIndex.value, layout.value.length - 1)]
   if (!targetItem) return { display: 'none' }
-  
-  // Show indicator at the target position
+
   const isEnd = dropIndex.value >= layout.value.length
   return {
     left: `${targetItem.x}px`,
@@ -259,11 +260,8 @@ const getDropIndicatorStyle = () => {
   }
 }
 
-// Sorting
 const sortBy = ref<SortType>('newest')
 const sortDesc = ref(true)
-
-
 
 const getDate = (item: MasonryItem, type: 'meta' | 'upload'): number => {
   const field = type === 'upload' ? (item.uploadedAt || item.createdAt) : (item.date || item.createdAt)
@@ -291,7 +289,6 @@ const sortedItems = computed(() => {
 const toggleSel = (id: string) => { const s = new Set(selected.value); s.has(id) ? s.delete(id) : s.add(id); selected.value = s }
 const toggleFav = (id: string) => { const f = new Set(favorites.value); f.has(id) ? f.delete(id) : f.add(id); favorites.value = f }
 
-// Size configs with weights
 const sizeConfig: Record<SizeType, { scale: number; weight: number }> = {
   small: { scale: 0.8, weight: 0.30 },
   medium: { scale: 1.0, weight: 0.35 },
@@ -361,7 +358,6 @@ const calculateLayout = () => {
     const aspect = (item.width || props.baseWidth) / (item.height || props.baseHeight)
     let span = 1, w: number, h: number
 
-    // Dynamic sizing based on type
     if (type === 'hero') {
       span = Math.min(2, cols)
       w = baseColW * span + (span - 1) * gap
@@ -384,7 +380,6 @@ const calculateLayout = () => {
       h = Math.round(w / aspect)
     }
 
-    // Apply custom scale if resized
     if (customScale) {
       w = Math.round(baseColW * customScale)
       h = Math.round(w / aspect)
@@ -394,14 +389,12 @@ const calculateLayout = () => {
     w = Math.min(w, cw)
     span = Math.min(span, cols)
 
-    // Find best position for multi-span items
     let col = 0, minH = Infinity
     for (let c = 0; c <= cols - span; c++) {
       const maxH = Math.max(...colHeights.slice(c, c + span))
       if (maxH < minH) { minH = maxH; col = c }
     }
 
-    // Grouped items try to stay together
     if (group && !customScale) {
       const groupCol = hash(group) % (cols - span + 1)
       if (colHeights[groupCol] <= minH + 100) col = groupCol
@@ -412,7 +405,6 @@ const calculateLayout = () => {
 
     items.push({ id: item.id, data: item, x, y, w, h, type, highlight, group, visible: false, scale: customScale || typeScale })
 
-    // Update all spanned columns
     const newH = y + h + gap
     for (let c = col; c < col + span; c++) colHeights[c] = newH
   }
@@ -565,7 +557,6 @@ watch([sortedItems, sortBy, sortDesc], calculateLayout, { deep: true })
   z-index: 1000 !important;
 }
 
-/* Dynamic size styles */
 .item-small { opacity: 0.95; }
 
 .item-large { box-shadow: 0 4px 20px rgba(0,0,0,0.3); }

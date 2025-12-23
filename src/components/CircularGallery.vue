@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <template>
   <div class="relative w-full h-full"
     @touchstart="handleTouchStart"
@@ -50,7 +56,7 @@ interface GalleryItem {
   syncedGithub?: boolean;
   syncedLocal?: boolean;
   favorite?: boolean;
-  // Metadata
+  
   size?: number;
   dimensions?: string;
   date?: string | Date;
@@ -105,7 +111,6 @@ const emit = defineEmits<{
 }>();
 let rafId: number | null = null;
 
-// Pinch-to-zoom for circular gallery
 let initialPinchDistance = 0
 let isPinching = false
 let currentZoom = 1
@@ -317,7 +322,6 @@ interface MediaProps {
   auth?: any;
 }
 
-
 class Media {
   extra: number = 0;
   geometry: Plane;
@@ -347,8 +351,7 @@ class Media {
   speed: number = 0;
   isBefore: boolean = false;
   isAfter: boolean = false;
-  
-  // Store base scales to apply dynamic scaling on top
+
   baseScaleX: number = 1;
   baseScaleY: number = 1;
 
@@ -442,8 +445,7 @@ class Media {
           if(d > 0.0) {
             discard;
           }
-          
-          // Bottom shadow gradient (stronger when centered)
+
           float shadowStrength = smoothstep(0.35, 0.0, vUv.y) * 0.7 * uCenterFactor;
           color.rgb = mix(color.rgb, vec3(0.0), shadowStrength);
           
@@ -462,21 +464,18 @@ class Media {
       transparent: true
     });
 
-    
     this.loadTexture(texture);
   }
 
   async loadTexture(texture: Texture) {
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    
-    // Check if secure load needed
+
     let src = this.image;
     const isGitHub = src.includes('github.com') || src.includes('githubusercontent.com');
-    // Only try secure load if auth is present and it is a GitHub URL
-    // And not in dev mode mock (picsum)
+
     if (this.auth && isGitHub && !src.includes('picsum')) {
-       // Parse path
+       
        const parts = src.split('photos/');
        if (parts.length > 1) {
          const remotePath = 'photos/' + parts[1].split('?')[0];
@@ -486,8 +485,7 @@ class Media {
          
          if (token && repo && keypairBytes) {
            try {
-             // In class context, we need to handle async loading
-             // We can fetch data, create blob, set src
+
              const imageBytes = await invoke<number[]>('download_secure_photo', {
                 remotePath,
                 repo,
@@ -507,15 +505,9 @@ class Media {
     img.onload = () => {
       texture.image = img;
       this.program.uniforms.uImageSizes.value = [img.naturalWidth, img.naturalHeight];
-      // Clean up blob if we created one
+      
       if (src.startsWith('blob:')) {
-        // Keep it for now as texture needs it? No, once uploaded to GPU (texture.image = img) 
-        // ogl handles it? OGL uploads on first usage.
-        // We shouldn't revoke immediately if OGL hasn't uploaded yet.
-        // OGL Texture uploads on update.
-        // We can revoke later or let GC handle it if we trust it, but blobs need explicit revoke.
-        // However, keeping it in memory for the duration of the gallery is acceptable for now.
-        // Or cleaner: revoke after a timeout or when Media is destroyed.
+
       }
     };
   }
@@ -540,7 +532,7 @@ class Media {
   }
 
   setZoom(zoom: number) {
-    // Apply zoom to the current scale
+    
     this.plane.scale.x = this.baseScaleX * zoom;
     this.plane.scale.y = this.baseScaleY * zoom;
     this.plane.program.uniforms.uPlaneSizes.value = [this.plane.scale.x, this.plane.scale.y];
@@ -552,26 +544,20 @@ class Media {
     const x = this.plane.position.x;
     const H = this.viewport.width / 2;
 
-    // Calculate distance from center
     const dist = Math.abs(x);
-    // Center factor (1 at center, 0 at edges)
+    
     const centerFactor = Math.max(0, 1 - (dist / H) * 1.2);
     this.program.uniforms.uCenterFactor.value = centerFactor;
-    
-    // Z position: center image in front, others pushed back
+
     this.plane.position.z = centerFactor * 5;
-    
-    // Scale: center image shows at full size, others smaller
+
     const minScale = 0.6;
     const scaleFactor = minScale + (1 - minScale) * centerFactor;
-    
-    // Use the base scales calculated in onResize
+
     this.plane.scale.x = this.baseScaleX * scaleFactor;
     this.plane.scale.y = this.baseScaleY * scaleFactor;
 
-    // Update uPlaneSizes for correct aspect ratio in fragment shader
     this.program.uniforms.uPlaneSizes.value = [this.plane.scale.x, this.plane.scale.y];
-
 
     if (this.bend === 0) {
       this.plane.position.y = 0;
@@ -618,23 +604,22 @@ class Media {
       }
     }
     this.scale = this.screen.height / 1500;
-    
-    // Responsive scaling - adapt to screen size and orientation
+
     const isPortrait = this.screen.height > this.screen.width;
     const isMobile = this.screen.width < 768;
     
     if (isMobile) {
       if (isPortrait) {
-        // Mobile portrait: use most of screen width, reasonable height
+        
         this.baseScaleX = this.viewport.width * 0.9;
         this.baseScaleY = this.viewport.height * 0.7;
       } else {
-        // Mobile landscape: use most of screen height, reasonable width
+        
         this.baseScaleY = this.viewport.height * 0.8;
         this.baseScaleX = this.viewport.width * 0.6;
       }
     } else {
-      // Desktop: original responsive logic
+      
       if (isPortrait) {
         this.baseScaleX = this.viewport.width * 0.7;
         this.baseScaleY = this.viewport.height * 0.8;
@@ -670,7 +655,7 @@ interface AppConfig {
 }
 
 class App {
-  // ... (previous properties)
+  
   container: HTMLElement;
   scrollSpeed: number;
   showTitles: boolean;
@@ -732,8 +717,7 @@ class App {
     this.onResize();
     this.createGeometry();
     this.createMedias(items, bend, textColor, borderRadius, font);
-    
-    // Set initial scroll relative to index
+
     if (this.medias.length > 0 && initialIndex !== undefined) {
         const width = this.medias[0].width;
         this.scroll.target = width * initialIndex;
@@ -745,8 +729,6 @@ class App {
     this.addEventListeners();
   }
 
-  // ... (rest of class)
-  
   createRenderer() {
     this.renderer = new Renderer({ alpha: true });
     this.gl = this.renderer.gl;
@@ -838,7 +820,7 @@ class App {
 
   onWheel(e: Event) {
     const wheelEvent = e as WheelEvent;
-    // Support legacy wheel events if present
+    
     const legacy = wheelEvent as unknown as { wheelDelta?: number; detail?: number };
     const delta = wheelEvent.deltaY ?? legacy.wheelDelta ?? legacy.detail ?? 0;
     this.scroll.target += delta > 0 ? this.scrollSpeed : -this.scrollSpeed;
@@ -937,7 +919,6 @@ onMounted(() => {
   });
   updateCenterItem();
 });
-
 
 onUnmounted(() => {
   if (rafId) cancelAnimationFrame(rafId);

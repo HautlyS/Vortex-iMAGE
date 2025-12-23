@@ -1,3 +1,9 @@
+/**
+ * Vue Component - 0 components, 0 composables
+ * Main functionality: UI component with reactive state management
+ * Dependencies: 
+ */
+
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
@@ -237,7 +243,6 @@ onMounted(async () => {
   padding: 1.5rem;
 }
 
-/* Loading State */
 .loading-state {
   display: flex;
   flex-direction: column;
@@ -264,7 +269,6 @@ onMounted(async () => {
   font-size: 0.875rem;
 }
 
-/* Error State */
 .error-state {
   display: flex;
   flex-direction: column;
@@ -284,7 +288,6 @@ onMounted(async () => {
   text-align: center;
 }
 
-/* Folder Info */
 .folder-info {
   display: flex;
   gap: 1rem;
@@ -337,7 +340,6 @@ onMounted(async () => {
   height: 0.875rem;
 }
 
-/* Upload Options */
 .upload-options h4 {
   font-size: 0.875rem;
   font-weight: 500;

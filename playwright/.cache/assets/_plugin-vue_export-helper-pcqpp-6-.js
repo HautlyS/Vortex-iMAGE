@@ -1,3 +1,9 @@
+/**
+ * TypeScript Module - 0 exports
+ * Purpose: Type-safe utilities and composable functions
+ * Imports: 0 modules
+ */
+
 const _export_sfc = (sfc, props) => {
   const target = sfc.__vccOpts || sfc;
   for (const [key, val] of props) {
@@ -7,4 +13,3 @@ const _export_sfc = (sfc, props) => {
 };
 
 export { _export_sfc as _ };
-//# sourceMappingURL=_plugin-vue_export-helper-pcqpp-6-.js.map
