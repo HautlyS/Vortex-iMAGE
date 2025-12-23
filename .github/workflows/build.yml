@@ -382,7 +382,19 @@ jobs:
         run: pnpm run build
 
       - name: Build desktop app
-        run: pnpm tauri build
+        run: |
+          # Retry logic for transient network errors during bundling
+          for i in 1 2 3; do
+            echo "Build attempt $i..."
+            if pnpm tauri build; then
+              echo "✅ Build succeeded on attempt $i"
+              exit 0
+            fi
+            echo "⚠️ Build failed on attempt $i, retrying in 10s..."
+            sleep 10
+          done
+          echo "❌ All build attempts failed"
+          exit 1
 
       - uses: actions/upload-artifact@v4
         with:
