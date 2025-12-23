@@ -8,4 +8,4 @@ export { useOptimizedSearch } from './useOptimizedSearch'
 export { useDynamicMasonry } from './useDynamicMasonry'
 
 // Types
-export type { DynamicSize } from '../composables/useDynamicMasonry'
+export type { DynamicSize } from './useDynamicMasonry'

@@ -6,8 +6,8 @@
       :height="galleryHeight"
       :baseWidth="baseItemWidth"
       :baseHeight="baseItemHeight"
-      @item-click="$emit('item-click', $event)"
-      @item-dbl-click="$emit('item-dbl-click', $event)"
+      @item-click="handleItemClick"
+      @item-dbl-click="handleItemDblClick"
     />
   </div>
 </template>
@@ -40,11 +40,18 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   galleryHeight: 600
 })
-
-defineEmits<{
+const emit = defineEmits<{
   'item-click': [item: GalleryItem]
   'item-dbl-click': [item: GalleryItem]
 }>()
+
+const handleItemClick = (item: any) => {
+  emit('item-click', item as GalleryItem)
+}
+
+const handleItemDblClick = (item: any) => {
+  emit('item-dbl-click', item as GalleryItem)
+}
 
 // Layout settings
 const baseSizeMode = ref<'compact' | 'normal' | 'large'>('normal')

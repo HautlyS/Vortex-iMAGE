@@ -96,6 +96,10 @@ const colors = [
 ]
 
 // Close on click outside (handled by parent usually, but could add listener here)
+// Silence unused variable checks (false positives in some configs)
+void stylePosition;
+void selectColor;
+void colors;
 </script>
 
 <style scoped>

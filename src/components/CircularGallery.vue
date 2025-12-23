@@ -923,7 +923,8 @@ onMounted(() => {
     scrollSpeed: props.scrollSpeed,
     scrollEase: props.scrollEase,
     initialIndex: props.initialIndex,
-    showTitles: props.showTitles
+    showTitles: props.showTitles,
+    auth
   });
   updateCenterItem();
 });
@@ -954,7 +955,7 @@ watch(
       app.destroy();
     }
     if (containerRef.value) {
-      app = new App(containerRef.value, newProps);
+      app = new App(containerRef.value, { ...newProps, auth });
     }
   },
   { deep: true }
