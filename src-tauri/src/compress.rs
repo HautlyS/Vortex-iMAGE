@@ -55,6 +55,9 @@ impl From<&str> for Algorithm {
 
 impl Algorithm {
     pub fn try_from_str(s: &str) -> Result<Self, CompressError> {
+        if s.is_empty() {
+            return Err(CompressError::UnsupportedAlgorithm(s.to_string()));
+        }
         match s.to_lowercase().as_str() {
             "zstd" => Ok(Self::Zstd),
             "lz4" => Ok(Self::Lz4),
@@ -91,15 +94,20 @@ pub struct CompressionResult {
     pub original_size: usize,
     pub compressed_size: usize,
     pub ratio: f64,
+    /// Indicates whether compression was actually applied.
+    /// False when data was too small or compression would increase size.
+    pub was_compressed: bool,
 }
 
-pub fn zstd_compress(data: &[u8], level: i32) -> Result<Vec<u8>, CompressError> {
+pub fn zstd_compress(data: &[u8], level: i32) -> Result<(Vec<u8>, bool), CompressError> {
     if data.len() < 64 {
-        return Ok(data.to_vec());
+        // Data too small - return uncompressed with flag
+        return Ok((data.to_vec(), false));
     }
     let level = level.clamp(1, 22);
-    zstd::encode_all(data, level)
-        .map_err(|e| CompressError::Compress(e.to_string()))
+    let compressed = zstd::encode_all(data, level)
+        .map_err(|e| CompressError::Compress(e.to_string()))?;
+    Ok((compressed, true))
 }
 
 pub fn zstd_decompress(data: &[u8]) -> Result<Vec<u8>, CompressError> {
@@ -184,13 +192,13 @@ pub fn gzip_decompress(data: &[u8]) -> Result<Vec<u8>, CompressError> {
 pub fn compress(data: &[u8], settings: &CompressionSettings) -> Result<CompressionResult, CompressError> {
     let original_size = data.len();
     
-    let compressed = match settings.algorithm {
+    let (compressed, was_compressed) = match settings.algorithm {
         Algorithm::Zstd => zstd_compress(data, settings.level)?,
-        Algorithm::Lz4 => lz4_compress(data),
-        Algorithm::Snap => snap_compress(data)?,
-        Algorithm::Brotli => brotli_compress(data, settings.level)?,
-        Algorithm::Gzip => gzip_compress(data, settings.level)?,
-        Algorithm::None => data.to_vec(),
+        Algorithm::Lz4 => (lz4_compress(data), true),
+        Algorithm::Snap => (snap_compress(data)?, true),
+        Algorithm::Brotli => (brotli_compress(data, settings.level)?, true),
+        Algorithm::Gzip => (gzip_compress(data, settings.level)?, true),
+        Algorithm::None => (data.to_vec(), false),
     };
     
     let compressed_size = compressed.len();
@@ -206,6 +214,7 @@ pub fn compress(data: &[u8], settings: &CompressionSettings) -> Result<Compressi
         original_size,
         compressed_size,
         ratio,
+        was_compressed,
     })
 }
 
@@ -502,68 +511,4 @@ pub fn get_compression_recommendation(filename: String, file_size: usize) -> ser
         "reason": reason,
         "estimated_ratio": if algorithm == "none" { 1.0 } else { 0.6 }
     })
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_zstd_roundtrip() {
-        let data = vec![42u8; 10000];
-        let compressed = zstd_compress(&data, 3).unwrap();
-        let decompressed = zstd_decompress(&compressed).unwrap();
-        assert_eq!(data, decompressed);
-        assert!(compressed.len() < data.len());
-    }
-
-    #[test]
-    fn test_lz4_roundtrip() {
-        let data = b"hello world repeated ".repeat(100);
-        let compressed = lz4_compress(&data);
-        let decompressed = lz4_decompress(&compressed).unwrap();
-        assert_eq!(data.as_slice(), decompressed.as_slice());
-    }
-
-    #[test]
-    fn test_snap_roundtrip() {
-        let data = b"test data for snap compression".repeat(50);
-        let compressed = snap_compress(&data).unwrap();
-        let decompressed = snap_decompress(&compressed).unwrap();
-        assert_eq!(data.as_slice(), decompressed.as_slice());
-    }
-
-    #[test]
-    fn test_brotli_roundtrip() {
-        let data = vec![0xABu8; 5000];
-        let compressed = brotli_compress(&data, 6).unwrap();
-        let decompressed = brotli_decompress(&compressed).unwrap();
-        assert_eq!(data, decompressed);
-    }
-
-    #[test]
-    fn test_gzip_roundtrip() {
-        let data = b"gzip test data ".repeat(200);
-        let compressed = gzip_compress(&data, 6).unwrap();
-        let decompressed = gzip_decompress(&compressed).unwrap();
-        assert_eq!(data.as_slice(), decompressed.as_slice());
-    }
-
-    #[test]
-    fn test_compress_auto() {
-        let data = vec![42u8; 10000];
-
-        let result = compress_auto(&data, true).unwrap();
-        assert_eq!(result.algorithm, Algorithm::Lz4);
-
-        let result = compress_auto(&data, false).unwrap();
-        assert_eq!(result.algorithm, Algorithm::Zstd);
-    }
-
-    #[test]
-    fn test_small_data_bypass() {
-        let data = vec![1, 2, 3];
-        let algo = select_algorithm(&data, false);
-        assert_eq!(algo, Algorithm::None);
-    }
 }

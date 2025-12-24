@@ -16,9 +16,12 @@ use tokio::fs;
 use tokio::time::sleep;
 
 use crate::compress::{compress_file_data, ItemCompressionSettings, Algorithm};
-use crate::crypto::{encrypt_hybrid, decrypt_hybrid, PublicBundle, EncryptedFileData, EncryptionSettings, encrypt_file_data};
+use crate::crypto::{encrypt, decrypt_with_keypair_bytes, PublicBundle, EncryptedFileData, EncryptionSettings, EncryptedPayload};
 
-const CLIENT_ID: &str = "Ov23lijNSMM1i93CQdfQ";
+pub struct GithubConfig {
+    pub client_id: String,
+}
+
 const MAX_RETRIES: u32 = 3;
 const INITIAL_RETRY_DELAY_MS: u64 = 1000;
 const UPLOAD_TIMEOUT_SECS: u64 = 120;
@@ -177,12 +180,15 @@ fn sanitize_filename(name: &str) -> String {
 }
 
 #[tauri::command]
-pub async fn start_oauth(client: State<'_, HttpClient>) -> Result<DeviceCodeResponse, AppError> {
+pub async fn start_oauth(
+    client: State<'_, HttpClient>,
+    config: State<'_, GithubConfig>,
+) -> Result<DeviceCodeResponse, AppError> {
     let res = client
         .0
         .post("https://github.com/login/device/code")
         .header("Accept", "application/json")
-        .form(&[("client_id", CLIENT_ID), ("scope", "repo")])
+        .form(&[("client_id", config.client_id.as_str()), ("scope", "repo")])
         .send()
         .await?;
 
@@ -197,14 +203,15 @@ pub async fn start_oauth(client: State<'_, HttpClient>) -> Result<DeviceCodeResp
 pub async fn poll_oauth(
     client: State<'_, HttpClient>,
     device_code: String,
+    config: State<'_, GithubConfig>,
 ) -> Result<Option<String>, AppError> {
     let res = client
         .0
         .post("https://github.com/login/oauth/access_token")
         .header("Accept", "application/json")
         .form(&[
-            ("client_id", CLIENT_ID),
-            ("device_code", &device_code),
+            ("client_id", config.client_id.as_str()),
+            ("device_code", device_code.as_str()),
             ("grant_type", "urn:ietf:params:oauth:grant-type:device_code"),
         ])
         .send()
@@ -242,6 +249,84 @@ pub async fn get_user(
     Ok(res.json().await?)
 }
 
+async fn prepare_upload_payload(
+    content: &[u8],
+    filename: &str,
+    public_bundle: PublicBundle,
+    app: &AppHandle,
+    upload_id: &str,
+) -> Result<Vec<u8>, AppError> {
+    let total_bytes = content.len() as u64;
+
+    let _ = app.emit("upload-progress", UploadProgress {
+        id: upload_id.to_string(),
+        bytes_sent: 0,
+        total_bytes,
+        percent: 0,
+    });
+
+    let compression_settings = ItemCompressionSettings {
+        enabled: true,
+        algorithm: Algorithm::Zstd,
+        level: 3,
+        prefer_speed: false,
+        min_size_threshold: 128,
+        skip_already_compressed: false,
+    };
+
+    let compressed_data = compress_file_data(content, filename, &compression_settings)
+        .map_err(|e| AppError::Validation(format!("Compression failed: {}", e)))?;
+
+    let _ = app.emit("upload-progress", UploadProgress {
+        id: upload_id.to_string(),
+        bytes_sent: 0,
+        total_bytes,
+        percent: 30,
+    });
+
+    let compressed_bytes = serde_json::to_vec(&compressed_data)
+        .map_err(|e| AppError::Validation(format!("Serialization failed: {}", e)))?;
+    drop(compressed_data);
+
+    // Note: encryption_settings kept for documentation/future use
+    let _encryption_settings = EncryptionSettings {
+        enabled: true,
+        use_password: false,
+        use_keypair: true,
+        recipient_bundle: Some(public_bundle.clone()),
+    };
+
+    // Encrypt using hybrid PQ encryption
+    let encrypted_payload = encrypt(&compressed_bytes, &public_bundle)
+        .map_err(|e| AppError::Validation(format!("Encryption failed: {}", e)))?;
+    drop(compressed_bytes);
+
+    // Wrap in EncryptedFileData for compatibility
+    let encrypted_file = EncryptedFileData {
+        data: serde_json::to_vec(&encrypted_payload)
+            .map_err(|e| AppError::Validation(format!("Payload serialization failed: {}", e)))?,
+        encrypted: true,
+        method: crate::crypto::EncryptionMethod::HybridPQ,
+        metadata: None,
+    };
+    drop(encrypted_payload);
+        
+    let final_payload = serde_json::to_vec(&encrypted_file)
+        .map_err(|e| AppError::Validation(format!("Final serialization failed: {}", e)))?;
+    drop(encrypted_file);
+
+    let final_size = final_payload.len() as u64;
+
+    let _ = app.emit("upload-progress", UploadProgress {
+        id: upload_id.to_string(),
+        bytes_sent: 0,
+        total_bytes: final_size,
+        percent: 60,
+    });
+
+    Ok(final_payload)
+}
+
 #[tauri::command]
 pub async fn upload_photo(
     app: AppHandle,
@@ -261,81 +346,49 @@ pub async fn upload_photo(
     }
 
     let content = fs::read(&path).await?;
-    let total_bytes = content.len() as u64;
 
-    let _ = app.emit("upload-progress", UploadProgress {
-        id: upload_id.clone(),
-        bytes_sent: 0,
-        total_bytes,
-        percent: 0,
-    });
+    let final_payload =
+        prepare_upload_payload(&content, &safe_filename, public_bundle, &app, &upload_id).await?;
 
-    let compression_settings = ItemCompressionSettings {
-        enabled: true,
-        algorithm: Algorithm::Zstd,
-        level: 3,
-        prefer_speed: false,
-        min_size_threshold: 128,
-        skip_already_compressed: false,
-    };
+    upload_to_github(
+        &app,
+        &client.0,
+        final_payload,
+        &repo,
+        &token,
+        &safe_filename,
+        &upload_id,
+    )
+    .await
+}
 
-    let compressed_data = compress_file_data(&content, &filename, &compression_settings)
-        .map_err(|e| AppError::Validation(format!("Compression failed: {}", e)))?;
-
-    drop(content);
-
-    let _ = app.emit("upload-progress", UploadProgress {
-        id: upload_id.clone(),
-        bytes_sent: 0,
-        total_bytes,
-        percent: 30,
-    });
-
-    let compressed_bytes = serde_json::to_vec(&compressed_data)
-        .map_err(|e| AppError::Validation(format!("Serialization failed: {}", e)))?;
-    drop(compressed_data);
-
-    let encryption_settings = EncryptionSettings {
-        enabled: true,
-        use_password: false,
-        use_keypair: true,
-        recipient_bundle: Some(public_bundle),
-    };
-
-    let encrypted_file = encrypt_file_data(&compressed_bytes, &encryption_settings, None, None)
-        .map_err(|e| AppError::Validation(format!("Encryption failed: {}", e)))?;
-    drop(compressed_bytes);
-        
-    let final_payload = serde_json::to_vec(&encrypted_file)
-        .map_err(|e| AppError::Validation(format!("Final serialization failed: {}", e)))?;
-    drop(encrypted_file);
-
-    let final_size = final_payload.len() as u64;
-
-    let _ = app.emit("upload-progress", UploadProgress {
-        id: upload_id.clone(),
-        bytes_sent: 0,
-        total_bytes: final_size,
-        percent: 60,
-    });
+async fn upload_to_github(
+    app: &AppHandle,
+    client: &Client,
+    payload: Vec<u8>,
+    repo: &str,
+    token: &str,
+    filename: &str,
+    upload_id: &str,
+) -> Result<UploadResult, AppError> {
+    let final_size = payload.len() as u64;
 
     if final_size > LFS_THRESHOLD_BYTES {
-        return upload_lfs_internal(&app, &client.0, final_payload, &repo, &token, &safe_filename, &upload_id).await;
+        return upload_lfs_internal(app, client, payload, repo, token, filename, upload_id).await;
     }
 
-    let encoded = STANDARD.encode(&final_payload);
-    drop(final_payload);
+    let encoded = STANDARD.encode(&payload);
+    drop(payload);
 
-    let upload_path = format!("photos/{}", safe_filename);
+    let upload_path = format!("photos/{}", filename);
     let url = format!("https://api.github.com/repos/{}/contents/{}", repo, upload_path);
 
     let body = serde_json::json!({
-        "message": format!("Upload {} (secure)", safe_filename),
+        "message": format!("Upload {} (secure)", filename),
         "content": encoded
     });
 
     let res = client
-        .0
         .put(&url)
         .timeout(Duration::from_secs(UPLOAD_TIMEOUT_SECS))
         .header("Authorization", format!("Bearer {}", token))
@@ -346,7 +399,7 @@ pub async fn upload_photo(
         .await?;
 
     let _ = app.emit("upload-progress", UploadProgress {
-        id: upload_id.clone(),
+        id: upload_id.to_string(),
         bytes_sent: final_size,
         total_bytes: final_size,
         percent: 100,
@@ -354,15 +407,15 @@ pub async fn upload_photo(
 
     if !res.status().is_success() {
         let status = res.status();
-        let err = res.text().await.unwrap_or_default();
-        return Err(AppError::Api(format!("Upload failed ({}): {}", status, err)));
+        let err_text = res.text().await.map_err(|e| AppError::Api(format!("Failed to read error response body: {}", e)))?;
+        return Err(AppError::Api(format!("Upload failed ({}): {}", status, err_text)));
     }
 
     let json: serde_json::Value = res.json().await?;
 
     Ok(UploadResult {
-        url: json["content"]["html_url"].as_str().unwrap_or("").to_string(),
-        sha: json["content"]["sha"].as_str().unwrap_or("").to_string(),
+        url: json["content"]["html_url"].as_str().ok_or_else(|| AppError::Validation("GitHub API response did not contain html_url".to_string()))?.to_string(),
+        sha: json["content"]["sha"].as_str().ok_or_else(|| AppError::Validation("GitHub API response did not contain sha".to_string()))?.to_string(),
     })
 }
 
@@ -575,22 +628,22 @@ pub async fn create_repo(
 
     if !res.status().is_success() {
         let status = res.status();
-        let err = res.text().await.unwrap_or_default();
+        let err_text = res.text().await.map_err(|e| AppError::Api(format!("Failed to read error response body: {}", e)))?;
         return Err(AppError::Api(format!(
             "Failed to create repository ({}): {}",
-            status, err
+            status, err_text
         )));
     }
 
     let json: serde_json::Value = res.json().await?;
 
     Ok(RepoInfo {
-        name: json["name"].as_str().unwrap_or("").to_string(),
-        full_name: json["full_name"].as_str().unwrap_or("").to_string(),
-        private: json["private"].as_bool().unwrap_or(false),
+        name: json["name"].as_str().ok_or_else(|| AppError::Validation("GitHub API response did not contain name".to_string()))?.to_string(),
+        full_name: json["full_name"].as_str().ok_or_else(|| AppError::Validation("GitHub API response did not contain full_name".to_string()))?.to_string(),
+        private: json["private"].as_bool().ok_or_else(|| AppError::Validation("GitHub API response did not contain private".to_string()))?,
         description: json["description"].as_str().map(|s| s.to_string()),
-        html_url: json["html_url"].as_str().unwrap_or("").to_string(),
-        default_branch: json["default_branch"].as_str().unwrap_or("main").to_string(),
+        html_url: json["html_url"].as_str().ok_or_else(|| AppError::Validation("GitHub API response did not contain html_url".to_string()))?.to_string(),
+        default_branch: json["default_branch"].as_str().ok_or_else(|| AppError::Validation("GitHub API response did not contain default_branch".to_string()))?.to_string(),
     })
 }
 
@@ -624,12 +677,12 @@ pub async fn get_repo_info(
     let json: serde_json::Value = res.json().await?;
 
     Ok(RepoInfo {
-        name: json["name"].as_str().unwrap_or("").to_string(),
-        full_name: json["full_name"].as_str().unwrap_or("").to_string(),
-        private: json["private"].as_bool().unwrap_or(false),
+        name: json["name"].as_str().ok_or_else(|| AppError::Validation("GitHub API response did not contain name".to_string()))?.to_string(),
+        full_name: json["full_name"].as_str().ok_or_else(|| AppError::Validation("GitHub API response did not contain full_name".to_string()))?.to_string(),
+        private: json["private"].as_bool().ok_or_else(|| AppError::Validation("GitHub API response did not contain private".to_string()))?,
         description: json["description"].as_str().map(|s| s.to_string()),
-        html_url: json["html_url"].as_str().unwrap_or("").to_string(),
-        default_branch: json["default_branch"].as_str().unwrap_or("main").to_string(),
+        html_url: json["html_url"].as_str().ok_or_else(|| AppError::Validation("GitHub API response did not contain html_url".to_string()))?.to_string(),
+        default_branch: json["default_branch"].as_str().ok_or_else(|| AppError::Validation("GitHub API response did not contain default_branch".to_string()))?.to_string(),
     })
 }
 
@@ -660,22 +713,22 @@ pub async fn update_repo_visibility(
 
     if !res.status().is_success() {
         let status = res.status();
-        let err = res.text().await.unwrap_or_default();
+        let err_text = res.text().await.map_err(|e| AppError::Api(format!("Failed to read error response body: {}", e)))?;
         return Err(AppError::Api(format!(
             "Failed to update repository visibility ({}): {}",
-            status, err
+            status, err_text
         )));
     }
 
     let json: serde_json::Value = res.json().await?;
 
     Ok(RepoInfo {
-        name: json["name"].as_str().unwrap_or("").to_string(),
-        full_name: json["full_name"].as_str().unwrap_or("").to_string(),
-        private: json["private"].as_bool().unwrap_or(false),
+        name: json["name"].as_str().ok_or_else(|| AppError::Validation("GitHub API response did not contain name".to_string()))?.to_string(),
+        full_name: json["full_name"].as_str().ok_or_else(|| AppError::Validation("GitHub API response did not contain full_name".to_string()))?.to_string(),
+        private: json["private"].as_bool().ok_or_else(|| AppError::Validation("GitHub API response did not contain private".to_string()))?,
         description: json["description"].as_str().map(|s| s.to_string()),
-        html_url: json["html_url"].as_str().unwrap_or("").to_string(),
-        default_branch: json["default_branch"].as_str().unwrap_or("main").to_string(),
+        html_url: json["html_url"].as_str().ok_or_else(|| AppError::Validation("GitHub API response did not contain html_url".to_string()))?.to_string(),
+        default_branch: json["default_branch"].as_str().ok_or_else(|| AppError::Validation("GitHub API response did not contain default_branch".to_string()))?.to_string(),
     })
 }
 
@@ -1340,8 +1393,8 @@ pub async fn delete_photo(
 
     if !delete_res.status().is_success() {
         let status = delete_res.status();
-        let err = delete_res.text().await.unwrap_or_default();
-        return Err(AppError::Api(format!("Failed to delete file ({}): {}", status, err)));
+        let err_text = delete_res.text().await.map_err(|e| AppError::Api(format!("Failed to read error response body: {}", e)))?;
+        return Err(AppError::Api(format!("Failed to delete file ({}): {}", status, err_text)));
     }
 
     Ok(())
@@ -1635,11 +1688,15 @@ pub async fn download_secure_photo(
     let encrypted_data: EncryptedFileData = serde_json::from_slice(&encrypted_bytes)
         .map_err(|e| AppError::Validation(format!("Invalid encrypted file format: {}", e)))?;
 
-    let compressed_bytes = crate::crypto::decrypt_file_data(
-        &encrypted_data, 
-        None, 
-        Some(&keypair_bytes)
-    ).map_err(|e| AppError::Validation(format!("Decryption failed: {}", e)))?;
+    let compressed_bytes = {
+        // Deserialize the encrypted payload
+        let encrypted_payload: EncryptedPayload = serde_json::from_slice(&encrypted_data.data)
+            .map_err(|e| AppError::Validation(format!("Invalid encrypted payload: {}", e)))?;
+        
+        // Decrypt using keypair bytes
+        decrypt_with_keypair_bytes(&encrypted_payload, &keypair_bytes)
+            .map_err(|e| AppError::Validation(format!("Decryption failed: {}", e)))?
+    };
 
     let compressed_file: crate::compress::CompressedFileData = serde_json::from_slice(&compressed_bytes)
         .map_err(|e| AppError::Validation(format!("Invalid compressed file format: {}", e)))?;
@@ -1666,9 +1723,11 @@ pub async fn upload_secure_message(
         return Err(AppError::Validation("Invalid filename".into()));
     }
 
-    let encrypted_bytes = encrypt_hybrid(content.into_bytes(), public_bundle)
-        .await
+    let encrypted_payload = encrypt(content.as_bytes(), &public_bundle)
         .map_err(|e| AppError::Validation(format!("Encryption failed: {}", e)))?;
+
+    let encrypted_bytes = serde_json::to_vec(&encrypted_payload)
+        .map_err(|e| AppError::Validation(format!("Serialization failed: {}", e)))?;
 
     let encoded = STANDARD.encode(&encrypted_bytes);
     
@@ -1746,8 +1805,10 @@ pub async fn download_secure_message(
     let encrypted_bytes = STANDARD.decode(&content_b64)
         .map_err(|e| AppError::Validation(format!("Base64 decode failed: {}", e)))?;
 
-    let decrypted_bytes = decrypt_hybrid(encrypted_bytes, keypair_bytes)
-        .await
+    let encrypted_payload: EncryptedPayload = serde_json::from_slice(&encrypted_bytes)
+        .map_err(|e| AppError::Validation(format!("Invalid encrypted payload: {}", e)))?;
+
+    let decrypted_bytes = decrypt_with_keypair_bytes(&encrypted_payload, &keypair_bytes)
         .map_err(|e| AppError::Validation(format!("Decryption failed: {}", e)))?;
 
     let message = String::from_utf8(decrypted_bytes)

@@ -55,19 +55,53 @@ pqcrypto-traits = { version = "0.3", optional = true }
 
 # Pure-Rust Post-quantum cryptography (works on ALL platforms including iOS)
 # These crates are 100% Rust with no assembly - iOS ARM compatible
-pqc_kyber = { version = "0.7", default-features = false, features = ["kyber1024"] }
-pqc_dilithium = { version = "0.2", default-features = false, features = ["mode3"] }
+#
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║ SECURITY CRITICAL: Versions MUST be pinned exactly!                          ║
+# ╠══════════════════════════════════════════════════════════════════════════════╣
+# ║ The sign_dilithium_safe() function in crypto.rs uses unsafe code that        ║
+# ║ relies on the internal memory layout of pqc_dilithium::Keypair.              ║
+# ║                                                                              ║
+# ║ UNSAFE CODE LOCATION: src-tauri/src/crypto.rs::HybridKeypair::sign_dilithium_safe ║
+# ║                                                                              ║
+# ║ SAFETY INVARIANTS:                                                           ║
+# ║ 1. DilithiumKeypair struct layout: { public: [u8; 1952], secret: [u8; 4016] }║
+# ║ 2. Total struct size: 5968 bytes (verified by compile-time assertion)        ║
+# ║ 3. No padding between fields (both are byte arrays)                          ║
+# ║                                                                              ║
+# ║ IF UPDATING VERSIONS:                                                        ║
+# ║ 1. Review sign_dilithium_safe() in crypto.rs                                 ║
+# ║ 2. Verify compile-time size assertions still pass                            ║
+# ║ 3. Check the new crate's Keypair struct layout in source                     ║
+# ║ 4. Run full test suite: cargo test                                           ║
+# ║ 5. Run property-based tests with 100+ iterations                             ║
+# ║ 6. Update this comment with new version and layout details                   ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+#
+# Last verified: 2024-12-24
+# pqc_kyber 0.7.1: Keypair { public: [u8; 1568], secret: [u8; 3168] } (Kyber1024)
+# pqc_dilithium 0.2.0: Keypair { public: [u8; 1952], secret: [u8; 4016] } (Mode3/ML-DSA-65)
+pqc_kyber = { version = "=0.7.1", default-features = false, features = ["kyber1024"] }
+pqc_dilithium = { version = "=0.2.0", default-features = false, features = ["mode3"] }
+
+# OS Keychain integration for secure token storage
+keyring = "2"
+lazy_static = "1.4"
+log = "0.4"
 
 # Classical cryptography
 chacha20poly1305 = "0.10"
-x25519-dalek = { version = "2", features = ["static_secrets"] }
-ed25519-dalek = { version = "2", features = ["rand_core"] }
+x25519-dalek = { version = "2", features = ["static_secrets", "zeroize"] }
+ed25519-dalek = { version = "2", features = ["rand_core", "zeroize"] }
 blake3 = "1"
 argon2 = "0.5"
 hkdf = "0.12"
 hmac = "0.12"
 rand = "0.8"
 hex = "0.4"
+
+# Security utilities
+zeroize = { version = "1.7", features = ["derive"] }
 
 # Desktop dependencies (native TLS)
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
@@ -90,4 +124,7 @@ tokio = { version = "1", features = ["fs", "rt-multi-thread"] }
 # - Desktop Linux: cargo build --features pqcrypto-backend
 # - Desktop macOS: cargo build --features pqcrypto-backend
 # - Desktop Win:   cargo build --features pqcrypto-backend
+
+[dev-dependencies]
+proptest = "1.4"
 

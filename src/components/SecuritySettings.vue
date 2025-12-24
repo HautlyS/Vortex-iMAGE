@@ -67,8 +67,8 @@ async function handleGenerateKeypair() {
     return
   }
   
-  if (keypairPassword.value.length < 8) {
-    error.value = 'Password must be at least 8 characters'
+  if (keypairPassword.value.length < 12) {
+    error.value = 'Password must be at least 12 characters'
     return
   }
   
@@ -268,15 +268,15 @@ function formatBytes(arr: number[]): string {
               <div class="bundle-info" v-if="publicBundle">
                 <div class="bundle-item">
                   <span class="label">PQ Key (ML-KEM-1024)</span>
-                  <span class="value">{{ formatBytes(publicBundle.pq) }}</span>
+                  <span class="value">{{ formatBytes(publicBundle.pq_encap) }}</span>
                 </div>
                 <div class="bundle-item">
                   <span class="label">X25519 Key</span>
                   <span class="value">{{ formatBytes(publicBundle.x25519) }}</span>
                 </div>
                 <div class="bundle-item">
-                  <span class="label">Signing Key (ML-DSA-87)</span>
-                  <span class="value">{{ formatBytes(publicBundle.signing) }}</span>
+                  <span class="label">Signing Key (ML-DSA-65)</span>
+                  <span class="value">{{ formatBytes(publicBundle.pq_verify) }}</span>
                 </div>
               </div>
               

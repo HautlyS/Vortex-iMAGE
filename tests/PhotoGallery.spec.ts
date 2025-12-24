@@ -22,7 +22,7 @@ test('render empty state', async ({ mount, page }) => {
 });
 
 test('render photos', async ({ mount, page }) => {
-    const mockPhotos = ['https:
+    const mockPhotos = ['https://example.com/photo1.jpg', 'https://example.com/photo2.jpg'];
 
     await page.evaluate((photos) => {
         (window as any).__MOCK_PHOTOS__ = { photos };

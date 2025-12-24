@@ -6,14 +6,18 @@ mod github;
 mod compress;
 mod crypto;
 mod pipeline;
-mod security_verify;
 
+// Test modules - organized by functionality
+#[cfg(test)]
+mod tests;
+
+use tauri::Manager;
 use github::{
     get_user, list_photos, poll_oauth, start_oauth, upload_photo,
     create_repo, get_repo_info, update_repo_visibility, scan_folder, upload_folder_as_album,
     upload_folder_recursive, list_albums, download_photo, delete_photo, remove_local_file,
     get_local_image_info, delete_album, rename_album, HttpClient, download_secure_photo,
-    upload_secure_message, download_secure_message
+    upload_secure_message, download_secure_message, GithubConfig
 };
 
 use compress::{
@@ -22,11 +26,12 @@ use compress::{
 };
 
 use crypto::{
-    generate_keypair, encrypt_data_password, decrypt_data_password,
-    hash_data_blake3, get_crypto_info, encrypt_keypair, decrypt_keypair,
-    encrypt_hybrid, decrypt_hybrid, sign_data, verify_signature, verify_signature_with_keypair,
-    derive_session_keys, secure_store_token, secure_retrieve_token, encrypt_file, decrypt_file,
-    check_pqcrypto_backend, require_optimized_backend
+    generate_keypair, release_keypair, rotate_keypair, validate_keypair_handle,
+    encrypt_data_password, decrypt_data_password,
+    hash_data_blake3, get_crypto_info,
+    encrypt_hybrid, decrypt_hybrid, sign_data, verify_signature,
+    secure_store_token, secure_retrieve_token, secure_delete_token,
+    encrypt_file, decrypt_file,
 };
 
 use pipeline::{
@@ -38,6 +43,13 @@ use pipeline::{
 pub fn run() {
     tauri::Builder::default()
         .manage(HttpClient::new())
+        .setup(|_app| {
+            // GitHub OAuth client ID - set via GITHUB_CLIENT_ID env var or use default
+            let client_id = std::env::var("GITHUB_CLIENT_ID")
+                .unwrap_or_else(|_| "Ov23lijNSMM1i93CQdfQ".to_string());
+            _app.manage(GithubConfig { client_id });
+            Ok(())
+        })
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_fs::init())
@@ -83,31 +95,26 @@ pub fn run() {
             get_compression_recommendation,
             
             generate_keypair,
+            release_keypair,
+            rotate_keypair,
+            validate_keypair_handle,
             encrypt_data_password,
             decrypt_data_password,
             hash_data_blake3,
             get_crypto_info,
-            
-            encrypt_keypair,
-            decrypt_keypair,
             
             encrypt_hybrid,
             decrypt_hybrid,
             
             sign_data,
             verify_signature,
-            verify_signature_with_keypair,
-            
-            derive_session_keys,
             
             secure_store_token,
             secure_retrieve_token,
+            secure_delete_token,
             
             encrypt_file,
             decrypt_file,
-            
-            check_pqcrypto_backend,
-            require_optimized_backend,
             
             pipeline_process,
             pipeline_reverse,

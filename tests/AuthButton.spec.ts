@@ -22,7 +22,7 @@ test('render user profile when authenticated', async ({ mount, page }) => {
     await page.evaluate(() => {
         (window as any).__SET_MOCK_USER__?.({
             login: 'test-user',
-            avatar_url: 'https:
+            avatar_url: 'https://example.com/avatar.png'
         });
     });
 

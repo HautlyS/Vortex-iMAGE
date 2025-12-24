@@ -1,9 +1,3 @@
-/**
- * Vue Component - 1 components, 0 composables
- * Main functionality: UI component with reactive state management
- * Dependencies: PhotoPreview
- */
-
 <script setup lang="ts">
 import { computed, toRefs } from 'vue'
 import PhotoPreview from '../PhotoPreview.vue'
@@ -28,11 +22,13 @@ const emit = defineEmits<{
   'open-lightbox': [photo: Photo]
 }>()
 
+// Memoize grid style for performance
 const gridStyle = computed(() => ({
   gridTemplateColumns: `repeat(auto-fill, minmax(${props.previewSize || GALLERY.preview.defaultSize}px, 1fr))`,
   gap: `${GALLERY.grid.gap}px`
 }))
 
+// Memoize photos for better reactivity
 const { photos } = toRefs(props)
 
 function handlePhotoSelect(photo: Photo, additive: boolean, range: boolean) {
@@ -62,6 +58,16 @@ function handleOpenLightbox(photo: Photo) {
 
 <template>
   <div class="photo-grid" :style="gridStyle" role="grid" :aria-label="`Grid com ${photos.length} fotos`">
+    <PixelCard 
+    variant="default" 
+    :gap="5"
+    :speed="35"
+    colors="#f8fafc,#f1f5f9,#cbd5e1"
+    :no-focus="false"
+    class-name="custom-class"
+    
+    ></PixelCard>
+    
     <PhotoPreview
       v-for="(photo, index) in photos"
       :key="photo.sha"
@@ -81,6 +87,8 @@ function handleOpenLightbox(photo: Photo) {
       @resize="handleResize"
       @dblclick="handleOpenLightbox(photo)"
     />
+    
+    
   </div>
 </template>
 

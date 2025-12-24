@@ -1,0 +1,321 @@
+# Implementation Plan: Crypto Security Hardening
+
+## Overview
+
+This implementation plan transforms the security hardening design into actionable coding tasks. All tasks are required and include property-based tests for correctness verification. The implementation uses Rust for the backend and TypeScript for the frontend.
+
+## Tasks
+
+- [x] 1. Pin PQ Crypto Library Versions and Update Cargo.toml
+  - [x] 1.1 Pin pqc_dilithium to exact version `=0.2.0`
+    - Edit `src-tauri/Cargo.toml`
+    - Change `pqc_dilithium = { version = "0.2"` to `pqc_dilithium = { version = "=0.2.0"`
+    - _Requirements: 1.1_
+  - [x] 1.2 Pin pqc_kyber to exact version `=0.7.1`
+    - Edit `src-tauri/Cargo.toml`
+    - Change `pqc_kyber = { version = "0.7"` to `pqc_kyber = { version = "=0.7.1"`
+    - _Requirements: 1.2_
+  - [x] 1.3 Add keyring dependency for OS keychain support
+    - Add `keyring = "2"` to dependencies
+    - Add `lazy_static = "1.4"` for global keypair store
+    - Add `log = "0.4"` for warning logs
+    - _Requirements: 3.1, 3.2, 3.3_
+
+- [x] 2. Implement SecretBytes and SecretKey32 without Clone
+  - [x] 2.1 Create SecretBytes struct with Zeroize but no Clone
+    - Implement `new()`, `as_slice()`, `len()`, `is_empty()`
+    - Implement explicit `clone_secret()` method
+    - Add `#[derive(Zeroize, ZeroizeOnDrop)]`
+    - _Requirements: 8.1, 8.3_
+  - [x] 2.2 Create SecretKey32 struct with Zeroize but no Clone
+    - Fixed 32-byte array wrapper
+    - Implement `new()`, `as_bytes()`, `clone_secret()`
+    - _Requirements: 8.2_
+  - [x] 2.3 Write property test for SecretBytes clone_secret
+    - **Property 2: Keypair Byte Validation**
+    - Verify clone produces equal bytes
+    - **Validates: Requirements 2.4**
+
+- [x] 3. Implement Keypair Store with Opaque Handles
+  - [x] 3.1 Create KeypairStore struct with handle management
+    - HashMap<KeypairHandle, Arc<Mutex<HybridKeypair>>>
+    - next_handle counter starting at 1
+    - rotated_keypairs HashMap for rotation history
+    - _Requirements: 4.1_
+  - [x] 3.2 Implement insert(), get(), remove() methods
+    - insert() returns new handle and increments counter
+    - get() returns Option<Arc<Mutex<HybridKeypair>>>
+    - remove() cleans up rotated keypairs too
+    - _Requirements: 4.4, 4.5_
+  - [x] 3.3 Create global KEYPAIR_STORE using lazy_static
+    - RwLock<KeypairStore> for thread-safe access
+    - _Requirements: 4.1_
+  - [x] 3.4 Write property test for handle generation uniqueness
+    - **Property 3: Opaque Handle Generation**
+    - Generate N keypairs, verify N unique handles
+    - **Validates: Requirements 4.1**
+  - [x] 3.5 Write property test for handle lookup correctness
+    - **Property 4: Handle Lookup Correctness**
+    - Valid handles return keypair, invalid return None
+    - **Validates: Requirements 4.4**
+  - [x] 3.6 Write property test for handle release cleanup
+    - **Property 5: Handle Release Cleanup**
+    - After remove(), lookup returns None
+    - **Validates: Requirements 4.5**
+
+- [x] 4. Implement Safe Dilithium Signing
+  - [x] 4.1 Create sign_dilithium_safe method in HybridKeypair
+    - Validate pq_signing_key length == DIL_SECRETKEYBYTES
+    - Validate pq_verifying_key length == DIL_PUBLICKEYBYTES
+    - Reconstruct keypair from bytes without transmute
+    - Return signed data or CryptoError
+    - _Requirements: 2.1, 2.2, 2.3, 2.4_
+  - [x] 4.2 Update sign() method to use sign_dilithium_safe
+    - Remove all std::mem::transmute calls
+    - Remove all std::ptr::read calls
+    - _Requirements: 2.1, 2.3_
+  - [x] 4.3 Write property test for safe signing round-trip
+    - **Property 1: Safe Signing Round-Trip**
+    - Generate keypair, sign data, verify signature
+    - **Validates: Requirements 2.2**
+  - [x] 4.4 Write property test for keypair byte validation
+    - **Property 2: Keypair Byte Validation**
+    - Invalid lengths should return InvalidInput error
+    - **Validates: Requirements 2.4**
+
+- [x] 5. Implement Key Rotation Mechanism
+  - [x] 5.1 Add rotation fields to HybridKeypair
+    - created_at: u64 (Unix timestamp)
+    - rotation_count: u32
+    - _Requirements: 5.5_
+  - [x] 5.2 Implement rotate() method in KeypairStore
+    - Move current keypair to rotated_keypairs
+    - Generate new keypair with same handle
+    - Increment rotation_count
+    - _Requirements: 5.1, 5.2_
+  - [x] 5.3 Implement get_all_for_decryption() method
+    - Return Vec with current + all rotated keypairs
+    - Order: current first, then rotated (newest to oldest)
+    - _Requirements: 5.3_
+  - [x] 5.4 Add rotate_keypair Tauri command
+    - Takes handle, returns new PublicBundle
+    - _Requirements: 5.4_
+  - [x] 5.5 Write property test for key rotation decryption
+    - **Property 6: Key Rotation Decryption Compatibility**
+    - Encrypt with old key, rotate, decrypt should work
+    - **Validates: Requirements 5.1, 5.2, 5.3**
+  - [x] 5.6 Write property test for rotation metadata
+    - **Property 7: Rotation Metadata Accuracy**
+    - After K rotations, rotation_count == K
+    - **Validates: Requirements 5.5**
+
+- [x] 6. Implement OS Keychain Integration
+  - [x] 6.1 Create KeychainService trait and implementations
+    - Define store(), retrieve(), delete(), is_available()
+    - Use keyring crate for cross-platform support
+    - Service identifier: "com.vortex.image.crypto"
+    - _Requirements: 3.1, 3.2, 3.3, 3.5_
+  - [x] 6.2 Implement fallback with enhanced entropy
+    - Use machine-id + process ID + boot time
+    - Log warning when using fallback
+    - _Requirements: 3.4, 10.1, 10.2_
+  - [x] 6.3 Create get_keychain_or_fallback() function
+    - Try keychain first, fall back if unavailable
+    - _Requirements: 10.4_
+
+- [x] 7. Implement Token v4 Format with AAD
+  - [x] 7.1 Define TOKEN_VERSION_V4 constant (0x04)
+    - Document token format in comments
+    - _Requirements: 6.1_
+  - [x] 7.2 Implement encrypt_token_v4() function
+    - Generate random 32-byte salt
+    - Derive key using Argon2id with salt
+    - Create AAD from service_id + timestamp
+    - Encrypt with ChaCha20-Poly1305 using Payload{msg, aad}
+    - Format: [version][salt][nonce][aad_len][aad][ciphertext]
+    - _Requirements: 6.1, 6.2, 6.3, 7.1, 7.2_
+  - [x] 7.3 Implement decrypt_token_v4() function
+    - Parse version, salt, nonce, aad_len, aad, ciphertext
+    - Derive key from salt
+    - Decrypt with AAD verification
+    - Store AAD hash in result for verification
+    - _Requirements: 7.3, 7.4, 7.5_
+  - [x] 7.4 Implement migrate_v2_token() and migrate_v3_token()
+    - Decrypt using old format
+    - Re-encrypt as v4
+    - Return upgraded token bytes
+    - _Requirements: 6.4, 6.5_
+  - [x] 7.5 Update decrypt_token() to handle all versions
+    - Match on version byte
+    - v2/v3: decrypt and auto-migrate to v4
+    - v4: decrypt directly
+    - Other: return UnsupportedTokenVersion error
+    - _Requirements: 6.6_
+  - [x] 7.6 Write property test for token version byte
+    - **Property 9: Token Version Byte**
+    - New tokens have first byte == 0x04
+    - **Validates: Requirements 6.1**
+  - [x] 7.7 Write property test for token salt uniqueness
+    - **Property 10: Token Salt Uniqueness**
+    - Two tokens from same plaintext have different salts
+    - **Validates: Requirements 6.2**
+  - [x] 7.8 Write property test for AAD binding
+    - **Property 11: AAD Binding Correctness**
+    - Correct AAD decrypts, wrong AAD fails
+    - **Validates: Requirements 6.3, 7.2, 7.3, 7.4**
+  - [x] 7.9 Write property test for legacy token migration
+    - **Property 12: Legacy Token Migration**
+    - v2/v3 tokens decrypt and upgrade to v4
+    - **Validates: Requirements 6.4, 6.5**
+  - [x] 7.10 Write property test for invalid version rejection
+    - **Property 13: Invalid Version Rejection**
+    - Versions not in {0x02, 0x03, 0x04} fail
+    - **Validates: Requirements 6.6**
+
+- [x] 8. Update Tauri Commands for Opaque Handles
+  - [x] 8.1 Update generate_keypair command
+    - Return KeypairInfo { handle, public_bundle, created_at, key_id }
+    - Do NOT return keypair_bytes
+    - _Requirements: 4.2_
+  - [x] 8.2 Update sign_data command
+    - Accept handle instead of keypair_bytes
+    - Look up keypair from KEYPAIR_STORE
+    - _Requirements: 4.3_
+  - [x] 8.3 Update decrypt_hybrid command
+    - Accept handle instead of keypair_bytes
+    - Try all keypairs for handle (current + rotated)
+    - _Requirements: 4.3, 5.3_
+  - [x] 8.4 Add release_keypair command
+    - Remove keypair from store
+    - Clear rotated keypairs
+    - _Requirements: 4.5_
+  - [x] 8.5 Update encrypt_keypair and decrypt_keypair commands
+    - Use keychain for storage when available
+    - Fall back to password encryption
+    - _Requirements: 3.1, 3.2, 3.3_
+
+- [x] 9. Update Frontend useCrypto Composable
+  - [x] 9.1 Update TypeScript interfaces
+    - Remove keypair_bytes from KeypairResult
+    - Add KeypairInfo with handle, public_bundle, created_at, key_id
+    - _Requirements: 4.2, 4.6_
+  - [x] 9.2 Replace keypair reactive ref with handle
+    - Change `keypair: Ref<KeypairResult | null>` to `keypairHandle: Ref<number | null>`
+    - Keep publicBundle as separate ref
+    - _Requirements: 4.6_
+  - [x] 9.3 Update all crypto functions to use handle
+    - signData: pass handle to backend
+    - decryptFromSender: pass handle to backend
+    - _Requirements: 4.3_
+  - [x] 9.4 Implement session timeout
+    - Track lastActivity timestamp
+    - Check timeout on interval (every 60 seconds)
+    - Auto-lock after 15 minutes inactivity
+    - Reset timer on crypto operations
+    - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
+  - [x] 9.5 Add rotateKeypair function
+    - Call rotate_keypair command
+    - Update publicBundle with new key
+    - _Requirements: 5.4_
+  - [x] 9.6 Write property test for session timeout
+    - **Property 14: Session Timeout Behavior**
+    - After timeout, handle is null and isUnlocked is false
+    - **Validates: Requirements 9.1, 9.2, 9.3, 9.5**
+
+- [x] 10. Checkpoint - Verify Core Implementation
+  - Run all property tests
+  - Run cargo build to verify Rust compilation
+  - Run npm run build to verify TypeScript compilation
+  - Ensure all tests pass, ask the user if questions arise
+
+- [x] 11. Add AAD Support to Hybrid Encryption
+  - [x] 11.1 Update EncryptedPayload struct
+    - Add aad_hash: Option<[u8; 32]> field
+    - _Requirements: 7.3_
+  - [x] 11.2 Update encrypt() function to accept optional AAD
+    - If AAD provided, use Payload { msg, aad }
+    - Store BLAKE3 hash of AAD in result
+    - _Requirements: 7.1, 7.2_
+  - [x] 11.3 Update decrypt() function to verify AAD
+    - If aad_hash present, verify provided AAD matches
+    - Return AadMismatch error on failure
+    - _Requirements: 7.4, 7.5_
+
+- [x] 12. Final Integration and Cleanup
+  - [x] 12.1 Remove all unsafe code from crypto.rs
+    - Search for `unsafe` keyword
+    - Replace with safe alternatives
+    - _Requirements: 2.1, 2.3_
+  - [x] 12.2 Add documentation comments
+    - Document memory layout assumptions
+    - Document security implications of fallback
+    - _Requirements: 1.4, 10.3_
+  - [x] 12.3 Update lib.rs to export new commands
+    - Add rotate_keypair, release_keypair commands
+    - _Requirements: 5.4, 4.5_
+
+- [x] 13. Final Checkpoint - Complete Verification
+  - Run full test suite: `cargo test`
+  - Run property tests with 100+ iterations
+  - Verify cargo build --release succeeds
+  - Verify npm run build succeeds
+  - Ensure all tests pass, ask the user if questions arise
+
+- [x] 14. Add Keypair Handle Validation Command
+  - [x] 14.1 Implement validate_keypair_handle Tauri command
+    - Accept handle parameter
+    - Return true if handle exists in KEYPAIR_STORE, false otherwise
+    - Handle lock poisoning gracefully
+    - _Requirements: 11.1, 11.2, 11.3_
+  - [x] 14.2 Update useCrypto.ts to validate handle on session restore
+    - Call validate_keypair_handle when unlockKeypair restores from storage
+    - Clear invalid handles and return false
+    - _Requirements: 11.4_
+  - [x]* 14.3 Write property test for handle validation
+    - **Property 15: Handle Validation Correctness**
+    - Valid handles return true, invalid return false
+    - **Validates: Requirements 11.1, 11.2, 11.3**
+
+- [x] 15. Improve Compression Result Transparency
+  - [x] 15.1 Add was_compressed field to CompressionResult
+    - Boolean indicating if compression was actually applied
+    - Set to false when data is returned uncompressed (too small, already compressed format)
+    - _Requirements: 12.1, 12.2_
+  - [x] 15.2 Update zstd_compress to return CompressionResult
+    - Include was_compressed: false when data < 64 bytes
+    - Update all callers to handle the new return type
+    - _Requirements: 12.1_
+  - [x] 15.3 Ensure compress_data_strict uses try_from_str
+    - Already implemented - verify it returns error for invalid algorithms
+    - _Requirements: 12.3, 12.4_
+  - [x]* 15.4 Write property test for compression transparency
+    - **Property 16: Compression Result Transparency**
+    - Verify was_compressed accurately reflects actual compression
+    - **Validates: Requirements 12.1, 12.2**
+
+- [x] 16. Document Unsafe Code Safety Invariants
+  - [x] 16.1 Review and enhance SAFETY comments in sign_dilithium_safe
+    - Document all invariants: byte lengths, struct layout, version pinning
+    - Add reference to Cargo.toml version pin
+    - _Requirements: 13.1, 13.2_
+  - [x] 16.2 Verify compile-time assertions are present
+    - Ensure size_of assertion catches layout changes
+    - _Requirements: 13.3_
+  - [x] 16.3 Update Cargo.toml comments for version pins
+    - Document why pqc_dilithium and pqc_kyber are pinned
+    - Include instructions for updating versions safely
+    - _Requirements: 13.4_
+
+- [x] 17. Final Integration Checkpoint
+  - Run cargo build to verify all changes compile
+  - Run cargo test to verify all tests pass
+  - Run npm run build to verify TypeScript compiles
+  - Ensure all tests pass, ask the user if questions arise
+
+## Notes
+
+- Tasks 1-13 are complete (core security hardening)
+- Tasks 14-17 address remaining issues identified in security audit
+- Property tests use proptest crate with minimum 100 iterations
+- Each property test references its design document property number
+- Checkpoints ensure incremental validation

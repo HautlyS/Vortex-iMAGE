@@ -36,13 +36,7 @@
     },
     "iOS": {
       "developmentTeam": null,
-      "minimumSystemVersion": "14.0",
-      "infoPlist": {
-        "NSLocalNetworkUsageDescription": "For connecting to the development server.",
-        "NSBonjourServices": [
-          "_http._tcp"
-        ]
-      }
+      "minimumSystemVersion": "14.0"
     }
   }
 }
