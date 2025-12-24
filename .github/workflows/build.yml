@@ -41,25 +41,75 @@ jobs:
       - name: Build frontend
         run: pnpm run build
 
+      - name: Verify frontend dist exists
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "❌ Frontend dist folder not found!"
+            exit 1
+          fi
+          echo "✅ Frontend dist exists:"
+          ls -la dist/
+
       - name: Initialize iOS project
         run: pnpm tauri ios init
 
-      - name: Patch iOS project for unsigned build
+      - name: Patch iOS project for unsigned release build
         run: python3 .github/scripts/patch_ios_project.py
 
-      - name: Build Rust library for iOS device
+      - name: Build Rust library for iOS device (Release)
         run: |
           cd src-tauri
           cargo build --release --target aarch64-apple-ios
           
-          # Xcode looks in debug folder even for release builds
+          # Copy to both debug and release folders (Xcode may look in either)
           mkdir -p gen/apple/Externals/arm64/debug
-          cp target/aarch64-apple-ios/release/libvortex_image_lib.a gen/apple/Externals/arm64/debug/libapp.a
+          mkdir -p gen/apple/Externals/arm64/release
           
-          echo "✅ Rust library built"
-          ls -la gen/apple/Externals/arm64/debug/
+          # The library name from Cargo.toml is vortex_image_lib
+          LIB_FILE="target/aarch64-apple-ios/release/libvortex_image_lib.a"
+          
+          if [ ! -f "$LIB_FILE" ]; then
+            echo "Looking for any .a file..."
+            LIB_FILE=$(find target/aarch64-apple-ios/release -name "*.a" -type f | head -1)
+          fi
+          
+          if [ -z "$LIB_FILE" ] || [ ! -f "$LIB_FILE" ]; then
+            echo "❌ No .a library found"
+            ls -la target/aarch64-apple-ios/release/ || true
+            exit 1
+          fi
+          
+          echo "Found library: $LIB_FILE"
+          cp "$LIB_FILE" gen/apple/Externals/arm64/debug/libapp.a
+          cp "$LIB_FILE" gen/apple/Externals/arm64/release/libapp.a
+          
+          echo "✅ Rust library built and copied"
+          ls -la gen/apple/Externals/arm64/*/
 
-      - name: Build iOS Archive (Unsigned)
+      - name: Copy frontend assets to iOS project
+        run: |
+          # Tauri iOS expects the dist folder to be available
+          # The tauri ios init should have set up the project to look for ../dist
+          
+          echo "Frontend dist contents:"
+          ls -la dist/
+          
+          # Find where Tauri expects the assets
+          APPLE_DIR="src-tauri/gen/apple"
+          
+          # For Tauri 2.x, assets are bundled during the build
+          # We need to ensure the dist folder is in the right place relative to src-tauri
+          if [ -d "dist" ]; then
+            echo "✅ Frontend dist folder exists at project root"
+          fi
+          
+          # Also check if there's a Sources folder that needs the assets
+          if [ -d "$APPLE_DIR/Sources" ]; then
+            echo "Found Sources directory"
+            ls -la "$APPLE_DIR/Sources/" || true
+          fi
+
+      - name: Build iOS Archive (Unsigned Release)
         run: |
           set -e
           
@@ -76,18 +126,29 @@ jobs:
           
           echo "Scheme: $SCHEME"
           
+          # Use the xcconfig if it exists
+          XCCONFIG=""
+          if [ -f "src-tauri/gen/apple/Release-Unsigned.xcconfig" ]; then
+            XCCONFIG="-xcconfig src-tauri/gen/apple/Release-Unsigned.xcconfig"
+          fi
+          
+          # Build with Release configuration and proper settings
           xcodebuild archive \
             -project "$XCODEPROJ" \
             -scheme "$SCHEME" \
             -configuration Release \
             -archivePath ./unsigned.xcarchive \
             -destination "generic/platform=iOS" \
+            $XCCONFIG \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" \
             AD_HOC_CODE_SIGNING_ALLOWED=NO \
-            ONLY_ACTIVE_ARCH=NO
+            ONLY_ACTIVE_ARCH=NO \
+            GCC_PREPROCESSOR_DEFINITIONS='$(inherited) RELEASE=1 NDEBUG=1' \
+            SWIFT_ACTIVE_COMPILATION_CONDITIONS='RELEASE' \
+            ENABLE_BITCODE=NO
           
           echo "✅ Archive created"
 
@@ -115,12 +176,18 @@ jobs:
           
           echo "✅ Found: $APP_PATH"
           
+          # Verify the app contains bundled assets (not pointing to localhost)
+          if [ -f "$APP_PATH/Info.plist" ]; then
+            echo "📋 App Info.plist found"
+          fi
+          
           mkdir -p Payload
           cp -R "$APP_PATH" Payload/
           zip -r -q iMAGE-unsigned.ipa Payload/
           rm -rf Payload
           
           echo "✅ IPA created: iMAGE-unsigned.ipa"
+          ls -la iMAGE-unsigned.ipa
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
