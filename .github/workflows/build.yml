@@ -53,61 +53,28 @@ jobs:
       - name: Initialize iOS project
         run: pnpm tauri ios init
 
-      - name: Patch iOS project for unsigned release build
+      - name: First patch - prepare for build
         run: python3 .github/scripts/patch_ios_project.py
 
-      - name: Build Rust library for iOS device (Release)
+      - name: Build iOS with Tauri (Release mode)
         run: |
-          cd src-tauri
-          cargo build --release --target aarch64-apple-ios
+          # Use tauri ios build which properly configures release mode
+          # This ensures frontendDist is used instead of devUrl
+          pnpm tauri ios build --target aarch64 2>&1 || true
           
-          # Copy to both debug and release folders (Xcode may look in either)
-          mkdir -p gen/apple/Externals/arm64/debug
-          mkdir -p gen/apple/Externals/arm64/release
-          
-          # The library name from Cargo.toml is vortex_image_lib
-          LIB_FILE="target/aarch64-apple-ios/release/libvortex_image_lib.a"
-          
-          if [ ! -f "$LIB_FILE" ]; then
-            echo "Looking for any .a file..."
-            LIB_FILE=$(find target/aarch64-apple-ios/release -name "*.a" -type f | head -1)
-          fi
-          
-          if [ -z "$LIB_FILE" ] || [ ! -f "$LIB_FILE" ]; then
-            echo "❌ No .a library found"
-            ls -la target/aarch64-apple-ios/release/ || true
-            exit 1
-          fi
-          
-          echo "Found library: $LIB_FILE"
-          cp "$LIB_FILE" gen/apple/Externals/arm64/debug/libapp.a
-          cp "$LIB_FILE" gen/apple/Externals/arm64/release/libapp.a
-          
-          echo "✅ Rust library built and copied"
-          ls -la gen/apple/Externals/arm64/*/
+          # The build may fail at signing, but the .app should be built
+          echo "Checking for generated files..."
+          find src-tauri/gen/apple -name "*.swift" -type f 2>/dev/null | head -5 || echo "No swift files yet"
 
-      - name: Copy frontend assets to iOS project
+      - name: Second patch - fix any remaining dev server references
+        run: python3 .github/scripts/patch_ios_project.py
+
+      - name: Debug - Show generated Swift files for devUrl references
         run: |
-          # Tauri iOS expects the dist folder to be available
-          # The tauri ios init should have set up the project to look for ../dist
-          
-          echo "Frontend dist contents:"
-          ls -la dist/
-          
-          # Find where Tauri expects the assets
-          APPLE_DIR="src-tauri/gen/apple"
-          
-          # For Tauri 2.x, assets are bundled during the build
-          # We need to ensure the dist folder is in the right place relative to src-tauri
-          if [ -d "dist" ]; then
-            echo "✅ Frontend dist folder exists at project root"
-          fi
-          
-          # Also check if there's a Sources folder that needs the assets
-          if [ -d "$APPLE_DIR/Sources" ]; then
-            echo "Found Sources directory"
-            ls -la "$APPLE_DIR/Sources/" || true
-          fi
+          echo "=== Searching for localhost/devUrl references in Swift files ==="
+          grep -r "localhost" src-tauri/gen/apple --include="*.swift" || echo "No localhost references found"
+          grep -r "devUrl" src-tauri/gen/apple --include="*.swift" || echo "No devUrl references found"
+          echo "=== End of search ==="
 
       - name: Build iOS Archive (Unsigned Release)
         run: |
@@ -126,12 +93,6 @@ jobs:
           
           echo "Scheme: $SCHEME"
           
-          # Use the xcconfig if it exists
-          XCCONFIG=""
-          if [ -f "src-tauri/gen/apple/Release-Unsigned.xcconfig" ]; then
-            XCCONFIG="-xcconfig src-tauri/gen/apple/Release-Unsigned.xcconfig"
-          fi
-          
           # Build with Release configuration and proper settings
           xcodebuild archive \
             -project "$XCODEPROJ" \
@@ -139,15 +100,12 @@ jobs:
             -configuration Release \
             -archivePath ./unsigned.xcarchive \
             -destination "generic/platform=iOS" \
-            $XCCONFIG \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" \
             AD_HOC_CODE_SIGNING_ALLOWED=NO \
             ONLY_ACTIVE_ARCH=NO \
-            GCC_PREPROCESSOR_DEFINITIONS='$(inherited) RELEASE=1 NDEBUG=1' \
-            SWIFT_ACTIVE_COMPILATION_CONDITIONS='RELEASE' \
             ENABLE_BITCODE=NO
           
           echo "✅ Archive created"

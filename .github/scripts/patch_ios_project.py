@@ -110,7 +110,7 @@ def patch_info_plist(path):
         print(f"✅ Info.plist already configured: {path}")
 
 def patch_swift_files(apple_path):
-    """Patch Swift files to ensure release mode uses bundled assets."""
+    """Patch Swift files to ensure release mode uses bundled assets instead of dev server."""
     swift_files = glob.glob(os.path.join(apple_path, '**', '*.swift'), recursive=True)
     
     for swift_file in swift_files:
@@ -119,19 +119,53 @@ def patch_swift_files(apple_path):
                 content = f.read()
             
             original = content
+            modified = False
             
-            # Look for devUrl references and ensure they're only used in DEBUG
-            # Tauri 2.x uses a different approach - check for WKWebView configuration
+            # Tauri 2.x generates code that checks for devUrl
+            # We need to force it to use bundled assets by:
+            # 1. Commenting out or removing devUrl references
+            # 2. Ensuring the app loads from the bundle
             
-            # If there's a hardcoded localhost URL, wrap it in DEBUG check
-            if 'localhost:1420' in content or 'http://localhost' in content:
+            # Pattern 1: Replace devUrl with nil or remove the dev server check
+            # Look for patterns like: let devUrl = "http://localhost:1420"
+            if 'localhost:1420' in content or 'localhost' in content:
                 print(f"⚠️  Found localhost reference in {swift_file}")
-                # This is informational - the actual fix is in the build configuration
+                
+                # Replace hardcoded dev URLs with nil
+                content = re.sub(
+                    r'(let\s+devUrl\s*[:=]\s*)(String\?\s*=\s*)?"http://localhost[^"]*"',
+                    r'\1nil',
+                    content
+                )
+                
+                # Also handle URL initialization
+                content = re.sub(
+                    r'URL\(string:\s*"http://localhost[^"]*"\)',
+                    'nil',
+                    content
+                )
+                
+                modified = content != original
             
-            if content != original:
+            # Pattern 2: Force production mode in Tauri config checks
+            # Some Tauri versions check #if DEBUG
+            if '#if DEBUG' in content and 'devUrl' in content.lower():
+                # Wrap dev server code to never execute
+                content = re.sub(
+                    r'#if DEBUG\s*\n(.*?devUrl.*?)\n\s*#else',
+                    r'#if false // Force release mode\n\1\n#else',
+                    content,
+                    flags=re.DOTALL | re.IGNORECASE
+                )
+                modified = content != original or modified
+            
+            if modified:
                 with open(swift_file, 'w') as f:
                     f.write(content)
                 print(f"✅ Patched Swift file: {swift_file}")
+            elif 'localhost' in original.lower():
+                print(f"ℹ️  Localhost found but no pattern matched in: {swift_file}")
+                
         except Exception as e:
             print(f"⚠️  Could not process {swift_file}: {e}")
 
@@ -152,15 +186,75 @@ SWIFT_OPTIMIZATION_LEVEL = -O
 ENABLE_TESTABILITY = NO
 DEBUG_INFORMATION_FORMAT = dwarf-with-dsym
 
-// Force release mode for Tauri
+// Force release mode for Tauri - disable DEBUG flag
 GCC_PREPROCESSOR_DEFINITIONS = $(inherited) RELEASE=1 NDEBUG=1
 SWIFT_ACTIVE_COMPILATION_CONDITIONS = RELEASE
+
+// Disable debug-only features
+ENABLE_NS_ASSERTIONS = NO
 """
     
     xcconfig_path = os.path.join(apple_path, 'Release-Unsigned.xcconfig')
     with open(xcconfig_path, 'w') as f:
         f.write(xcconfig_content)
     print(f"✅ Created xcconfig: {xcconfig_path}")
+
+
+def patch_tauri_lib_swift(apple_path):
+    """
+    Patch the Tauri-generated lib.swift to force bundled assets.
+    This is the key file where Tauri decides between devUrl and frontendDist.
+    """
+    lib_swift_patterns = [
+        os.path.join(apple_path, 'Sources', '*', 'lib.swift'),
+        os.path.join(apple_path, '**', 'lib.swift'),
+        os.path.join(apple_path, '**', 'Tauri*.swift'),
+    ]
+    
+    lib_files = []
+    for pattern in lib_swift_patterns:
+        lib_files.extend(glob.glob(pattern, recursive=True))
+    
+    for lib_file in lib_files:
+        try:
+            with open(lib_file, 'r') as f:
+                content = f.read()
+            
+            original = content
+            
+            # Tauri 2.x pattern: looks for devUrl in the generated code
+            # The key is to make sure the app doesn't try to connect to localhost
+            
+            # Pattern: Replace any devUrl assignment with nil
+            content = re.sub(
+                r'private\s+let\s+devUrl\s*=\s*"[^"]*"',
+                'private let devUrl: String? = nil',
+                content
+            )
+            
+            # Pattern: Force useDevUrl to false
+            content = re.sub(
+                r'let\s+useDevUrl\s*=\s*true',
+                'let useDevUrl = false',
+                content
+            )
+            
+            # Pattern: Comment out dev server initialization
+            content = re.sub(
+                r'(if\s+let\s+devUrl\s*=\s*devUrl\s*\{[^}]*\})',
+                '/* Release build - dev server disabled\n\\1\n*/',
+                content
+            )
+            
+            if content != original:
+                with open(lib_file, 'w') as f:
+                    f.write(content)
+                print(f"✅ Patched Tauri lib file: {lib_file}")
+            else:
+                print(f"ℹ️  No changes needed for: {lib_file}")
+                
+        except Exception as e:
+            print(f"⚠️  Could not process {lib_file}: {e}")
 
 def patch_tauri_conf_for_release(base_path):
     """Verify tauri.conf.json has correct frontendDist for release builds."""
@@ -212,7 +306,10 @@ def main():
         for plist in plist_files:
             patch_info_plist(plist)
     
-    # Patch Swift files
+    # Patch Tauri lib.swift (key file for dev vs release)
+    patch_tauri_lib_swift(apple_path)
+    
+    # Patch other Swift files
     patch_swift_files(apple_path)
     
     # Create xcconfig for release
