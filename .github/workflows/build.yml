@@ -53,36 +53,129 @@ jobs:
       - name: Initialize iOS project
         run: pnpm tauri ios init
 
-      - name: First patch - prepare for build
-        run: python3 .github/scripts/patch_ios_project.py
-
       - name: Build iOS with Tauri (Release mode)
+        id: tauri_build
+        continue-on-error: true
         run: |
-          # Use tauri ios build which properly configures release mode
-          # This ensures frontendDist is used instead of devUrl
-          pnpm tauri ios build --target aarch64 2>&1 || true
+          # Run tauri ios build in release mode
+          # The --export-method none skips code signing
+          # This builds the Rust library AND generates the Xcode project properly
+          pnpm tauri ios build --target aarch64 --export-method none 2>&1 | tee build_output.txt || true
           
-          # The build may fail at signing, but the .app should be built
-          echo "Checking for generated files..."
-          find src-tauri/gen/apple -name "*.swift" -type f 2>/dev/null | head -5 || echo "No swift files yet"
+          echo "📦 Checking what was built..."
+          find src-tauri/gen/apple/Externals -name "*.a" -type f 2>/dev/null || echo "No .a files in Externals"
+          find src-tauri/target -name "*.a" -type f 2>/dev/null | head -10 || echo "No .a files in target"
 
-      - name: Second patch - fix any remaining dev server references
+      - name: Verify Rust library was built
+        run: |
+          echo "🔍 Searching for built libraries..."
+          
+          # Tauri 2.x places the library in Externals with architecture folder
+          # The library is named based on the crate, but linked as -lapp
+          
+          # Check various possible locations
+          LOCATIONS=(
+            "src-tauri/gen/apple/Externals/arm64/release/libapp.a"
+            "src-tauri/gen/apple/Externals/arm64/debug/libapp.a"
+            "src-tauri/gen/apple/Externals/aarch64/release/libapp.a"
+            "src-tauri/gen/apple/Externals/aarch64/debug/libapp.a"
+          )
+          
+          FOUND=""
+          for loc in "${LOCATIONS[@]}"; do
+            if [ -f "$loc" ]; then
+              echo "✅ Found library at: $loc"
+              FOUND="$loc"
+              ls -la "$loc"
+              break
+            fi
+          done
+          
+          # Also check for any .a files in target directory
+          if [ -z "$FOUND" ]; then
+            echo "📂 Checking target directory for static libraries..."
+            find src-tauri/target/aarch64-apple-ios -name "*.a" -type f 2>/dev/null | while read f; do
+              echo "  Found: $f"
+            done
+          fi
+          
+          if [ -z "$FOUND" ]; then
+            echo "❌ libapp.a not found in expected Externals locations"
+            echo ""
+            echo "📂 Full search for .a files:"
+            find src-tauri -name "*.a" -type f 2>/dev/null || echo "No .a files found"
+            
+            # Try to find and copy from target if it exists there
+            TARGET_LIB=$(find src-tauri/target/aarch64-apple-ios -name "libvortex_image_lib.a" -type f 2>/dev/null | head -1)
+            if [ -n "$TARGET_LIB" ]; then
+              echo ""
+              echo "📦 Found library in target, copying to Externals..."
+              mkdir -p "src-tauri/gen/apple/Externals/arm64/release"
+              mkdir -p "src-tauri/gen/apple/Externals/arm64/debug"
+              cp "$TARGET_LIB" "src-tauri/gen/apple/Externals/arm64/release/libapp.a"
+              cp "$TARGET_LIB" "src-tauri/gen/apple/Externals/arm64/debug/libapp.a"
+              FOUND="src-tauri/gen/apple/Externals/arm64/release/libapp.a"
+              echo "✅ Copied library to Externals"
+            fi
+          fi
+          
+          if [ -z "$FOUND" ]; then
+            echo "❌ Could not find or create libapp.a"
+            exit 1
+          fi
+          
+          # Ensure the library exists in BOTH debug and release directories
+          # because Xcode might look in either depending on configuration
+          RELEASE_DIR="src-tauri/gen/apple/Externals/arm64/release"
+          DEBUG_DIR="src-tauri/gen/apple/Externals/arm64/debug"
+          
+          mkdir -p "$RELEASE_DIR" "$DEBUG_DIR"
+          
+          if [ -f "$RELEASE_DIR/libapp.a" ] && [ ! -f "$DEBUG_DIR/libapp.a" ]; then
+            cp "$RELEASE_DIR/libapp.a" "$DEBUG_DIR/libapp.a"
+            echo "✅ Copied release library to debug directory"
+          elif [ -f "$DEBUG_DIR/libapp.a" ] && [ ! -f "$RELEASE_DIR/libapp.a" ]; then
+            cp "$DEBUG_DIR/libapp.a" "$RELEASE_DIR/libapp.a"
+            echo "✅ Copied debug library to release directory"
+          fi
+          
+          echo ""
+          echo "📦 Final library locations:"
+          ls -la "$RELEASE_DIR" 2>/dev/null || echo "No release dir"
+          ls -la "$DEBUG_DIR" 2>/dev/null || echo "No debug dir"
+
+      - name: Patch iOS project for unsigned build
         run: python3 .github/scripts/patch_ios_project.py
 
-      - name: Debug - Show generated Swift files for devUrl references
+      - name: Debug - Show project state
         run: |
-          echo "=== Searching for localhost/devUrl references in Swift files ==="
-          grep -r "localhost" src-tauri/gen/apple --include="*.swift" || echo "No localhost references found"
-          grep -r "devUrl" src-tauri/gen/apple --include="*.swift" || echo "No devUrl references found"
-          echo "=== End of search ==="
+          echo "=== Library locations ==="
+          find src-tauri/gen/apple/Externals -type f -name "*.a" 2>/dev/null || echo "No libraries"
+          
+          echo ""
+          echo "=== Xcode project schemes ==="
+          XCODEPROJ=$(find src-tauri/gen/apple -name "*.xcodeproj" -type d | head -1)
+          if [ -n "$XCODEPROJ" ]; then
+            xcodebuild -project "$XCODEPROJ" -list 2>/dev/null || echo "Could not list schemes"
+          fi
 
       - name: Build iOS Archive (Unsigned Release)
         run: |
           set -e
           
           XCODEPROJ=$(find src-tauri/gen/apple -name "*.xcodeproj" -type d | head -1)
-          echo "Project: $XCODEPROJ"
+          echo "📁 Project: $XCODEPROJ"
           
+          if [ -z "$XCODEPROJ" ]; then
+            echo "❌ No Xcode project found!"
+            exit 1
+          fi
+          
+          # Get the project directory for SRCROOT
+          PROJECT_DIR=$(dirname "$XCODEPROJ")
+          echo "📂 Project directory: $PROJECT_DIR"
+          
+          # Get the iOS scheme
           SCHEME=$(xcodebuild -project "$XCODEPROJ" -list 2>/dev/null | \
             awk '/Schemes:/{flag=1; next} flag && /^$/{flag=0} flag' | \
             sed 's/^[[:space:]]*//' | grep -i ios | head -1)
@@ -91,9 +184,15 @@ jobs:
             awk '/Schemes:/{flag=1; next} flag && /^$/{flag=0} flag' | \
             sed 's/^[[:space:]]*//' | head -1)
           
-          echo "Scheme: $SCHEME"
+          echo "🎯 Using scheme: $SCHEME"
           
-          # Build with Release configuration and proper settings
+          # Verify library exists before building
+          echo "📦 Verifying library before xcodebuild..."
+          ls -la "$PROJECT_DIR/Externals/arm64/release/" 2>/dev/null || echo "No release dir"
+          ls -la "$PROJECT_DIR/Externals/arm64/debug/" 2>/dev/null || echo "No debug dir"
+          
+          # Build archive with Release configuration and no code signing
+          # Add both debug and release paths to LIBRARY_SEARCH_PATHS
           xcodebuild archive \
             -project "$XCODEPROJ" \
             -scheme "$SCHEME" \
@@ -106,9 +205,12 @@ jobs:
             DEVELOPMENT_TEAM="" \
             AD_HOC_CODE_SIGNING_ALLOWED=NO \
             ONLY_ACTIVE_ARCH=NO \
-            ENABLE_BITCODE=NO
+            ENABLE_BITCODE=NO \
+            SKIP_INSTALL=NO \
+            BUILD_LIBRARY_FOR_DISTRIBUTION=YES \
+            "LIBRARY_SEARCH_PATHS=\$(inherited) \$(SRCROOT)/Externals/arm64/release \$(SRCROOT)/Externals/arm64/debug"
           
-          echo "✅ Archive created"
+          echo "✅ Archive created successfully"
 
       - name: Package IPA from Archive
         run: |
@@ -121,6 +223,7 @@ jobs:
             exit 1
           fi
           
+          # Find the .app bundle
           APP_PATH=$(find "$ARCHIVE_PATH/Products/Applications" -name "*.app" -type d 2>/dev/null | head -1)
           
           if [ -z "$APP_PATH" ]; then
@@ -129,16 +232,18 @@ jobs:
           
           if [ -z "$APP_PATH" ]; then
             echo "❌ No .app found in archive"
+            echo "Archive contents:"
+            find "$ARCHIVE_PATH" -type d | head -20
             exit 1
           fi
           
-          echo "✅ Found: $APP_PATH"
+          echo "✅ Found app: $APP_PATH"
           
-          # Verify the app contains bundled assets (not pointing to localhost)
-          if [ -f "$APP_PATH/Info.plist" ]; then
-            echo "📋 App Info.plist found"
-          fi
+          # Show app contents
+          echo "📱 App bundle contents:"
+          ls -la "$APP_PATH/" | head -15
           
+          # Create IPA
           mkdir -p Payload
           cp -R "$APP_PATH" Payload/
           zip -r -q iMAGE-unsigned.ipa Payload/
