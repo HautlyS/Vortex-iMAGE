@@ -53,96 +53,54 @@ jobs:
       - name: Initialize iOS project
         run: pnpm tauri ios init
 
-      - name: Build iOS with Tauri (Release mode)
-        id: tauri_build
-        continue-on-error: true
+      - name: Build Rust library for iOS (Release)
+        working-directory: src-tauri
         run: |
-          # Run tauri ios build in release mode
-          # The --export-method none skips code signing
-          # This builds the Rust library AND generates the Xcode project properly
-          pnpm tauri ios build --target aarch64 --export-method none 2>&1 | tee build_output.txt || true
+          echo "🔨 Building Rust library for aarch64-apple-ios..."
           
-          echo "📦 Checking what was built..."
-          find src-tauri/gen/apple/Externals -name "*.a" -type f 2>/dev/null || echo "No .a files in Externals"
-          find src-tauri/target -name "*.a" -type f 2>/dev/null | head -10 || echo "No .a files in target"
-
-      - name: Verify Rust library was built
-        run: |
-          echo "🔍 Searching for built libraries..."
-          
-          # Tauri 2.x places the library in Externals with architecture folder
-          # The library is named based on the crate, but linked as -lapp
-          
-          # Check various possible locations
-          LOCATIONS=(
-            "src-tauri/gen/apple/Externals/arm64/release/libapp.a"
-            "src-tauri/gen/apple/Externals/arm64/debug/libapp.a"
-            "src-tauri/gen/apple/Externals/aarch64/release/libapp.a"
-            "src-tauri/gen/apple/Externals/aarch64/debug/libapp.a"
-          )
-          
-          FOUND=""
-          for loc in "${LOCATIONS[@]}"; do
-            if [ -f "$loc" ]; then
-              echo "✅ Found library at: $loc"
-              FOUND="$loc"
-              ls -la "$loc"
-              break
-            fi
-          done
-          
-          # Also check for any .a files in target directory
-          if [ -z "$FOUND" ]; then
-            echo "📂 Checking target directory for static libraries..."
-            find src-tauri/target/aarch64-apple-ios -name "*.a" -type f 2>/dev/null | while read f; do
-              echo "  Found: $f"
-            done
-          fi
-          
-          if [ -z "$FOUND" ]; then
-            echo "❌ libapp.a not found in expected Externals locations"
-            echo ""
-            echo "📂 Full search for .a files:"
-            find src-tauri -name "*.a" -type f 2>/dev/null || echo "No .a files found"
-            
-            # Try to find and copy from target if it exists there
-            TARGET_LIB=$(find src-tauri/target/aarch64-apple-ios -name "libvortex_image_lib.a" -type f 2>/dev/null | head -1)
-            if [ -n "$TARGET_LIB" ]; then
-              echo ""
-              echo "📦 Found library in target, copying to Externals..."
-              mkdir -p "src-tauri/gen/apple/Externals/arm64/release"
-              mkdir -p "src-tauri/gen/apple/Externals/arm64/debug"
-              cp "$TARGET_LIB" "src-tauri/gen/apple/Externals/arm64/release/libapp.a"
-              cp "$TARGET_LIB" "src-tauri/gen/apple/Externals/arm64/debug/libapp.a"
-              FOUND="src-tauri/gen/apple/Externals/arm64/release/libapp.a"
-              echo "✅ Copied library to Externals"
-            fi
-          fi
-          
-          if [ -z "$FOUND" ]; then
-            echo "❌ Could not find or create libapp.a"
-            exit 1
-          fi
-          
-          # Ensure the library exists in BOTH debug and release directories
-          # because Xcode might look in either depending on configuration
-          RELEASE_DIR="src-tauri/gen/apple/Externals/arm64/release"
-          DEBUG_DIR="src-tauri/gen/apple/Externals/arm64/debug"
-          
-          mkdir -p "$RELEASE_DIR" "$DEBUG_DIR"
-          
-          if [ -f "$RELEASE_DIR/libapp.a" ] && [ ! -f "$DEBUG_DIR/libapp.a" ]; then
-            cp "$RELEASE_DIR/libapp.a" "$DEBUG_DIR/libapp.a"
-            echo "✅ Copied release library to debug directory"
-          elif [ -f "$DEBUG_DIR/libapp.a" ] && [ ! -f "$RELEASE_DIR/libapp.a" ]; then
-            cp "$DEBUG_DIR/libapp.a" "$RELEASE_DIR/libapp.a"
-            echo "✅ Copied debug library to release directory"
-          fi
+          # Build the staticlib for iOS
+          cargo build --release --target aarch64-apple-ios --lib
           
           echo ""
-          echo "📦 Final library locations:"
-          ls -la "$RELEASE_DIR" 2>/dev/null || echo "No release dir"
-          ls -la "$DEBUG_DIR" 2>/dev/null || echo "No debug dir"
+          echo "📦 Checking built libraries..."
+          find target/aarch64-apple-ios/release -maxdepth 1 -name "*.a" -type f 2>/dev/null || echo "No .a in release root"
+          
+          # The library name comes from Cargo.toml [lib] name = "vortex_image_lib"
+          # But Tauri's Xcode project expects libapp.a
+          LIB_PATH="target/aarch64-apple-ios/release/libvortex_image_lib.a"
+          
+          if [ ! -f "$LIB_PATH" ]; then
+            echo "⚠️ libvortex_image_lib.a not found, searching..."
+            find target/aarch64-apple-ios/release -name "lib*.a" -type f 2>/dev/null
+            
+            # Try alternative name patterns
+            ALT_LIB=$(find target/aarch64-apple-ios/release -maxdepth 1 -name "lib*.a" -type f 2>/dev/null | grep -v "deps" | head -1)
+            if [ -n "$ALT_LIB" ]; then
+              LIB_PATH="$ALT_LIB"
+              echo "Found alternative: $LIB_PATH"
+            fi
+          fi
+          
+          if [ -f "$LIB_PATH" ]; then
+            echo "✅ Library built: $LIB_PATH"
+            ls -la "$LIB_PATH"
+            
+            # Copy to Externals directory where Xcode expects it
+            mkdir -p "gen/apple/Externals/arm64/release"
+            mkdir -p "gen/apple/Externals/arm64/debug"
+            
+            cp "$LIB_PATH" "gen/apple/Externals/arm64/release/libapp.a"
+            cp "$LIB_PATH" "gen/apple/Externals/arm64/debug/libapp.a"
+            
+            echo "✅ Copied to Externals as libapp.a"
+            ls -la gen/apple/Externals/arm64/release/
+            ls -la gen/apple/Externals/arm64/debug/
+          else
+            echo "❌ Could not find built library"
+            echo "Build output:"
+            find target/aarch64-apple-ios -name "*.a" -type f 2>/dev/null | head -20
+            exit 1
+          fi
 
       - name: Patch iOS project for unsigned build
         run: python3 .github/scripts/patch_ios_project.py
