@@ -145,16 +145,18 @@ function handleClick(item: typeof navItems.value[0]) {
     bottom: 0;
     left: 0;
     right: 0;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
     height: calc(49px + env(safe-area-inset-bottom, 0px));
-    background: var(--systemStandardThickMaterialSover);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: rgba(28, 28, 30, 0.92);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border-top: 0.5px solid var(--labelDivider);
+    border-top: 0.5px solid rgba(255, 255, 255, 0.1);
     z-index: 100;
     justify-content: space-around;
-    align-items: flex-start;
-    padding-top: 6px;
+    align-items: center;
+    padding-top: 0;
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
   }
 
   .mobile-nav-item {
@@ -163,11 +165,13 @@ function handleClick(item: typeof navItems.value[0]) {
     align-items: center;
     justify-content: center;
     gap: 2px;
-    min-width: 64px;
-    padding: 4px 8px;
+    flex: 1;
+    max-width: 80px;
+    min-height: 44px;
+    padding: 4px 0;
     background: transparent;
     border: none;
-    color: var(--systemSecondary);
+    color: var(--systemSecondary, rgba(255, 255, 255, 0.55));
     font-size: 10px;
     font-weight: 500;
     cursor: pointer;
@@ -193,10 +197,11 @@ function handleClick(item: typeof navItems.value[0]) {
 
   .nav-label {
     transition: color 0.15s ease;
+    line-height: 1.2;
   }
 
   .mobile-nav-item.active {
-    color: var(--keyColor);
+    color: var(--keyColor, #0a84ff);
   }
 
   .mobile-nav-item.active .nav-icon {
@@ -216,6 +221,26 @@ function handleClick(item: typeof navItems.value[0]) {
     .nav-icon {
       transition: none;
     }
+  }
+}
+
+/* Landscape mode adjustments */
+@media (max-width: 768px) and (orientation: landscape) {
+  .mobile-nav {
+    height: calc(44px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mobile-nav-item {
+    min-height: 40px;
+  }
+
+  .nav-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .nav-label {
+    font-size: 9px;
   }
 }
 </style>

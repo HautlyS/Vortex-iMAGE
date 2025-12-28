@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Patch Tauri iOS project for unsigned release builds.
+Patch Tauri iOS project for unsigned CI builds.
 
 Key fixes:
 1. Disable code signing for CI builds
-2. Keep the Rust build script intact (don't break it!)
+2. Replace Tauri's xcode-script with no-op (library is pre-built)
 3. Update library search paths to include both debug and release
-4. Configure for Release mode
+4. Configure schemes for Release mode
 """
 import glob
 import sys
@@ -24,7 +24,7 @@ def patch_pbxproj(path):
     
     original = content
     
-    # 1. Disable code signing (but DON'T touch the shell scripts!)
+    # 1. Disable code signing
     signing_replacements = [
         ('CODE_SIGN_IDENTITY = "Apple Development"', 'CODE_SIGN_IDENTITY = ""'),
         ('CODE_SIGN_IDENTITY = "-"', 'CODE_SIGN_IDENTITY = ""'),
@@ -42,9 +42,23 @@ def patch_pbxproj(path):
     # Clear DEVELOPMENT_TEAM values
     content = re.sub(r'DEVELOPMENT_TEAM\s*=\s*[A-Z0-9]+;', 'DEVELOPMENT_TEAM = "";', content)
     
-    # 2. Ensure LIBRARY_SEARCH_PATHS includes both debug and release
-    # This is critical for the linker to find libapp.a
-    # Pattern: Add release path if only debug exists
+    # 2. CRITICAL: Replace the Tauri build script with a no-op
+    # The script tries to run "tauri ios xcode-script" which requires a dev server
+    # Since we pre-built the library, we just need to skip this step
+    # Look for shellScript containing "tauri" and replace with echo
+    
+    # Pattern to match shellScript lines containing tauri commands
+    # This handles both npm/pnpm/yarn variants
+    shell_script_pattern = r'(shellScript\s*=\s*)"([^"]*(?:tauri|TAURI)[^"]*)"'
+    
+    def replace_tauri_script(match):
+        original_script = match.group(2)
+        # Replace with a simple echo that confirms the library is pre-built
+        return match.group(1) + '"echo \\"Rust library pre-built, skipping tauri ios xcode-script\\""'
+    
+    content = re.sub(shell_script_pattern, replace_tauri_script, content, flags=re.IGNORECASE)
+    
+    # 3. Ensure LIBRARY_SEARCH_PATHS includes both debug and release
     if 'Externals/arm64/debug' in content and 'Externals/arm64/release' not in content:
         content = content.replace(
             'Externals/arm64/debug',

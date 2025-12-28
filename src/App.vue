@@ -1368,4 +1368,189 @@ async function retryLoadPhotos() {
 }
 .error-toast button:hover { background: rgba(255, 255, 255, 0.2); }
 .error-toast button svg { width: 1rem; height: 1rem; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE STYLES
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .app {
+    flex-direction: column;
+    padding-bottom: calc(49px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .main {
+    width: 100%;
+    min-height: calc(100vh - 49px - env(safe-area-inset-bottom, 0px));
+  }
+
+  .header {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .header-left {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .view-title {
+    font-size: 1.25rem;
+  }
+
+  .photo-count {
+    font-size: 0.75rem;
+  }
+
+  .search-bar {
+    display: none;
+  }
+
+  .header-actions {
+    gap: 0.375rem;
+  }
+
+  .view-toggle {
+    display: none;
+  }
+
+  .upload-group {
+    gap: 0.375rem;
+  }
+
+  .btn-upload {
+    padding: 8px 14px;
+    font-size: 0.8125rem;
+  }
+
+  .btn-upload span:not(.upload-badge) {
+    display: none;
+  }
+
+  .btn-folder {
+    padding: 8px 12px;
+  }
+
+  .btn-icon {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  .btn-icon svg {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  .content {
+    padding: 0.75rem;
+    padding-bottom: 1rem;
+  }
+
+  .empty-state {
+    min-height: 50vh;
+    padding: 1.5rem;
+  }
+
+  .empty-icon {
+    width: 4rem;
+    height: 4rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .empty-state h2 {
+    font-size: 1.25rem;
+  }
+
+  .empty-state p {
+    font-size: 0.9375rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .repo-setup {
+    flex-direction: column;
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .repo-setup input {
+    width: 100%;
+  }
+
+  .login-state {
+    padding: 1.5rem;
+  }
+
+  .login-auth-btn {
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .error-toast {
+    bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+    left: 0.75rem;
+    right: 0.75rem;
+    transform: none;
+    padding: 0.875rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .settings-panel {
+    padding: 0.875rem 1rem;
+  }
+
+  .repo-input {
+    flex-wrap: wrap;
+  }
+
+  .repo-input input {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .btn-save,
+  .btn-new {
+    flex: 1;
+  }
+
+  .drag-overlay {
+    display: none;
+  }
+}
+
+/* Small phones */
+@media (max-width: 375px) {
+  .header {
+    padding: 0.625rem 0.75rem;
+    padding-top: calc(0.625rem + env(safe-area-inset-top, 0px));
+  }
+
+  .view-title {
+    font-size: 1.125rem;
+  }
+
+  .btn-upload {
+    padding: 6px 10px;
+  }
+
+  .btn-folder {
+    padding: 6px 10px;
+  }
+
+  .btn-icon {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .content {
+    padding: 0.5rem;
+  }
+}
 </style>

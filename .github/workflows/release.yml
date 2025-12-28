@@ -1,0 +1,126 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+env:
+  APP_NAME: iMAGE
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'pnpm' }
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: aarch64-apple-ios }
+      - uses: swatinem/rust-cache@v2
+        with: { workspaces: "./src-tauri -> target" }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - run: pnpm tauri ios init
+      - name: Build iOS
+        working-directory: src-tauri
+        run: |
+          cargo build --release --target aarch64-apple-ios --lib
+          LIB=$(find target/aarch64-apple-ios/release -maxdepth 1 -name "lib*.a" | head -1)
+          mkdir -p gen/apple/Externals/arm64/{release,debug}
+          cp "$LIB" gen/apple/Externals/arm64/release/libapp.a
+          cp "$LIB" gen/apple/Externals/arm64/debug/libapp.a
+      - run: python3 .github/scripts/patch_ios_project.py
+      - name: Archive & Package IPA
+        run: |
+          XCODEPROJ=$(find src-tauri/gen/apple -name "*.xcodeproj" | head -1)
+          SCHEME=$(xcodebuild -project "$XCODEPROJ" -list 2>/dev/null | awk '/Schemes:/{f=1;next}f&&/^$/{f=0}f' | tr -d ' ' | grep -i ios | head -1)
+          xcodebuild archive -project "$XCODEPROJ" -scheme "$SCHEME" -configuration Release \
+            -archivePath ./unsigned.xcarchive -destination "generic/platform=iOS" \
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
+            "LIBRARY_SEARCH_PATHS=\$(inherited) \$(SRCROOT)/Externals/arm64/release"
+          APP=$(find ./unsigned.xcarchive -name "*.app" | head -1)
+          mkdir Payload && cp -R "$APP" Payload/ && zip -r iMAGE-ios-unsigned.ipa Payload/
+      - uses: actions/upload-artifact@v4
+        with: { name: ios, path: iMAGE-ios-unsigned.ipa }
+
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'pnpm' }
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android }
+      - uses: swatinem/rust-cache@v2
+        with: { workspaces: "./src-tauri -> target" }
+      - uses: actions/setup-java@v4
+        with: { distribution: 'temurin', java-version: '17' }
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager --install "ndk;27.0.12077973"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - run: pnpm tauri android init
+      - run: pnpm tauri android build --features pqcrypto-backend
+        env: { NDK_HOME: "${{ env.ANDROID_HOME }}/ndk/27.0.12077973" }
+      - name: Collect APKs
+        run: |
+          mkdir -p release-apks
+          find src-tauri/gen/android -name "*.apk" -exec cp {} release-apks/ \;
+          cd release-apks && for f in *.apk; do mv "$f" "iMAGE-android-${f}"; done
+      - uses: actions/upload-artifact@v4
+        with: { name: android, path: release-apks/*.apk }
+
+  build-desktop:
+    strategy:
+      matrix:
+        include:
+          - { os: ubuntu-22.04, target: linux }
+          - { os: macos-latest, target: macos }
+          - { os: windows-latest, target: windows }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'pnpm' }
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with: { workspaces: "./src-tauri -> target" }
+      - name: Linux deps
+        if: matrix.os == 'ubuntu-22.04'
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - run: pnpm tauri build
+      - name: Collect artifacts
+        shell: bash
+        run: |
+          mkdir -p release-desktop
+          find src-tauri/target/release/bundle -type f \( -name "*.dmg" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.msi" -o -name "*.exe" \) -exec cp {} release-desktop/ \; 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        with: { name: desktop-${{ matrix.target }}, path: release-desktop/* }
+
+  release:
+    needs: [build-ios, build-android, build-desktop]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: artifacts }
+      - name: Flatten artifacts
+        run: |
+          mkdir release
+          find artifacts -type f \( -name "*.ipa" -o -name "*.apk" -o -name "*.dmg" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.msi" -o -name "*.exe" \) -exec cp {} release/ \;
+          ls -la release/
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true
+          draft: false
