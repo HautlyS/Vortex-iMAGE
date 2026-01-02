@@ -13,7 +13,7 @@ mod tests;
 
 use tauri::Manager;
 use github::{
-    get_user, list_photos, poll_oauth, start_oauth, upload_photo,
+    get_user, list_photos, poll_oauth, start_oauth, upload_photo, validate_token,
     create_repo, get_repo_info, update_repo_visibility, scan_folder, upload_folder_as_album,
     upload_folder_recursive, list_albums, download_photo, delete_photo, remove_local_file,
     get_local_image_info, delete_album, rename_album, HttpClient, download_secure_photo,
@@ -61,6 +61,7 @@ pub fn run() {
             start_oauth,
             poll_oauth,
             get_user,
+            validate_token,
             
             upload_photo,
             list_photos,

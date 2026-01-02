@@ -249,6 +249,64 @@ pub async fn get_user(
     Ok(res.json().await?)
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct TokenValidation {
+    pub valid: bool,
+    pub user: Option<GitHubUser>,
+    pub scopes: Vec<String>,
+    pub error: Option<String>,
+}
+
+#[tauri::command]
+pub async fn validate_token(
+    client: State<'_, HttpClient>,
+    token: String,
+) -> Result<TokenValidation, AppError> {
+    let res = client
+        .0
+        .get("https://api.github.com/user")
+        .header("Authorization", format!("Bearer {}", token))
+        .header("User-Agent", "vortex-image")
+        .send()
+        .await?;
+
+    if !res.status().is_success() {
+        return Ok(TokenValidation {
+            valid: false,
+            user: None,
+            scopes: vec![],
+            error: Some("Invalid or expired token".into()),
+        });
+    }
+
+    let scopes: Vec<String> = res
+        .headers()
+        .get("x-oauth-scopes")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.split(", ").map(|s| s.to_string()).collect())
+        .unwrap_or_default();
+
+    let user: GitHubUser = res.json().await?;
+
+    let has_repo = scopes.iter().any(|s| s == "repo" || s == "public_repo");
+    
+    if !has_repo {
+        return Ok(TokenValidation {
+            valid: false,
+            user: Some(user),
+            scopes,
+            error: Some("Token missing 'repo' scope. Generate a new token with repo access.".into()),
+        });
+    }
+
+    Ok(TokenValidation {
+        valid: true,
+        user: Some(user),
+        scopes,
+        error: None,
+    })
+}
+
 async fn prepare_upload_payload(
     content: &[u8],
     filename: &str,

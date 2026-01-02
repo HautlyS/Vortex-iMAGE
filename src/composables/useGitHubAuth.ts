@@ -1,13 +1,14 @@
 /**
- * TypeScript Module - 2 exports
- * Purpose: Type-safe utilities and composable functions
- * Imports: 1 modules
+ * GitHub Auth Composable - Multi-platform authentication
+ * Supports: Device Flow (Tauri), Manual Token (Web/Tauri)
  */
 
-import { ref, onUnmounted } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 
-const isTauriAvailable = typeof window !== 'undefined' && !!(window as any).__TAURI__
-export const isDevMode = import.meta.env.DEV && (import.meta.env.VITE_MOCK_AUTH === 'true' || !isTauriAvailable)
+// Platform detection
+const isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI__
+export const isDevMode = import.meta.env.DEV && import.meta.env.VITE_MOCK_AUTH === 'true'
+export const isWebMode = !isTauri && !isDevMode
 
 interface DeviceCodeResponse {
   device_code: string
@@ -22,6 +23,13 @@ interface GitHubUser {
   avatar_url: string
 }
 
+interface TokenValidation {
+  valid: boolean
+  user: GitHubUser | null
+  scopes: string[]
+  error: string | null
+}
+
 export interface PublicBundle {
   pq_encap: number[]
   x25519: number[]
@@ -34,72 +42,104 @@ interface KeypairResult {
   keypair_bytes: number[]
 }
 
+// Shared state
 const token = ref<string | null>(isDevMode ? 'mock-token-dev' : null)
 const user = ref<GitHubUser | null>(isDevMode ? { login: 'dev-user', avatar_url: 'https://github.com/identicons/dev.png' } : null)
 const repo = ref<string>(isDevMode ? 'dev-user/photos' : '')
 const publicBundle = ref<PublicBundle | null>(null)
 const keypairBytes = ref<number[] | null>(null)
 
+// Web storage key
+const WEB_TOKEN_KEY = 'vortex_gh_token'
+const WEB_USER_KEY = 'vortex_gh_user'
+const WEB_REPO_KEY = 'vortex_gh_repo'
+
 export function useGitHubAuth() {
   const loading = ref(false)
   const userCode = ref('')
   const error = ref<string | null>(null)
+  const validating = ref(false)
 
   let pollInterval: ReturnType<typeof setInterval> | null = null
   let pollTimeout: ReturnType<typeof setTimeout> | null = null
 
   function clearPolling() {
-    if (pollInterval) {
-      clearInterval(pollInterval)
-      pollInterval = null
-    }
-    if (pollTimeout) {
-      clearTimeout(pollTimeout)
-      pollTimeout = null
-    }
+    if (pollInterval) { clearInterval(pollInterval); pollInterval = null }
+    if (pollTimeout) { clearTimeout(pollTimeout); pollTimeout = null }
   }
 
   onUnmounted(clearPolling)
 
+  // Check if device flow is available (Tauri only)
+  const canUseDeviceFlow = computed(() => isTauri && !isDevMode)
+
   async function init() {
-    
     if (isDevMode) return
 
     try {
-      const { invoke } = await import('@tauri-apps/api/core')
-      const { load } = await import('@tauri-apps/plugin-store')
-      const store = await load('settings.json')
-      token.value = await store.get<string>('token') || null
-      repo.value = await store.get<string>('repo') || ''
-
-      const storedKeypair = await store.get<number[]>('keypair_bytes')
-      const storedBundle = await store.get<PublicBundle>('public_bundle')
-
-      if (storedKeypair && storedBundle) {
-        keypairBytes.value = storedKeypair
-        publicBundle.value = storedBundle
-      } else if (token.value) {
+      if (isTauri) {
+        // Tauri: use plugin-store
+        const { invoke } = await import('@tauri-apps/api/core')
+        const { load } = await import('@tauri-apps/plugin-store')
+        const store = await load('settings.json')
         
-        await rotateKeys()
-      }
+        token.value = await store.get<string>('token') || null
+        repo.value = await store.get<string>('repo') || ''
 
-      if (token.value) {
-        user.value = await invoke<GitHubUser>('get_user', { token: token.value })
+        const storedKeypair = await store.get<number[]>('keypair_bytes')
+        const storedBundle = await store.get<PublicBundle>('public_bundle')
+
+        if (storedKeypair && storedBundle) {
+          keypairBytes.value = storedKeypair
+          publicBundle.value = storedBundle
+        } else if (token.value) {
+          await rotateKeys()
+        }
+
+        if (token.value) {
+          user.value = await invoke<GitHubUser>('get_user', { token: token.value })
+        }
+      } else {
+        // Web: use localStorage
+        const storedToken = localStorage.getItem(WEB_TOKEN_KEY)
+        const storedUser = localStorage.getItem(WEB_USER_KEY)
+        const storedRepo = localStorage.getItem(WEB_REPO_KEY)
+
+        if (storedToken) {
+          token.value = storedToken
+          repo.value = storedRepo || ''
+          if (storedUser) {
+            user.value = JSON.parse(storedUser)
+          }
+          // Validate token on init
+          const validation = await validateTokenWeb(storedToken)
+          if (!validation.valid) {
+            await logout()
+            error.value = validation.error || 'Token expired'
+          } else if (validation.user) {
+            user.value = validation.user
+          }
+        }
       }
     } catch {
       token.value = null
       user.value = null
-      try {
-        const { load } = await import('@tauri-apps/plugin-store')
-        const store = await load('settings.json')
-        await store.delete('token')
-        await store.save()
-      } catch { }
+      if (isTauri) {
+        try {
+          const { load } = await import('@tauri-apps/plugin-store')
+          const store = await load('settings.json')
+          await store.delete('token')
+          await store.save()
+        } catch {}
+      } else {
+        localStorage.removeItem(WEB_TOKEN_KEY)
+        localStorage.removeItem(WEB_USER_KEY)
+      }
     }
   }
 
   async function rotateKeys() {
-    if (isDevMode) return
+    if (isDevMode || !isTauri) return
     try {
       const { invoke } = await import('@tauri-apps/api/core')
       const { load } = await import('@tauri-apps/plugin-store')
@@ -117,9 +157,102 @@ export function useGitHubAuth() {
     }
   }
 
+  // Validate token via GitHub API (web-compatible)
+  async function validateTokenWeb(tokenToValidate: string): Promise<TokenValidation> {
+    try {
+      const res = await fetch('https://api.github.com/user', {
+        headers: {
+          'Authorization': `Bearer ${tokenToValidate}`,
+          'User-Agent': 'vortex-image'
+        }
+      })
+
+      if (!res.ok) {
+        return { valid: false, user: null, scopes: [], error: 'Invalid or expired token' }
+      }
+
+      const scopes = res.headers.get('x-oauth-scopes')?.split(', ') || []
+      const userData: GitHubUser = await res.json()
+
+      const hasRepo = scopes.some(s => s === 'repo' || s === 'public_repo')
+      if (!hasRepo) {
+        return {
+          valid: false,
+          user: userData,
+          scopes,
+          error: "Token missing 'repo' scope. Generate a new token with repo access."
+        }
+      }
+
+      return { valid: true, user: userData, scopes, error: null }
+    } catch (e) {
+      return { valid: false, user: null, scopes: [], error: String(e) }
+    }
+  }
+
+  // Validate token (uses Tauri command if available, otherwise web fetch)
+  async function validateToken(tokenToValidate: string): Promise<TokenValidation> {
+    if (isTauri) {
+      try {
+        const { invoke } = await import('@tauri-apps/api/core')
+        return await invoke<TokenValidation>('validate_token', { token: tokenToValidate })
+      } catch {
+        return validateTokenWeb(tokenToValidate)
+      }
+    }
+    return validateTokenWeb(tokenToValidate)
+  }
+
+  // Manual token login (works on both Tauri and Web)
+  async function loginWithToken(manualToken: string): Promise<boolean> {
+    if (!manualToken.trim()) {
+      error.value = 'Please enter a token'
+      return false
+    }
+
+    validating.value = true
+    error.value = null
+
+    try {
+      const validation = await validateToken(manualToken.trim())
+
+      if (!validation.valid) {
+        error.value = validation.error || 'Invalid token'
+        validating.value = false
+        return false
+      }
+
+      token.value = manualToken.trim()
+      user.value = validation.user
+
+      if (isTauri) {
+        const { load } = await import('@tauri-apps/plugin-store')
+        const store = await load('settings.json')
+        await store.set('token', token.value)
+        await store.save()
+
+        if (!keypairBytes.value) {
+          await rotateKeys()
+        }
+      } else {
+        localStorage.setItem(WEB_TOKEN_KEY, token.value)
+        if (user.value) {
+          localStorage.setItem(WEB_USER_KEY, JSON.stringify(user.value))
+        }
+      }
+
+      validating.value = false
+      return true
+    } catch (e) {
+      error.value = String(e)
+      validating.value = false
+      return false
+    }
+  }
+
+  // Device Flow login (Tauri only)
   async function startLogin() {
     if (isDevMode) {
-      
       loading.value = true
       await new Promise(r => setTimeout(r, 500))
       token.value = 'mock-token-dev'
@@ -132,6 +265,11 @@ export function useGitHubAuth() {
         ed_verify: Array(32).fill(0)
       }
       loading.value = false
+      return
+    }
+
+    if (!isTauri) {
+      error.value = 'Device Flow not available in web mode. Use manual token.'
       return
     }
 
@@ -168,11 +306,9 @@ export function useGitHubAuth() {
               await rotateKeys()
             }
 
-            try {
-              const store = await load('settings.json')
-              await store.set('token', t)
-              await store.save()
-            } catch { }
+            const store = await load('settings.json')
+            await store.set('token', t)
+            await store.save()
 
             loading.value = false
             userCode.value = ''
@@ -197,12 +333,17 @@ export function useGitHubAuth() {
 
     if (isDevMode) return
 
-    try {
-      const { load } = await import('@tauri-apps/plugin-store')
-      const store = await load('settings.json')
-      await store.delete('token')
-      await store.save()
-    } catch { }
+    if (isTauri) {
+      try {
+        const { load } = await import('@tauri-apps/plugin-store')
+        const store = await load('settings.json')
+        await store.delete('token')
+        await store.save()
+      } catch {}
+    } else {
+      localStorage.removeItem(WEB_TOKEN_KEY)
+      localStorage.removeItem(WEB_USER_KEY)
+    }
   }
 
   async function setRepo(r: string) {
@@ -210,15 +351,20 @@ export function useGitHubAuth() {
 
     if (isDevMode) return
 
-    try {
-      const { load } = await import('@tauri-apps/plugin-store')
-      const store = await load('settings.json')
-      await store.set('repo', r)
-      await store.save()
-    } catch { }
+    if (isTauri) {
+      try {
+        const { load } = await import('@tauri-apps/plugin-store')
+        const store = await load('settings.json')
+        await store.set('repo', r)
+        await store.save()
+      } catch {}
+    } else {
+      localStorage.setItem(WEB_REPO_KEY, r)
+    }
   }
 
   return {
+    // State
     token,
     user,
     repo,
@@ -227,8 +373,15 @@ export function useGitHubAuth() {
     loading,
     userCode,
     error,
+    validating,
+    // Computed
+    canUseDeviceFlow,
+    isWebMode: computed(() => isWebMode),
+    // Methods
     init,
     startLogin,
+    loginWithToken,
+    validateToken,
     logout,
     setRepo
   }
