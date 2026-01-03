@@ -9,6 +9,7 @@ import { computed, ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import Masonry from './Masonry.vue'
 import CircularGallery from './CircularGallery.vue'
+import PhotoEditor from './PhotoEditor.vue'
 import type { Photo } from '../types/photo'
 import { useGitHubAuth } from '../composables/useGitHubAuth'
 import { useFavorites } from '../composables/useFavorites'
@@ -169,7 +170,7 @@ const isSaving = ref(false);
 const isSyncing = ref(false);
 const saveSuccess = ref(false);
 const syncSuccess = ref(false);
-
+const isEditorOpen = ref(false);
 const currentLightboxPhoto = computed(() => displayPhotos.value[currentLightboxIndex.value])
 
 function handleLightboxIndexChange(index: number) {
@@ -316,6 +317,11 @@ function closeContextMenu() {
   contextMenu.value.visible = false
 }
 
+async function handleEditorSave(blob: Blob) {
+  // TODO: Implement actual save/upload logic
+  console.log('Editor saved blob:', blob.size)
+  isEditorOpen.value = false
+}
 </script>
 
 <template>
@@ -341,11 +347,11 @@ function closeContextMenu() {
     <!-- Grid View (Masonry) -->
     <div v-else-if="viewMode === 'grid'" class="masonry-wrapper">
        <!-- Breadcrumbs -->
-       <div class="absolute top-4 left-4 z-10 flex items-center gap-2">
+       <div class="breadcrumbs-bar">
          <button 
-            class="btn btn-secondary glass-btn !px-3"
+            class="breadcrumb-btn"
             @click="emit('albumClick', { name: 'Home', path: '', photo_count: 0, children: [] })"
-            :class="{ '!bg-white/10': !currentAlbumPath }"
+            :class="{ 'active': !currentAlbumPath }"
          >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -354,16 +360,16 @@ function closeContextMenu() {
          </button>
          
          <template v-if="currentAlbumPath">
-            <span class="text-white/40 font-bold">/</span>
-            <div class="flex items-center gap-2">
+            <span class="breadcrumb-sep">/</span>
+            <div class="breadcrumb-trail">
                 <template v-for="(part, index) in getBreadcrumbs(currentAlbumPath)" :key="part.path">
                     <button 
-                        class="btn btn-secondary glass-btn !px-3"
+                        class="breadcrumb-btn"
                         @click="emit('albumClick', { name: part.name, path: part.path, photo_count: 0, children: [] })"
                     >
                         {{ part.name }}
                     </button>
-                    <span v-if="index < getBreadcrumbs(currentAlbumPath).length - 1" class="text-white/40 font-bold">/</span>
+                    <span v-if="index < getBreadcrumbs(currentAlbumPath).length - 1" class="breadcrumb-sep">/</span>
                 </template>
             </div>
          </template>
@@ -539,6 +545,19 @@ function closeContextMenu() {
                     </svg>
                     <span>Sync</span>
                   </button>
+
+                  <!-- Edit Button -->
+                  <button 
+                    class="lightbox-tool"
+                    @click="isEditorOpen = true"
+                    title="Editar"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    <span>Editar</span>
+                  </button>
                 </div>
 
                 <div class="w-full h-full">
@@ -574,22 +593,229 @@ function closeContextMenu() {
         @close="closeContextMenu"
       />
     </Teleport>
+
+    <PhotoEditor 
+      v-if="currentLightboxPhoto"
+      :visible="isEditorOpen"
+      :image-url="currentLightboxPhoto.url"
+      @close="isEditorOpen = false"
+      @save="handleEditorSave"
+    />
   </div>
 </template>
 
 <style scoped>
+/* === 8-BIT GALLERY CONTAINER === */
 .gallery-container {
   width: 100%;
   height: 100%;
   position: relative;
   background: transparent;
+  display: flex;
+  flex-direction: column;
 }
 
+/* === LOADING & EMPTY STATES === */
+.loading-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: var(--retro-text-muted, #9d8ec2);
+  gap: 16px;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--retro-bg-lighter, #2d1f4d);
+  border-top-color: var(--retro-accent-green, #00ff87);
+  animation: spin 0.8s steps(8) infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* === MASONRY WRAPPER === */
+.masonry-wrapper {
+  width: 100%;
+  flex: 1;
+  position: relative;
+  background: transparent;
+  overflow: hidden;
+}
+
+/* === BREADCRUMBS (8-Bit Style) === */
+.breadcrumbs-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--retro-bg-panel, #1a1030);
+  border-bottom: 2px solid #000;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.breadcrumbs-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.breadcrumb-btn {
+  flex-shrink: 0;
+  background: var(--retro-bg-card, #251842);
+  border: 2px solid var(--retro-bg-lighter, #2d1f4d);
+  color: var(--retro-text-muted, #9d8ec2);
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  box-shadow: 2px 2px 0 #000;
+  transition: all 0.1s;
+}
+
+.breadcrumb-btn:hover {
+  border-color: var(--retro-accent-green, #00ff87);
+  color: var(--retro-accent-green, #00ff87);
+}
+
+.breadcrumb-btn.active {
+  background: var(--retro-accent-pink, #ff2d95);
+  color: #fff;
+  border-color: #000;
+}
+
+.breadcrumb-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.breadcrumb-sep {
+  color: var(--retro-accent-yellow, #ffd000);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+}
+
+.breadcrumb-trail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* === LIST VIEW === */
+.list-wrapper {
+  width: 100%;
+  flex: 1;
+  background: var(--retro-bg-card, #251842);
+  border: 2px solid #000;
+  overflow: hidden;
+}
+
+.list-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  height: 100%;
+  gap: 2px;
+  background: #000;
+}
+
+.list-column {
+  background: var(--retro-bg-panel, #1a1030);
+  display: flex;
+  flex-direction: column;
+}
+
+.column-header {
+  padding: 12px 16px;
+  background: var(--retro-bg-lighter, #2d1f4d);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--retro-accent-yellow, #ffd000);
+  border-bottom: 2px solid #000;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.column-items {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: all 0.1s;
+}
+
+.list-item:hover {
+  background: var(--retro-bg-card, #251842);
+  border-left-color: var(--retro-accent-green, #00ff87);
+}
+
+.list-item-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #000;
+  border: 2px solid var(--retro-bg-lighter, #2d1f4d);
+}
+
+.folder-item .list-item-icon {
+  color: var(--retro-accent-yellow, #ffd000);
+}
+
+.folder-item .list-item-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.photo-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.list-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.list-item-name {
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+  color: var(--retro-text-main, #fff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list-item-meta {
+  font-size: 14px;
+  color: var(--retro-text-muted, #9d8ec2);
+  margin-top: 2px;
+}
+
+/* === LIGHTBOX (8-Bit Style) === */
 .lightbox-overlay {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: #000;
+  background: rgba(0, 0, 0, 0.95);
   padding-top: env(safe-area-inset-top, 0);
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
@@ -604,20 +830,22 @@ function closeContextMenu() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: none;
-  border-radius: 50%;
-  color: rgba(255, 255, 255, 0.8);
+  background: var(--retro-bg-panel, #1a1030);
+  border: 2px solid var(--retro-accent-red, #ff3b30);
+  color: var(--retro-accent-red, #ff3b30);
   cursor: pointer;
-  transition: all 0.2s;
-  -webkit-tap-highlight-color: transparent;
+  box-shadow: 3px 3px 0 #000;
+  transition: all 0.1s;
+}
+
+.lightbox-close:hover {
+  background: var(--retro-accent-red, #ff3b30);
+  color: #fff;
 }
 
 .lightbox-close:active {
-  transform: scale(0.9);
-  background: rgba(255, 255, 255, 0.2);
+  transform: translate(2px, 2px);
+  box-shadow: none;
 }
 
 .lightbox-counter {
@@ -627,14 +855,12 @@ function closeContextMenu() {
   transform: translateX(-50%);
   z-index: 50;
   padding: 8px 16px;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-radius: 20px;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 14px;
-  font-weight: 500;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--retro-bg-panel, #1a1030);
+  border: 2px solid var(--retro-accent-yellow, #ffd000);
+  color: var(--retro-accent-yellow, #ffd000);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  box-shadow: 3px 3px 0 #000;
 }
 
 .lightbox-tools {
@@ -646,11 +872,16 @@ function closeContextMenu() {
   display: flex;
   gap: 8px;
   padding: 8px;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--retro-bg-panel, #1a1030);
+  border: 3px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  max-width: calc(100vw - 32px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.lightbox-tools::-webkit-scrollbar {
+  display: none;
 }
 
 .lightbox-tool {
@@ -658,17 +889,17 @@ function closeContextMenu() {
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 12px 16px;
-  background: transparent;
-  border: none;
-  border-radius: 12px;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 11px;
-  font-weight: 500;
+  padding: 10px 14px;
+  background: var(--retro-bg-card, #251842);
+  border: 2px solid var(--retro-bg-lighter, #2d1f4d);
+  color: var(--retro-text-muted, #9d8ec2);
+  font-family: 'VT323', monospace;
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s;
-  -webkit-tap-highlight-color: transparent;
-  min-width: 64px;
+  box-shadow: 2px 2px 0 #000;
+  transition: all 0.1s;
+  min-width: 60px;
+  flex-shrink: 0;
 }
 
 .lightbox-tool svg {
@@ -676,179 +907,104 @@ function closeContextMenu() {
   height: 24px;
 }
 
+.lightbox-tool:hover {
+  border-color: var(--retro-accent-green, #00ff87);
+  color: var(--retro-accent-green, #00ff87);
+}
+
 .lightbox-tool:active {
-  transform: scale(0.95);
-  background: rgba(255, 255, 255, 0.1);
+  transform: translate(2px, 2px);
+  box-shadow: none;
 }
 
 .lightbox-tool:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 .lightbox-tool.active {
-  color: #ff3b5c;
+  background: var(--retro-accent-pink, #ff2d95);
+  border-color: #000;
+  color: #fff;
 }
 
 .lightbox-tool.success {
-  color: #34c759;
+  background: var(--retro-accent-green, #00ff87);
+  border-color: #000;
+  color: #000;
 }
 
 .lightbox-tool .spin {
-  animation: spin 0.8s linear infinite;
+  animation: spin 0.8s steps(8) infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.loading-state,
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 300px;
-  color: var(--text-muted);
-  gap: 1rem;
-}
-
-.spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--border-default);
-  border-top-color: var(--accent-color);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.masonry-wrapper {
-  width: 100%;
-  height: calc(100vh - 200px);
-  position: relative;
-  background: transparent;
-}
-
-.list-wrapper {
-  width: 100%;
-  height: calc(100vh - 200px);
-  background: rgba(var(--surface-1-rgb, 14, 14, 20), 0.4);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-
-.list-container {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  height: 100%;
-  gap: 1px;
-  background: var(--border-default);
-}
-
-.list-column {
-  background: rgba(var(--surface-0-rgb, 8, 8, 12), 0.6);
-  display: flex;
-  flex-direction: column;
-}
-
-.column-header {
-  padding: 1rem 1.25rem;
-  background: rgba(var(--surface-2-rgb, 22, 22, 32), 0.8);
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  border-bottom: 1px solid var(--border-default);
-}
-
-.column-items {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0.5rem 0;
-}
-
-.list-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1.25rem;
-  cursor: pointer;
-  transition: all var(--duration-fast);
-}
-
-.list-item:hover {
-  background: rgba(var(--surface-2-rgb, 22, 22, 32), 0.6);
-}
-
-.list-item-icon {
-  width: 2.5rem;
-  height: 2.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.folder-item .list-item-icon {
-  color: var(--accent-color);
-}
-
-.folder-item .list-item-icon svg {
-  width: 1.75rem;
-  height: 1.75rem;
-}
-
-.photo-thumbnail {
-  width: 2.5rem;
-  height: 2.5rem;
-  object-fit: cover;
-  border-radius: var(--radius-md);
-}
-
-.list-item-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.list-item-name {
-  font-size: 0.9375rem;
-  color: var(--text-primary);
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.list-item-meta {
-  font-size: 0.8125rem;
-  color: var(--text-secondary);
-  margin-top: 0.125rem;
-}
-
+/* === RESPONSIVE === */
 @media (max-width: 768px) {
+  .list-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .list-column:nth-child(2),
+  .list-column:nth-child(3) {
+    display: none;
+  }
+  
+  .breadcrumbs-bar {
+    padding: 8px 12px;
+  }
+  
+  .breadcrumb-btn {
+    padding: 4px 8px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .lightbox-tool span {
+    display: none;
+  }
+  
+  .lightbox-tool {
+    min-width: 44px;
+    padding: 8px;
+  }
+  
+  .lightbox-tool svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .lightbox-counter {
+    font-size: 8px;
+    padding: 6px 10px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .list-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
   .list-column:nth-child(3) {
     display: none;
   }
 }
 
+/* === UTILITY === */
 .glass-btn {
-  background: rgba(var(--surface-2-rgb, 22, 22, 32), 0.6);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
+  background: var(--retro-bg-card, #251842);
+  border: 2px solid var(--retro-bg-lighter, #2d1f4d);
+  color: #fff;
   padding: 8px 16px;
-  border-radius: 20px;
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: all 0.2s;
+  box-shadow: 2px 2px 0 #000;
+  transition: all 0.1s;
 }
 
 .glass-btn:hover {
-  background: rgba(var(--surface-2-rgb, 22, 22, 32), 0.8);
-  transform: translateY(-1px);
+  border-color: var(--retro-accent-green, #00ff87);
+  color: var(--retro-accent-green, #00ff87);
 }
 </style>

@@ -9,12 +9,14 @@ import { computed } from 'vue'
 import { useTheme } from '../composables/useTheme'
 import { TOUCH } from '../config'
 
+type NavView = 'photos' | 'favorites' | 'albums' | 'tags' | 'trash' | 'all-albums' | string
+
 defineProps<{
-  currentView: 'photos' | 'favorites' | 'albums' | 'tags' | 'trash'
+  currentView: NavView
 }>()
 
 const emit = defineEmits<{
-  navigate: [view: 'photos' | 'favorites' | 'albums' | 'tags' | 'trash']
+  navigate: [view: NavView]
   settings: []
 }>()
 
@@ -145,12 +147,10 @@ function handleClick(item: typeof navItems.value[0]) {
     bottom: 0;
     left: 0;
     right: 0;
-    height: calc(49px + env(safe-area-inset-bottom, 0px));
+    height: calc(56px + env(safe-area-inset-bottom, 0px));
     padding-bottom: env(safe-area-inset-bottom, 0px);
-    background: rgba(28, 28, 30, 0.92);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border-top: 0.5px solid rgba(255, 255, 255, 0.1);
+    background: var(--retro-bg-panel, #1a1030);
+    border-top: 3px solid #000;
     z-index: 100;
     justify-content: space-around;
     align-items: center;
@@ -164,18 +164,20 @@ function handleClick(item: typeof navItems.value[0]) {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
+    gap: 4px;
     flex: 1;
     max-width: 80px;
     min-height: 44px;
-    padding: 4px 0;
+    padding: 6px 0;
     background: transparent;
     border: none;
-    color: var(--systemSecondary, rgba(255, 255, 255, 0.55));
-    font-size: 10px;
-    font-weight: 500;
+    box-shadow: none;
+    color: var(--retro-text-muted, #9d8ec2);
+    font-family: 'VT323', monospace;
+    font-size: 12px;
+    font-weight: 400;
     cursor: pointer;
-    transition: color 0.15s ease;
+    transition: all 0.1s;
     -webkit-tap-highlight-color: transparent;
     position: relative;
     touch-action: manipulation;
@@ -187,7 +189,7 @@ function handleClick(item: typeof navItems.value[0]) {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.2s ease;
+    transition: transform 0.1s;
   }
 
   .nav-icon :deep(svg) {
@@ -196,24 +198,35 @@ function handleClick(item: typeof navItems.value[0]) {
   }
 
   .nav-label {
-    transition: color 0.15s ease;
+    transition: color 0.1s;
     line-height: 1.2;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   .mobile-nav-item.active {
-    color: var(--keyColor, #0a84ff);
+    color: var(--retro-accent-green, #00ff87);
+    text-shadow: 0 0 8px var(--retro-accent-green, #00ff87);
   }
 
   .mobile-nav-item.active .nav-icon {
-    transform: scale(1.05);
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 4px var(--retro-accent-green, #00ff87));
   }
 
   .active-indicator {
-    display: none;
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background: var(--retro-accent-green, #00ff87);
+    box-shadow: 0 0 6px var(--retro-accent-green, #00ff87);
   }
 
   .mobile-nav-item:active {
-    opacity: 0.7;
+    transform: scale(0.95);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -227,7 +240,7 @@ function handleClick(item: typeof navItems.value[0]) {
 /* Landscape mode adjustments */
 @media (max-width: 768px) and (orientation: landscape) {
   .mobile-nav {
-    height: calc(44px + env(safe-area-inset-bottom, 0px));
+    height: calc(48px + env(safe-area-inset-bottom, 0px));
   }
 
   .mobile-nav-item {
@@ -235,12 +248,12 @@ function handleClick(item: typeof navItems.value[0]) {
   }
 
   .nav-icon {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
   }
 
   .nav-label {
-    font-size: 9px;
+    font-size: 10px;
   }
 }
 </style>

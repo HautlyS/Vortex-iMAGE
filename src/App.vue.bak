@@ -13,8 +13,6 @@ import { useDataDriver, type DataDriver } from './composables/useDataDriver'
 import { useBackupSettings } from './composables/useBackupSettings'
 import { useSmartAlbums } from './composables/useSmartAlbums'
 import { useTimeout } from './composables/useTimeout'
-import { useDockApps, type DockView } from './composables/useDockApps'
-import { useToast } from './composables/useToast'
 import { open } from '@tauri-apps/plugin-dialog'
 import { invoke } from '@tauri-apps/api/core'
 import { 
@@ -32,6 +30,7 @@ import FolderCreator from './components/FolderCreator.vue'
 import RepoCreator from './components/RepoCreator.vue'
 import AlbumTree from './components/AlbumTree.vue'
 import SmartAlbumList from './components/SmartAlbumList.vue'
+import ColorTagPanel from './components/ColorTagPanel.vue'
 import ContextMenu, { type ContextMenuItem } from './components/ContextMenu.vue'
 import UploadToast from './components/UploadToast.vue'
 import ThemeSettings from './components/ThemeSettings.vue'
@@ -39,13 +38,9 @@ import DataDriverManager from './components/DataDriverManager.vue'
 import BackupSettings from './components/BackupSettings.vue'
 import LocalImageBrowser from './components/LocalImageBrowser.vue'
 import SecuritySettings from './components/SecuritySettings.vue'
-import MacOSDock from './components/MacOSDock.vue'
+import MobileNav from './components/MobileNav.vue'
 import ErrorBoundary from './components/ErrorBoundary.vue'
 import AsyncState from './components/AsyncState.vue'
-import ToastContainer from './components/ui/ToastContainer.vue'
-
-// Initialize toast system
-const toast = useToast()
 
 interface Album {
   name: string
@@ -61,13 +56,13 @@ const { init: initAccent } = useAccentColor()
 const { loadTheme } = useTheme()
 const { selected, clearSelection, selectAll, getSelected } = useSelection()
 const { loadFavorites, isFavorite, toggleFavorite } = useFavorites()
-const { loadTags, tagItems } = useColorTags()
+const { loadTags, tagItems, getItemsByTag } = useColorTags()
 const { size: previewSize, setSize: setPreviewSize, loadSize: loadPreviewSize } = usePhotoPreviewSize()
-const { loadDrivers } = useDataDriver()
+const { activeDriver, loadDrivers, setActiveDriver: _setActiveDriver } = useDataDriver()
 const { loadConfig: loadBackupConfig } = useBackupSettings()
 const { albums: smartAlbums, generateAlbums: generateSmartAlbums } = useSmartAlbums()
 const { createTimeout } = useTimeout()
-const { dockApps, activeView, setActiveView } = useDockApps()
+void _setActiveDriver // suppress unused warning
 
 // App state
 const loading = ref(true)
@@ -82,7 +77,6 @@ const showDataDrivers = ref(false)
 const showBackupSettings = ref(false)
 const showLocalBrowser = ref(false)
 const showSecuritySettings = ref(false)
-const showAlbumPanel = ref(false)
 const searchQuery = ref('')
 const debouncedSearchQuery = ref('')
 
@@ -101,7 +95,9 @@ onUnmounted(() => {
 const viewMode = ref<'grid' | 'list'>('grid')
 const uploadError = ref<string | null>(null)
 
-// Navigation state - now driven by dock
+// Navigation state
+type NavView = 'photos' | 'favorites' | 'albums' | 'tags' | 'trash'
+const currentView = ref<NavView>('photos')
 const selectedAlbumPath = ref<string | null>(null)
 const selectedSmartAlbumId = ref<string | null>(null)
 const selectedTagId = ref<string | null>(null)
@@ -117,7 +113,7 @@ const contextMenu = ref<{ x: number; y: number; items: ContextMenuItem[] } | nul
 const albums = ref<Album[]>([])
 const loadingAlbums = ref(false)
 
-// Filtered photos based on current view (dock navigation)
+// Filtered photos based on current view
 const filteredPhotos = computed(() => {
   let result = photos.value as Photo[]
   
@@ -127,31 +123,21 @@ const filteredPhotos = computed(() => {
     result = result.filter(p => p.name.toLowerCase().includes(q))
   }
   
-  // Filter by dock view
-  switch (activeView.value) {
-    case 'favorites':
-      result = result.filter(p => isFavorite(p.sha))
-      break
-    case 'albums':
-      // Show photos from selected album only
-      if (selectedAlbumPath.value) {
-        result = result.filter(p => p.path?.startsWith(selectedAlbumPath.value!))
-      } else if (selectedSmartAlbumId.value) {
-        const album = smartAlbums.value.find(a => a.id === selectedSmartAlbumId.value)
-        if (album) result = result.filter(p => album.photoIds.includes(p.name))
-      } else {
-        // No album selected - show empty until user selects one
-        result = []
+  // Filter by view
+  if (currentView.value === 'favorites') {
+    result = result.filter(p => isFavorite(p.sha))
+  } else if (currentView.value === 'tags' && selectedTagId.value) {
+    const taggedIds = getItemsByTag(selectedTagId.value)
+    result = result.filter(p => taggedIds.includes(p.sha))
+  } else if (currentView.value === 'albums') {
+    if (selectedAlbumPath.value) {
+      result = result.filter(p => p.path?.startsWith(selectedAlbumPath.value!))
+    } else if (selectedSmartAlbumId.value) {
+      const album = smartAlbums.value.find(a => a.id === selectedSmartAlbumId.value)
+      if (album) {
+        result = result.filter(p => album.photoIds.includes(p.name))
       }
-      break
-    case 'all-albums':
-      // Show all photos organized by albums (flat view)
-      // For now, show all photos - the gallery will show album structure
-      break
-    case 'photos':
-    default:
-      // Show all photos
-      break
+    }
   }
   
   return result
@@ -162,14 +148,14 @@ const uploadProgress = computed(() => {
 })
 
 const viewTitle = computed(() => {
-  switch (activeView.value) {
-    case 'favorites': return 'FAVORITOS'
+  switch (currentView.value) {
+    case 'favorites': return 'Favoritos'
     case 'albums': 
       if (selectedAlbumPath.value) return selectedAlbumPath.value.split('/').pop()?.toUpperCase()
       if (selectedSmartAlbumId.value) return smartAlbums.value.find(a => a.id === selectedSmartAlbumId.value)?.title
-      return 'ÁLBUNS'
-    case 'all-albums': return 'TODOS ÁLBUNS'
-    default: return 'TODAS FOTOS'
+      return 'ALBUNS'
+    case 'tags': return 'ETIQUETAS'
+    default: return 'FOTOS'
   }
 })
 
@@ -397,36 +383,31 @@ async function handleLocalImport(imagePaths: string[], _targetDriverId: string) 
   addToQueue(imagePaths)
 }
 
-// Navigation handlers - dock based
-function handleDockClick(appId: string) {
-  setActiveView(appId as DockView)
+// Navigation handlers
+function navigateTo(view: NavView) {
+  currentView.value = view
   selectedAlbumPath.value = null
-  selectedSmartAlbumId.value = null
   selectedTagId.value = null
   clearSelection()
-  
-  // Show album panel when albums view is selected
-  if (appId === 'albums' || appId === 'all-albums') {
-    showAlbumPanel.value = true
-  } else {
-    showAlbumPanel.value = false
-  }
 }
 
-function handleAlbumSelect(albumOrPath: Album | string | null) {
-  const path = typeof albumOrPath === 'string' || albumOrPath === null 
-    ? albumOrPath 
-    : albumOrPath.path || null
-  setActiveView('albums')
+function handleAlbumSelect(path: string | null) {
+  currentView.value = 'albums'
   selectedAlbumPath.value = path
   selectedSmartAlbumId.value = null
   clearSelection()
 }
 
 function handleSmartAlbumSelect(id: string) {
-  setActiveView('albums')
+  currentView.value = 'albums'
   selectedSmartAlbumId.value = id
   selectedAlbumPath.value = null
+  clearSelection()
+}
+
+function handleTagSelect(tagId: string | null) {
+  currentView.value = 'tags'
+  selectedTagId.value = tagId
   clearSelection()
 }
 
@@ -532,21 +513,118 @@ async function retryLoadPhotos() {
       </div>
     </Transition>
 
-    <!-- Main Content - Full Width (no sidebar) -->
-    <main class="main full-width">
-      <!-- Header with all controls -->
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <div class="logo-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="9" cy="9" r="2"/>
+              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+            </svg>
+          </div>
+          <span>iMAGE</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item" :class="{ active: currentView === 'photos' }" @click="navigateTo('photos')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span>FOTOS</span>
+        </button>
+        <button class="nav-item" :class="{ active: currentView === 'favorites' }" @click="navigateTo('favorites')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span>FAVORITOS</span>
+        </button>
+        <button class="nav-item" :class="{ active: currentView === 'albums' }" @click="navigateTo('albums')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          <span>ALBUNS</span>
+        </button>
+        <button class="nav-item" @click="showLocalBrowser = true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+          <span>IMPORTAR</span>
+        </button>
+      </nav>
+
+      <!-- Data Sources Section -->
+      <div class="sidebar-section">
+        <div class="section-header">
+          <span>FONTES</span>
+          <button class="section-btn" @click="showDataDrivers = true" title="Gerenciar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+        </div>
+        <div v-if="activeDriver" class="active-driver">
+          <div class="driver-icon" :class="activeDriver.type">
+            <svg v-if="activeDriver.type === 'github'" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+            </svg>
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <div class="driver-details">
+            <span class="driver-name">{{ activeDriver.name }}</span>
+            <span class="driver-type">{{ activeDriver.type === 'github' ? 'GitHub' : 'Local' }}</span>
+          </div>
+        </div>
+        <button v-else class="add-driver-btn" @click="showDataDrivers = true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          ADD FONTE
+        </button>
+      </div>
+
+      <!-- Backup Section -->
+      <div class="sidebar-section">
+        <div class="section-header">
+          <span>SISTEMA</span>
+        </div>
+        <button class="nav-item compact" @click="showBackupSettings = true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span>BACKUP</span>
+        </button>
+        <button class="nav-item compact" @click="showSecuritySettings = true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>SEGURANÇA</span>
+        </button>
+        <button class="nav-item compact" @click="showPrivacy = true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>PRIVACIDADE</span>
+        </button>
+      </div>
+
+      <!-- Albums Section -->
+      <div v-if="currentView === 'albums'" class="sidebar-section albums-section">
+        <AlbumTree 
+          :albums="albums" 
+          :selected-path="selectedAlbumPath" 
+          :loading="loadingAlbums"
+          @select="handleAlbumSelect" 
+          @refresh="loadAlbums"
+        />
+        <SmartAlbumList 
+            :albums="smartAlbums"
+            :selected-id="selectedSmartAlbumId"
+            @select="handleSmartAlbumSelect"
+        />
+      </div>
+
+      <!-- Color Tags Section -->
+      <div v-if="currentView === 'tags' || currentView === 'photos'" class="sidebar-section">
+        <ColorTagPanel :selected-tag-id="selectedTagId" @select="handleTagSelect" />
+      </div>
+
+      <div class="sidebar-footer">
+        <AuthButton />
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main">
+      <!-- Header -->
       <header class="header">
         <div class="header-left">
-          <div class="logo">
-            <div class="logo-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <circle cx="9" cy="9" r="2"/>
-                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
-              </svg>
-            </div>
-            <span>iMAGE</span>
-          </div>
           <h1 class="view-title">{{ viewTitle }}</h1>
           <span v-if="filteredPhotos.length > 0" class="photo-count">{{ filteredPhotos.length }} fotos</span>
         </div>
@@ -570,36 +648,42 @@ async function retryLoadPhotos() {
             </button>
           </div>
 
-          <!-- Action Buttons -->
+          <!-- Action Buttons Group -->
           <div class="action-group">
+            <!-- Create Button -->
             <button class="btn-action create" @click="showFolderCreator = true" :disabled="!token || !repo" title="Criar pasta">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14" /></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14m-7-7h14" />
+              </svg>
               <span>Criar</span>
             </button>
+
+            <!-- Upload Button -->
             <button class="btn-action upload" @click="handleUploadClick" :disabled="!token || !repo" title="Upload fotos">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17,8 12,3 7,8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
               <span>Upload</span>
               <span v-if="uploadProgress" class="action-badge">{{ uploadProgress }}</span>
             </button>
+
+            <!-- Folder Upload -->
             <button class="btn-action-icon" @click="handleFolderClick" :disabled="!token || !repo" title="Upload pasta">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-            </button>
-            <button class="btn-action-icon" @click="showLocalBrowser = true" :disabled="!token" title="Importar">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              </svg>
             </button>
           </div>
 
-          <!-- Settings buttons -->
-          <button class="btn-icon" @click="showDataDrivers = true" title="Fontes de dados">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-          </button>
           <button class="btn-icon" @click="showThemeSettings = true" title="Tema">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
           </button>
+
           <button class="btn-icon" @click="showSettings = !showSettings" title="Configurações">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           </button>
-          <AuthButton class="header-auth" />
         </div>
       </header>
 
@@ -659,7 +743,7 @@ async function retryLoadPhotos() {
           <AsyncState 
             :loading="loadingPhotos" 
             :error="photoLoadError"
-            :empty="!loadingPhotos && filteredPhotos.length === 0 && activeView !== 'albums'"
+            :empty="!loadingPhotos && filteredPhotos.length === 0"
             empty-message="Nenhuma foto encontrada"
             @retry="retryLoadPhotos"
           >
@@ -668,13 +752,9 @@ async function retryLoadPhotos() {
               :loading="false" 
               :view-mode="viewMode"
               :preview-size="previewSize"
-              :albums="albums"
-              :show-albums="activeView === 'albums' || activeView === 'all-albums'"
-              :current-album-path="selectedAlbumPath"
               @refresh="loadPhotos"
               @contextmenu="handlePhotoContextMenu"
               @resize="handlePreviewResize"
-              @album-click="handleAlbumSelect"
             />
             <template #empty-action>
               <button class="btn-secondary" @click="handleUploadClick">
@@ -695,7 +775,6 @@ async function retryLoadPhotos() {
     <BackupSettings v-if="showBackupSettings" @close="showBackupSettings = false" />
     <SecuritySettings v-if="showSecuritySettings" @close="showSecuritySettings = false" />
     <LocalImageBrowser v-if="showLocalBrowser" @close="showLocalBrowser = false" @import="handleLocalImport" />
-    <SettingsPanel v-if="showSettings" @close="showSettings = false" />
     <FolderCreator 
       v-if="showFolderCreator" 
       @created="handleFolderCreated" 
@@ -735,39 +814,12 @@ async function retryLoadPhotos() {
     <!-- Upload Progress Toast -->
     <UploadToast />
 
-    <!-- Toast Notifications -->
-    <ToastContainer />
-
-    <!-- MacOS Dock Navigation -->
-    <MacOSDock 
-      :apps="dockApps"
-      :open-apps="[activeView]"
-      @app-click="handleDockClick"
+    <!-- Mobile Bottom Navigation -->
+    <MobileNav 
+      :current-view="currentView"
+      @navigate="navigateTo"
+      @settings="showSettings = !showSettings"
     />
-
-    <!-- Album Panel (slides in when albums view is active) -->
-    <Transition name="slide-panel">
-      <aside v-if="showAlbumPanel && (activeView === 'albums' || activeView === 'all-albums')" class="album-panel">
-        <div class="panel-header">
-          <h3>{{ activeView === 'all-albums' ? 'Todos Álbuns' : 'Álbuns' }}</h3>
-          <button class="panel-close" @click="showAlbumPanel = false">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-          </button>
-        </div>
-        <AlbumTree 
-          :albums="albums" 
-          :selected-path="selectedAlbumPath" 
-          :loading="loadingAlbums"
-          @select="handleAlbumSelect" 
-          @refresh="loadAlbums"
-        />
-        <SmartAlbumList 
-          :albums="smartAlbums"
-          :selected-id="selectedSmartAlbumId"
-          @select="handleSmartAlbumSelect"
-        />
-      </aside>
-    </Transition>
     </div>
   </ErrorBoundary>
 </template>
@@ -776,17 +828,213 @@ async function retryLoadPhotos() {
 /* === 8-BIT RETRO APP LAYOUT === */
 .app {
   display: flex;
-  flex-direction: column;
   min-height: 100vh;
   background: var(--retro-bg-dark, #0f0a1e);
   color: var(--retro-text-main, #fff);
   position: relative;
   font-family: 'VT323', monospace;
-  padding-bottom: 100px; /* Space for dock */
 }
 
-/* === MAIN CONTENT (Full Width) === */
-.main.full-width {
+/* === SIDEBAR === */
+.retro-app .sidebar {
+  width: 220px;
+  background: var(--retro-bg-panel, #1a1030);
+  border-right: 3px solid #000;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  box-shadow: 4px 0 0 rgba(0,0,0,0.3);
+}
+
+.sidebar-header {
+  padding: 16px;
+  background: linear-gradient(135deg, #ff3b30, #ff2d95);
+  color: #fff;
+  border-bottom: 3px solid #000;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  text-shadow: 2px 2px 0 #000;
+}
+
+.logo-icon {
+  width: 28px;
+  height: 28px;
+  background: #000;
+  padding: 4px;
+  border: 2px solid #fff;
+}
+
+.logo-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.sidebar-nav {
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  width: 100%;
+  border: 2px solid transparent;
+  background: transparent;
+  color: var(--retro-text-muted, #9d8ec2);
+  cursor: pointer;
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+  text-align: left;
+  transition: all 0.1s;
+}
+
+.nav-item svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.nav-item:hover {
+  background: var(--retro-bg-lighter, #2d1f4d);
+  border-color: var(--retro-accent-green, #00ff87);
+  color: var(--retro-accent-green, #00ff87);
+  text-shadow: 0 0 8px var(--retro-accent-green, #00ff87);
+}
+
+.nav-item.active {
+  background: linear-gradient(135deg, #ff2d95, #b24dff);
+  color: #fff;
+  border-color: #000;
+  box-shadow: 3px 3px 0 #000;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.nav-item.compact {
+  padding: 8px 12px;
+  font-size: 16px;
+}
+
+.sidebar-section {
+  margin-top: 16px;
+  padding: 0 8px;
+}
+
+.section-header {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--retro-accent-yellow, #ffd000);
+  margin-bottom: 8px;
+  padding: 0 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.section-btn {
+  width: 24px;
+  height: 24px;
+  padding: 4px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.section-btn:hover {
+  color: var(--retro-accent-green, #00ff87);
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 12px;
+  border-top: 2px solid var(--retro-bg-lighter, #2d1f4d);
+}
+
+/* Active Driver Display */
+.active-driver {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: var(--retro-bg-card, #251842);
+  border: 2px solid var(--retro-bg-lighter, #2d1f4d);
+}
+
+.driver-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  border: 2px solid var(--retro-accent-green, #00ff87);
+}
+
+.driver-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.driver-icon.github { color: var(--retro-accent-green, #00ff87); }
+.driver-icon.local { color: var(--retro-accent-yellow, #ffd000); }
+
+.driver-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.driver-name {
+  font-size: 14px;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.driver-type {
+  font-size: 12px;
+  color: var(--retro-text-muted, #9d8ec2);
+}
+
+.add-driver-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: var(--retro-bg-card, #251842);
+  border: 2px dashed var(--retro-bg-lighter, #2d1f4d);
+  color: var(--retro-text-muted, #9d8ec2);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  box-shadow: none;
+}
+
+.add-driver-btn:hover {
+  border-color: var(--retro-accent-green, #00ff87);
+  color: var(--retro-accent-green, #00ff87);
+}
+
+.add-driver-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* === MAIN CONTENT === */
+.main {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -799,47 +1047,22 @@ async function retryLoadPhotos() {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 12px 20px;
+  padding: 12px 16px;
   border-bottom: 3px solid #000;
   background: var(--retro-bg-panel, #1a1030);
-  min-height: 60px;
+  height: 60px;
   flex-shrink: 0;
-  flex-wrap: wrap;
 }
 
 .header-left {
   display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
-  color: var(--retro-accent-pink, #ff2d95);
-  text-shadow: 2px 2px 0 #000;
-}
-
-.logo-icon {
-  width: 28px;
-  height: 28px;
-  background: linear-gradient(135deg, #ff3b30, #ff2d95);
-  padding: 4px;
-  border: 2px solid #000;
-  color: #fff;
-}
-
-.logo-icon svg {
-  width: 100%;
-  height: 100%;
+  align-items: baseline;
+  gap: 12px;
 }
 
 .view-title {
   font-family: 'Press Start 2P', monospace;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--retro-accent-yellow, #ffd000);
   text-shadow: 2px 2px 0 #000, 0 0 10px rgba(255, 208, 0, 0.5);
   white-space: nowrap;
@@ -854,8 +1077,7 @@ async function retryLoadPhotos() {
 /* === SEARCH BAR === */
 .search-bar {
   flex: 1;
-  max-width: 400px;
-  min-width: 200px;
+  max-width: 320px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -887,8 +1109,14 @@ async function retryLoadPhotos() {
   padding: 0;
 }
 
-.search-bar input:focus { outline: none; }
-.search-bar input::placeholder { color: var(--retro-text-muted, #9d8ec2); opacity: 0.6; }
+.search-bar input:focus {
+  outline: none;
+}
+
+.search-bar input::placeholder {
+  color: var(--retro-text-muted, #9d8ec2);
+  opacity: 0.6;
+}
 
 .search-clear {
   width: 20px;
@@ -900,17 +1128,17 @@ async function retryLoadPhotos() {
   color: var(--retro-text-muted, #9d8ec2);
 }
 
-.search-clear:hover { color: var(--retro-accent-red, #ff3b30); }
+.search-clear:hover {
+  color: var(--retro-accent-red, #ff3b30);
+}
 
 /* === HEADER ACTIONS === */
 .header-actions {
+  margin-left: auto;
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-left: auto;
 }
-
-.header-auth { margin-left: 8px; }
 
 .view-toggle {
   display: flex;
@@ -928,9 +1156,19 @@ async function retryLoadPhotos() {
   color: var(--retro-text-muted, #9d8ec2);
 }
 
-.view-toggle button:hover { color: #fff; }
-.view-toggle button.active { background: var(--retro-accent-pink, #ff2d95); color: #fff; }
-.view-toggle button svg { width: 100%; height: 100%; }
+.view-toggle button:hover {
+  color: #fff;
+}
+
+.view-toggle button.active {
+  background: var(--retro-accent-pink, #ff2d95);
+  color: #fff;
+}
+
+.view-toggle button svg {
+  width: 100%;
+  height: 100%;
+}
 
 .action-group {
   display: flex;
@@ -947,13 +1185,27 @@ async function retryLoadPhotos() {
   box-shadow: 2px 2px 0 #000;
   font-family: 'VT323', monospace;
   font-size: 16px;
-  color: #fff;
 }
 
-.btn-action svg { width: 18px; height: 18px; }
-.btn-action.upload { background: linear-gradient(135deg, var(--retro-accent-green, #00ff87), #00cc6a); color: #000; }
-.btn-action.create { background: linear-gradient(135deg, var(--retro-accent-blue, #00d4ff), #00a8cc); color: #000; }
-.btn-action:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-action svg {
+  width: 18px;
+  height: 18px;
+}
+
+.btn-action.upload {
+  background: linear-gradient(135deg, var(--retro-accent-green, #00ff87), #00cc6a);
+  color: #000;
+}
+
+.btn-action.create {
+  background: linear-gradient(135deg, var(--retro-accent-blue, #00d4ff), #00a8cc);
+  color: #000;
+}
+
+.btn-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 .btn-action-icon {
   width: 36px;
@@ -962,10 +1214,12 @@ async function retryLoadPhotos() {
   background: var(--retro-bg-lighter, #2d1f4d);
   border: 2px solid #000;
   box-shadow: 2px 2px 0 #000;
-  color: #fff;
 }
 
-.btn-action-icon svg { width: 100%; height: 100%; }
+.btn-action-icon svg {
+  width: 100%;
+  height: 100%;
+}
 
 .action-badge {
   background: var(--retro-accent-red, #ff3b30);
@@ -983,17 +1237,23 @@ async function retryLoadPhotos() {
   background: var(--retro-bg-lighter, #2d1f4d);
   border: 2px solid #000;
   box-shadow: 2px 2px 0 #000;
-  color: #fff;
 }
 
-.btn-icon svg { width: 100%; height: 100%; }
+.btn-icon svg {
+  width: 100%;
+  height: 100%;
+}
 
-.btn-icon:hover, .btn-action:hover, .btn-action-icon:hover {
+.btn-icon:hover,
+.btn-action:hover,
+.btn-action-icon:hover {
   transform: translate(-1px, -1px);
   box-shadow: 3px 3px 0 #000;
 }
 
-.btn-icon:active, .btn-action:active, .btn-action-icon:active {
+.btn-icon:active,
+.btn-action:active,
+.btn-action-icon:active {
   transform: translate(2px, 2px);
   box-shadow: none;
 }
@@ -1211,102 +1471,51 @@ async function retryLoadPhotos() {
   transform: translateX(-50%) translateY(20px);
 }
 
-/* === ALBUM PANEL (Slide-in) === */
-.album-panel {
-  position: fixed;
-  top: 60px;
-  left: 0;
-  bottom: 100px;
-  width: 280px;
-  background: var(--retro-bg-panel, #1a1030);
-  border-right: 3px solid #000;
-  box-shadow: 4px 0 0 rgba(0,0,0,0.3);
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background: linear-gradient(135deg, var(--retro-accent-yellow, #ffd000), #ff9500);
-  border-bottom: 3px solid #000;
-}
-
-.panel-header h3 {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
-  color: #000;
-  text-shadow: none;
-}
-
-.panel-close {
-  width: 28px;
-  height: 28px;
-  padding: 4px;
-  background: #000;
-  border: 2px solid #fff;
-  color: #fff;
-  box-shadow: 2px 2px 0 rgba(0,0,0,0.5);
-}
-
-.panel-close:hover {
-  background: var(--retro-accent-red, #ff3b30);
-}
-
-.panel-close svg {
-  width: 100%;
-  height: 100%;
-}
-
-/* Panel slide transition */
-.slide-panel-enter-active,
-.slide-panel-leave-active {
-  transition: transform 0.3s ease;
-}
-
-.slide-panel-enter-from,
-.slide-panel-leave-to {
-  transform: translateX(-100%);
-}
-
-/* === RESPONSIVE === */
+/* === MOBILE === */
 @media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+  
+  .app {
+    flex-direction: column;
+  }
+  
   .header {
+    height: auto;
+    flex-wrap: wrap;
     padding: 10px;
-    gap: 8px;
+    gap: 10px;
   }
   
   .header-left {
-    flex-wrap: wrap;
-    gap: 8px;
+    width: 100%;
+    justify-content: center;
   }
   
-  .logo { display: none; }
-  
-  .view-title { font-size: 10px; }
+  .view-title {
+    font-size: 12px;
+  }
   
   .search-bar {
-    order: 10;
+    order: 3;
     width: 100%;
     max-width: none;
-    min-width: auto;
   }
   
-  .action-group { display: none; }
-  .view-toggle { display: none; }
-  
-  .album-panel {
-    width: 100%;
-    top: 50px;
+  .header-actions {
+    order: 2;
+    margin-left: 0;
+    width: auto;
   }
-}
-
-@media (max-width: 480px) {
-  .btn-action span { display: none; }
-  .header-auth { display: none; }
+  
+  .action-group {
+    display: none;
+  }
+  
+  .view-toggle {
+    display: none;
+  }
 }
 </style>
+```

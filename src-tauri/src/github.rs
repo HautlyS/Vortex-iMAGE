@@ -15,8 +15,54 @@ use thiserror::Error;
 use tokio::fs;
 use tokio::time::sleep;
 
-use crate::compress::{compress_file_data, ItemCompressionSettings, Algorithm};
-use crate::crypto::{encrypt, decrypt_with_keypair_bytes, PublicBundle, EncryptedFileData, EncryptionSettings, EncryptedPayload};
+use crate::compress::{compress_file_data, ItemCompressionSettings, Algorithm, CompressedFileData};
+use crate::crypto::{encrypt, decrypt_with_keypair_bytes, PublicBundle, EncryptedFileData, EncryptionSettings, EncryptedPayload, encrypt_with_password};
+
+/// Upload processing settings - allows per-item customization
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct UploadProcessingSettings {
+    /// Compression configuration
+    pub compression: CompressionConfig,
+    /// Encryption configuration  
+    pub encryption: EncryptionConfig,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CompressionConfig {
+    pub enabled: bool,
+    pub algorithm: String,
+    pub level: i32,
+    pub prefer_speed: bool,
+    pub min_size_threshold: usize,
+    pub skip_already_compressed: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct EncryptionConfig {
+    pub enabled: bool,
+    pub use_password: bool,
+    pub use_keypair: bool,
+}
+
+impl Default for UploadProcessingSettings {
+    fn default() -> Self {
+        Self {
+            compression: CompressionConfig {
+                enabled: true,
+                algorithm: "zstd".to_string(),
+                level: 3,
+                prefer_speed: false,
+                min_size_threshold: 1024,
+                skip_already_compressed: true,
+            },
+            encryption: EncryptionConfig {
+                enabled: true,
+                use_password: false,
+                use_keypair: true,
+            },
+        }
+    }
+}
 
 pub struct GithubConfig {
     pub client_id: String,
@@ -310,7 +356,9 @@ pub async fn validate_token(
 async fn prepare_upload_payload(
     content: &[u8],
     filename: &str,
-    public_bundle: PublicBundle,
+    public_bundle: Option<PublicBundle>,
+    password: Option<String>,
+    settings: UploadProcessingSettings,
     app: &AppHandle,
     upload_id: &str,
 ) -> Result<Vec<u8>, AppError> {
@@ -323,55 +371,113 @@ async fn prepare_upload_payload(
         percent: 0,
     });
 
-    let compression_settings = ItemCompressionSettings {
-        enabled: true,
-        algorithm: Algorithm::Zstd,
-        level: 3,
-        prefer_speed: false,
-        min_size_threshold: 128,
-        skip_already_compressed: false,
-    };
+    // Step 1: Compression (if enabled)
+    let processed_data = if settings.compression.enabled {
+        let compression_settings = ItemCompressionSettings {
+            enabled: true,
+            algorithm: Algorithm::from(settings.compression.algorithm.as_str()),
+            level: settings.compression.level,
+            prefer_speed: settings.compression.prefer_speed,
+            min_size_threshold: settings.compression.min_size_threshold,
+            skip_already_compressed: settings.compression.skip_already_compressed,
+        };
 
-    let compressed_data = compress_file_data(content, filename, &compression_settings)
-        .map_err(|e| AppError::Validation(format!("Compression failed: {}", e)))?;
+        let compressed_data = compress_file_data(content, filename, &compression_settings)
+            .map_err(|e| AppError::Validation(format!("Compression failed: {}", e)))?;
 
-    let _ = app.emit("upload-progress", UploadProgress {
-        id: upload_id.to_string(),
-        bytes_sent: 0,
-        total_bytes,
-        percent: 30,
-    });
+        let _ = app.emit("upload-progress", UploadProgress {
+            id: upload_id.to_string(),
+            bytes_sent: 0,
+            total_bytes,
+            percent: 30,
+        });
 
-    let compressed_bytes = serde_json::to_vec(&compressed_data)
-        .map_err(|e| AppError::Validation(format!("Serialization failed: {}", e)))?;
-    drop(compressed_data);
-
-    // Note: encryption_settings kept for documentation/future use
-    let _encryption_settings = EncryptionSettings {
-        enabled: true,
-        use_password: false,
-        use_keypair: true,
-        recipient_bundle: Some(public_bundle.clone()),
-    };
-
-    // Encrypt using hybrid PQ encryption
-    let encrypted_payload = encrypt(&compressed_bytes, &public_bundle)
-        .map_err(|e| AppError::Validation(format!("Encryption failed: {}", e)))?;
-    drop(compressed_bytes);
-
-    // Wrap in EncryptedFileData for compatibility
-    let encrypted_file = EncryptedFileData {
-        data: serde_json::to_vec(&encrypted_payload)
-            .map_err(|e| AppError::Validation(format!("Payload serialization failed: {}", e)))?,
-        encrypted: true,
-        method: crate::crypto::EncryptionMethod::HybridPQ,
-        metadata: None,
-    };
-    drop(encrypted_payload);
+        serde_json::to_vec(&compressed_data)
+            .map_err(|e| AppError::Validation(format!("Serialization failed: {}", e)))?
+    } else {
+        // No compression - wrap raw data with metadata
+        let uncompressed = CompressedFileData {
+            data: content.to_vec(),
+            compressed: false,
+            algorithm: Algorithm::None,
+            original_size: content.len(),
+            compressed_size: content.len(),
+            ratio: 1.0,
+            checksum: blake3::hash(content).as_bytes().to_vec(),
+        };
         
-    let final_payload = serde_json::to_vec(&encrypted_file)
-        .map_err(|e| AppError::Validation(format!("Final serialization failed: {}", e)))?;
-    drop(encrypted_file);
+        let _ = app.emit("upload-progress", UploadProgress {
+            id: upload_id.to_string(),
+            bytes_sent: 0,
+            total_bytes,
+            percent: 30,
+        });
+
+        serde_json::to_vec(&uncompressed)
+            .map_err(|e| AppError::Validation(format!("Serialization failed: {}", e)))?
+    };
+
+    // Step 2: Encryption (if enabled)
+    let final_payload = if settings.encryption.enabled {
+        if settings.encryption.use_password {
+            // Password-based encryption
+            let pwd = password.ok_or_else(|| 
+                AppError::Validation("Password required for encryption".into()))?;
+            
+            let encrypted_bytes = encrypt_with_password(&processed_data, pwd.as_bytes())
+                .map_err(|e| AppError::Validation(format!("Password encryption failed: {}", e)))?;
+
+            let encrypted_file = EncryptedFileData {
+                data: encrypted_bytes,
+                encrypted: true,
+                method: crate::crypto::EncryptionMethod::Password,
+                metadata: None,
+            };
+
+            serde_json::to_vec(&encrypted_file)
+                .map_err(|e| AppError::Validation(format!("Final serialization failed: {}", e)))?
+        } else if settings.encryption.use_keypair {
+            // Hybrid PQ encryption
+            let bundle = public_bundle.ok_or_else(|| 
+                AppError::Validation("Public bundle required for keypair encryption".into()))?;
+
+            let encrypted_payload = encrypt(&processed_data, &bundle)
+                .map_err(|e| AppError::Validation(format!("Encryption failed: {}", e)))?;
+
+            let encrypted_file = EncryptedFileData {
+                data: serde_json::to_vec(&encrypted_payload)
+                    .map_err(|e| AppError::Validation(format!("Payload serialization failed: {}", e)))?,
+                encrypted: true,
+                method: crate::crypto::EncryptionMethod::HybridPQ,
+                metadata: None,
+            };
+
+            serde_json::to_vec(&encrypted_file)
+                .map_err(|e| AppError::Validation(format!("Final serialization failed: {}", e)))?
+        } else {
+            // Encryption enabled but no method selected - treat as no encryption
+            let unencrypted_file = EncryptedFileData {
+                data: processed_data,
+                encrypted: false,
+                method: crate::crypto::EncryptionMethod::None,
+                metadata: None,
+            };
+
+            serde_json::to_vec(&unencrypted_file)
+                .map_err(|e| AppError::Validation(format!("Final serialization failed: {}", e)))?
+        }
+    } else {
+        // No encryption - wrap data for consistency
+        let unencrypted_file = EncryptedFileData {
+            data: processed_data,
+            encrypted: false,
+            method: crate::crypto::EncryptionMethod::None,
+            metadata: None,
+        };
+
+        serde_json::to_vec(&unencrypted_file)
+            .map_err(|e| AppError::Validation(format!("Final serialization failed: {}", e)))?
+    };
 
     let final_size = final_payload.len() as u64;
 
@@ -394,7 +500,9 @@ pub async fn upload_photo(
     token: String,
     filename: String,
     upload_id: String,
-    public_bundle: PublicBundle,
+    public_bundle: Option<PublicBundle>,
+    password: Option<String>,
+    settings: Option<UploadProcessingSettings>,
 ) -> Result<UploadResult, AppError> {
     validate_repo(&repo)?;
     let safe_filename = sanitize_filename(&filename);
@@ -405,8 +513,32 @@ pub async fn upload_photo(
 
     let content = fs::read(&path).await?;
 
-    let final_payload =
-        prepare_upload_payload(&content, &safe_filename, public_bundle, &app, &upload_id).await?;
+    // Use provided settings or defaults
+    let processing_settings = settings.unwrap_or_default();
+
+    // Validate encryption requirements
+    if processing_settings.encryption.enabled {
+        if processing_settings.encryption.use_keypair && public_bundle.is_none() {
+            return Err(AppError::Validation(
+                "Public bundle required when keypair encryption is enabled".into()
+            ));
+        }
+        if processing_settings.encryption.use_password && password.is_none() {
+            return Err(AppError::Validation(
+                "Password required when password encryption is enabled".into()
+            ));
+        }
+    }
+
+    let final_payload = prepare_upload_payload(
+        &content,
+        &safe_filename,
+        public_bundle,
+        password,
+        processing_settings,
+        &app,
+        &upload_id
+    ).await?;
 
     upload_to_github(
         &app,
@@ -1700,6 +1832,72 @@ pub async fn rename_album(
     Ok(moved_count)
 }
 
+/// Create a folder (or subfolder) on GitHub by creating a .gitkeep placeholder file
+#[tauri::command]
+pub async fn create_folder(
+    client: State<'_, HttpClient>,
+    folder_path: String,
+    repo: String,
+    token: String,
+) -> Result<String, AppError> {
+    validate_repo(&repo)?;
+
+    // Sanitize each path segment
+    let sanitized_path: String = folder_path
+        .split('/')
+        .filter(|s| !s.is_empty())
+        .map(|s| sanitize_filename(s))
+        .filter(|s| !s.is_empty())
+        .collect::<Vec<_>>()
+        .join("/");
+
+    if sanitized_path.is_empty() {
+        return Err(AppError::Validation("Invalid folder path".into()));
+    }
+
+    let full_path = format!("photos/{}", sanitized_path);
+    let gitkeep_path = format!("{}/.gitkeep", full_path);
+    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, gitkeep_path);
+
+    // Check if folder already exists
+    let check_url = format!("https://api.github.com/repos/{}/contents/{}", repo, full_path);
+    let check_res = client
+        .0
+        .get(&check_url)
+        .header("Authorization", format!("Bearer {}", token))
+        .header("User-Agent", "vortex-image")
+        .header("Accept", "application/vnd.github+json")
+        .send()
+        .await?;
+
+    if check_res.status().is_success() {
+        return Err(AppError::Validation("Folder already exists".into()));
+    }
+
+    let body = serde_json::json!({
+        "message": format!("Create folder {}", sanitized_path),
+        "content": STANDARD.encode("")
+    });
+
+    let res = client
+        .0
+        .put(&url)
+        .header("Authorization", format!("Bearer {}", token))
+        .header("User-Agent", "vortex-image")
+        .header("Accept", "application/vnd.github+json")
+        .json(&body)
+        .send()
+        .await?;
+
+    if !res.status().is_success() {
+        let status = res.status();
+        let err = res.text().await.unwrap_or_default();
+        return Err(AppError::Api(format!("Failed to create folder ({}): {}", status, err)));
+    }
+
+    Ok(full_path)
+}
+
 #[tauri::command]
 pub async fn download_secure_photo(
     client: State<'_, HttpClient>,
@@ -1873,4 +2071,156 @@ pub async fn download_secure_message(
         .map_err(|e| AppError::Validation(format!("Invalid UTF-8 message: {}", e)))?;
 
     Ok(message)
+}
+
+
+// ============================================================================
+// Cross-Device Keypair Sync
+// ============================================================================
+
+const KEYPAIR_PATH: &str = ".vortex/keypair.enc";
+
+#[derive(Serialize, Deserialize)]
+pub struct KeypairSyncInfo {
+    pub exists: bool,
+    pub sha: Option<String>,
+    pub updated_at: Option<String>,
+}
+
+/// Check if encrypted keypair exists in repo
+#[tauri::command]
+pub async fn check_keypair_sync(
+    client: State<'_, HttpClient>,
+    repo: String,
+    token: String,
+) -> Result<KeypairSyncInfo, AppError> {
+    validate_repo(&repo)?;
+
+    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, KEYPAIR_PATH);
+
+    let res = client
+        .0
+        .get(&url)
+        .header("Authorization", format!("Bearer {}", token))
+        .header("User-Agent", "vortex-image")
+        .header("Accept", "application/vnd.github+json")
+        .send()
+        .await?;
+
+    if res.status() == 404 {
+        return Ok(KeypairSyncInfo { exists: false, sha: None, updated_at: None });
+    }
+
+    if !res.status().is_success() {
+        return Err(AppError::Api(format!("Failed to check keypair: {}", res.status())));
+    }
+
+    let json: serde_json::Value = res.json().await?;
+
+    Ok(KeypairSyncInfo {
+        exists: true,
+        sha: json["sha"].as_str().map(|s| s.to_string()),
+        updated_at: None, // GitHub doesn't return this in contents API
+    })
+}
+
+/// Upload encrypted keypair to repo for cross-device sync
+#[tauri::command]
+pub async fn upload_keypair_sync(
+    client: State<'_, HttpClient>,
+    encrypted_keypair: Vec<u8>,
+    repo: String,
+    token: String,
+) -> Result<String, AppError> {
+    validate_repo(&repo)?;
+
+    // Check if file exists to get SHA for update
+    let check_url = format!("https://api.github.com/repos/{}/contents/{}", repo, KEYPAIR_PATH);
+    let check_res = client
+        .0
+        .get(&check_url)
+        .header("Authorization", format!("Bearer {}", token))
+        .header("User-Agent", "vortex-image")
+        .header("Accept", "application/vnd.github+json")
+        .send()
+        .await?;
+
+    let existing_sha = if check_res.status().is_success() {
+        let json: serde_json::Value = check_res.json().await?;
+        json["sha"].as_str().map(|s| s.to_string())
+    } else {
+        None
+    };
+
+    let encoded = STANDARD.encode(&encrypted_keypair);
+    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, KEYPAIR_PATH);
+
+    let mut body = serde_json::json!({
+        "message": "Sync encrypted keypair",
+        "content": encoded
+    });
+
+    if let Some(sha) = existing_sha {
+        body["sha"] = serde_json::Value::String(sha);
+    }
+
+    let res = client
+        .0
+        .put(&url)
+        .header("Authorization", format!("Bearer {}", token))
+        .header("User-Agent", "vortex-image")
+        .header("Accept", "application/vnd.github+json")
+        .json(&body)
+        .send()
+        .await?;
+
+    if !res.status().is_success() {
+        let status = res.status();
+        let err = res.text().await.unwrap_or_default();
+        return Err(AppError::Api(format!("Failed to upload keypair ({}): {}", status, err)));
+    }
+
+    let json: serde_json::Value = res.json().await?;
+    Ok(json["content"]["sha"].as_str().unwrap_or("").to_string())
+}
+
+/// Download encrypted keypair from repo
+#[tauri::command]
+pub async fn download_keypair_sync(
+    client: State<'_, HttpClient>,
+    repo: String,
+    token: String,
+) -> Result<Vec<u8>, AppError> {
+    validate_repo(&repo)?;
+
+    let url = format!("https://api.github.com/repos/{}/contents/{}", repo, KEYPAIR_PATH);
+
+    let res = client
+        .0
+        .get(&url)
+        .header("Authorization", format!("Bearer {}", token))
+        .header("User-Agent", "vortex-image")
+        .header("Accept", "application/vnd.github+json")
+        .send()
+        .await?;
+
+    if res.status() == 404 {
+        return Err(AppError::Api("No synced keypair found in repository".into()));
+    }
+
+    if !res.status().is_success() {
+        return Err(AppError::Api(format!("Failed to download keypair: {}", res.status())));
+    }
+
+    let json: serde_json::Value = res.json().await?;
+
+    let content_b64 = json["content"]
+        .as_str()
+        .ok_or_else(|| AppError::Api("No content found".into()))?
+        .replace('\n', "");
+
+    let encrypted_bytes = STANDARD.decode(&content_b64)
+        .map_err(|e| AppError::Validation(format!("Base64 decode failed: {}", e)))?;
+
+    Ok(encrypted_bytes)
 }

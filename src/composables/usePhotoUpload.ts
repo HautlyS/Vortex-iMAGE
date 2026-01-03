@@ -6,6 +6,7 @@
 
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useGitHubAuth, isDevMode } from './useGitHubAuth'
+import { useMediaSettings, type ProcessingSettings } from './useMediaSettings'
 
 interface UploadResult {
   url: string
@@ -29,6 +30,9 @@ export interface UploadItem {
   progress: number
   error?: string
   url?: string
+  albumPath?: string
+  settings?: ProcessingSettings
+  password?: string
 }
 
 export interface Photo {
@@ -37,6 +41,23 @@ export interface Photo {
   sha: string
   path?: string
   size?: number
+}
+
+/** Upload processing settings for backend */
+interface UploadProcessingSettings {
+  compression: {
+    enabled: boolean
+    algorithm: string
+    level: number
+    prefer_speed: boolean
+    min_size_threshold: number
+    skip_already_compressed: boolean
+  }
+  encryption: {
+    enabled: boolean
+    use_password: boolean
+    use_keypair: boolean
+  }
 }
 
 const MOCK_PHOTOS: Photo[] = Array.from({ length: 50 }, (_, i) => {
@@ -60,6 +81,11 @@ let initialized = false
 
 export function usePhotoUpload() {
   const { token, repo, publicBundle } = useGitHubAuth()
+  const { 
+    getEffectiveSettings, 
+    detectMediaType, 
+    initialize: initMediaSettings 
+  } = useMediaSettings()
 
   let unlisten: (() => void) | null = null
   let isProcessing = false

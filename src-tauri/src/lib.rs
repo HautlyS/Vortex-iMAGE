@@ -16,8 +16,9 @@ use github::{
     get_user, list_photos, poll_oauth, start_oauth, upload_photo, validate_token,
     create_repo, get_repo_info, update_repo_visibility, scan_folder, upload_folder_as_album,
     upload_folder_recursive, list_albums, download_photo, delete_photo, remove_local_file,
-    get_local_image_info, delete_album, rename_album, HttpClient, download_secure_photo,
-    upload_secure_message, download_secure_message, GithubConfig
+    get_local_image_info, delete_album, rename_album, create_folder, HttpClient, download_secure_photo,
+    upload_secure_message, download_secure_message, GithubConfig,
+    check_keypair_sync, upload_keypair_sync, download_keypair_sync
 };
 
 use compress::{
@@ -76,6 +77,7 @@ pub fn run() {
             list_albums,
             delete_album,
             rename_album,
+            create_folder,
             
             download_photo,
             download_secure_photo,
@@ -116,6 +118,11 @@ pub fn run() {
             
             encrypt_file,
             decrypt_file,
+            
+            // Keypair sync
+            check_keypair_sync,
+            upload_keypair_sync,
+            download_keypair_sync,
             
             pipeline_process,
             pipeline_reverse,
