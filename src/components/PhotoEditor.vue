@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onUnmounted, watch } from 'vue'
+import { registerOverlay } from '../composables/useKeyboardShortcuts'
 
 const props = defineProps<{
   imageUrl: string
@@ -10,6 +11,26 @@ const emit = defineEmits<{
   (e: 'close'): void
   (e: 'save', blob: Blob): void
 }>()
+
+// Register ESC key handler when visible
+let unregisterOverlay: (() => void) | null = null;
+
+watch(() => props.visible, (isVisible) => {
+  if (isVisible) {
+    unregisterOverlay = registerOverlay('photo-editor', () => emit('close'));
+  } else {
+    if (unregisterOverlay) {
+      unregisterOverlay();
+      unregisterOverlay = null;
+    }
+  }
+}, { immediate: true });
+
+onUnmounted(() => {
+  if (unregisterOverlay) {
+    unregisterOverlay();
+  }
+});
 
 const canvas = ref<HTMLCanvasElement | null>(null)
 const rotation = ref(0)

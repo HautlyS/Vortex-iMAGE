@@ -1,289 +1,380 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 
-export interface DropdownOption {
-  id: string
-  label: string
-  icon?: string
-  disabled?: boolean
-  divider?: boolean
+interface Option {
+  value: string | number;
+  label: string;
+  icon?: string;
+  disabled?: boolean;
 }
 
 const props = withDefaults(defineProps<{
-  options: DropdownOption[]
-  modelValue?: string
-  placeholder?: string
-  disabled?: boolean
-  align?: 'left' | 'right'
+  modelValue: string | number | null;
+  options: Option[];
+  placeholder?: string;
+  disabled?: boolean;
+  label?: string;
+  variant?: 'default' | 'compact';
 }>(), {
-  placeholder: 'Selecionar...',
+  placeholder: 'SELECT...',
   disabled: false,
-  align: 'left'
-})
+  variant: 'default'
+});
 
 const emit = defineEmits<{
-  'update:modelValue': [value: string]
-  select: [option: DropdownOption]
-}>()
+  'update:modelValue': [value: string | number];
+}>();
 
-const isOpen = ref(false)
-const dropdownRef = ref<HTMLDivElement | null>(null)
-const selectedIndex = ref(-1)
+const isOpen = ref(false);
+const dropdownRef = ref<HTMLElement | null>(null);
+const highlightedIndex = ref(-1);
 
-const selectedOption = computed(() => 
-  props.options.find(o => o.id === props.modelValue && !o.divider)
-)
-
-const selectableOptions = computed(() => 
-  props.options.filter(o => !o.divider && !o.disabled)
-)
+const selectedOption = computed(() => {
+  return props.options.find(opt => opt.value === props.modelValue);
+});
 
 const toggle = () => {
   if (!props.disabled) {
-    isOpen.value = !isOpen.value
+    isOpen.value = !isOpen.value;
     if (isOpen.value) {
-      selectedIndex.value = selectableOptions.value.findIndex(o => o.id === props.modelValue)
+      highlightedIndex.value = props.options.findIndex(opt => opt.value === props.modelValue);
     }
   }
-}
+};
 
-const select = (option: DropdownOption) => {
-  if (option.disabled || option.divider) return
-  emit('update:modelValue', option.id)
-  emit('select', option)
-  isOpen.value = false
-}
+const select = (option: Option) => {
+  if (!option.disabled) {
+    emit('update:modelValue', option.value);
+    isOpen.value = false;
+  }
+};
 
 const handleKeydown = (e: KeyboardEvent) => {
   if (!isOpen.value) {
     if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
-      e.preventDefault()
-      isOpen.value = true
+      e.preventDefault();
+      isOpen.value = true;
     }
-    return
+    return;
   }
 
-  if (e.key === 'ArrowDown') {
-    e.preventDefault()
-    selectedIndex.value = Math.min(selectedIndex.value + 1, selectableOptions.value.length - 1)
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault()
-    selectedIndex.value = Math.max(selectedIndex.value - 1, 0)
-  } else if (e.key === 'Enter' || e.key === ' ') {
-    e.preventDefault()
-    if (selectedIndex.value >= 0) {
-      select(selectableOptions.value[selectedIndex.value])
-    }
-  } else if (e.key === 'Escape') {
-    isOpen.value = false
+  switch (e.key) {
+    case 'ArrowDown':
+      e.preventDefault();
+      highlightedIndex.value = Math.min(highlightedIndex.value + 1, props.options.length - 1);
+      break;
+    case 'ArrowUp':
+      e.preventDefault();
+      highlightedIndex.value = Math.max(highlightedIndex.value - 1, 0);
+      break;
+    case 'Enter':
+    case ' ':
+      e.preventDefault();
+      if (highlightedIndex.value >= 0) {
+        select(props.options[highlightedIndex.value]);
+      }
+      break;
+    case 'Escape':
+      isOpen.value = false;
+      break;
   }
-}
+};
 
 const handleClickOutside = (e: MouseEvent) => {
   if (dropdownRef.value && !dropdownRef.value.contains(e.target as Node)) {
-    isOpen.value = false
+    isOpen.value = false;
   }
-}
+};
 
-onMounted(() => document.addEventListener('click', handleClickOutside))
-onUnmounted(() => document.removeEventListener('click', handleClickOutside))
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
 </script>
 
 <template>
-  <div 
-    ref="dropdownRef"
-    class="pixel-dropdown"
-    :class="{ open: isOpen, disabled }"
-    @keydown="handleKeydown"
-  >
-    <button 
-      class="dropdown-trigger"
-      :disabled="disabled"
-      @click="toggle"
-      aria-haspopup="listbox"
-      :aria-expanded="isOpen"
+  <div class="pixel-dropdown-wrapper" :class="[variant]">
+    <label v-if="label" class="dropdown-label">{{ label }}</label>
+    
+    <div 
+      ref="dropdownRef"
+      class="pixel-dropdown"
+      :class="{ open: isOpen, disabled }"
+      @keydown="handleKeydown"
+      tabindex="0"
     >
-      <span v-if="selectedOption" class="dropdown-value">
-        <span v-if="selectedOption.icon" class="dropdown-icon" v-html="selectedOption.icon" />
-        {{ selectedOption.label }}
-      </span>
-      <span v-else class="dropdown-placeholder">{{ placeholder }}</span>
-      <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="m6 9 6 6 6-6"/>
-      </svg>
-    </button>
-
-    <Transition name="dropdown">
-      <div v-if="isOpen" class="dropdown-menu" :class="[align]" role="listbox">
-        <template v-for="(option, index) in options" :key="option.id">
-          <div v-if="option.divider" class="dropdown-divider" />
-          <button
-            v-else
-            class="dropdown-item"
-            :class="{ 
-              selected: option.id === modelValue,
-              highlighted: selectableOptions[selectedIndex]?.id === option.id,
-              disabled: option.disabled 
-            }"
-            :disabled="option.disabled"
-            role="option"
-            :aria-selected="option.id === modelValue"
-            @click="select(option)"
-          >
-            <span v-if="option.icon" class="dropdown-icon" v-html="option.icon" />
-            <span class="dropdown-label">{{ option.label }}</span>
-            <svg v-if="option.id === modelValue" class="dropdown-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20 6L9 17l-5-5"/>
-            </svg>
-          </button>
-        </template>
-      </div>
-    </Transition>
+      <!-- Trigger -->
+      <button 
+        class="dropdown-trigger"
+        :disabled="disabled"
+        @click="toggle"
+        type="button"
+      >
+        <span class="trigger-text">
+          {{ selectedOption?.label || placeholder }}
+        </span>
+        <span class="trigger-arrow" :class="{ rotated: isOpen }">
+          <svg viewBox="0 0 16 16">
+            <rect x="2" y="4" width="4" height="4" fill="currentColor"/>
+            <rect x="6" y="8" width="4" height="4" fill="currentColor"/>
+            <rect x="10" y="4" width="4" height="4" fill="currentColor"/>
+          </svg>
+        </span>
+        
+        <!-- Corner decorations -->
+        <div class="corner tl"></div>
+        <div class="corner tr"></div>
+        <div class="corner bl"></div>
+        <div class="corner br"></div>
+      </button>
+      
+      <!-- Options -->
+      <Transition name="dropdown">
+        <div v-if="isOpen" class="dropdown-options">
+          <div class="options-scroll">
+            <button
+              v-for="(option, index) in options"
+              :key="option.value"
+              class="dropdown-option"
+              :class="{ 
+                selected: option.value === modelValue,
+                highlighted: index === highlightedIndex,
+                disabled: option.disabled
+              }"
+              @click="select(option)"
+              @mouseenter="highlightedIndex = index"
+              type="button"
+            >
+              <span v-if="option.icon" class="option-icon">{{ option.icon }}</span>
+              <span class="option-label">{{ option.label }}</span>
+              <span v-if="option.value === modelValue" class="option-check">
+                <svg viewBox="0 0 16 16">
+                  <rect x="2" y="8" width="4" height="4" fill="currentColor"/>
+                  <rect x="6" y="10" width="4" height="4" fill="currentColor"/>
+                  <rect x="10" y="4" width="4" height="4" fill="currentColor"/>
+                  <rect x="14" y="0" width="2" height="4" fill="currentColor"/>
+                </svg>
+              </span>
+            </button>
+          </div>
+          
+          <!-- Corner decorations -->
+          <div class="corner tl"></div>
+          <div class="corner tr"></div>
+          <div class="corner bl"></div>
+          <div class="corner br"></div>
+        </div>
+      </Transition>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.pixel-dropdown {
-  position: relative;
-  display: inline-block;
-  min-width: 180px;
+.pixel-dropdown-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  image-rendering: pixelated;
 }
 
+.dropdown-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: #808080;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.pixel-dropdown {
+  position: relative;
+  outline: none;
+}
+
+.pixel-dropdown.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Trigger */
 .dropdown-trigger {
+  position: relative;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-  padding: 10px 14px;
-  background: var(--retro-bg-card, #251842);
-  border: 2px solid var(--retro-bg-lighter, #2d1f4d);
-  box-shadow: 2px 2px 0 #000;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(180deg, #3a3a5c 0%, #2a2a4c 100%);
+  border: 4px solid #000;
   font-family: 'VT323', monospace;
-  font-size: 18px;
-  color: var(--retro-text-main, #fff);
-  text-align: left;
+  font-size: 20px;
+  color: #fff;
   cursor: pointer;
-  transition: all 0.1s;
+  text-align: left;
+  box-shadow: 
+    inset -4px -4px 0 #1a1a3c,
+    inset 4px 4px 0 #4a4a6c,
+    4px 4px 0 #000;
 }
 
-.pixel-dropdown.open .dropdown-trigger,
 .dropdown-trigger:hover:not(:disabled) {
-  border-color: var(--retro-accent-cyan, #00d4ff);
+  background: linear-gradient(180deg, #4a4a6c 0%, #3a3a5c 100%);
 }
 
 .pixel-dropdown.open .dropdown-trigger {
-  box-shadow: 0 0 0 1px var(--retro-accent-cyan), 2px 2px 0 #000;
+  border-color: #39ff14;
+  box-shadow: 
+    inset -4px -4px 0 #1a1a3c,
+    inset 4px 4px 0 #4a4a6c,
+    0 0 0 2px #39ff14,
+    0 0 16px rgba(57, 255, 20, 0.3);
 }
 
-.dropdown-trigger:disabled {
+/* Corners */
+.corner {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #4a4a6c;
+  z-index: 1;
+}
+
+.corner.tl { top: -4px; left: -4px; }
+.corner.tr { top: -4px; right: -4px; }
+.corner.bl { bottom: -4px; left: -4px; }
+.corner.br { bottom: -4px; right: -4px; }
+
+.pixel-dropdown.open .dropdown-trigger .corner {
+  background: #39ff14;
+}
+
+.trigger-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trigger-arrow {
+  width: 16px;
+  height: 16px;
+  color: #808080;
+  transition: transform 0.1s steps(2);
+}
+
+.trigger-arrow.rotated {
+  transform: rotate(180deg);
+}
+
+.pixel-dropdown.open .trigger-arrow {
+  color: #39ff14;
+}
+
+/* Options */
+.dropdown-options {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: #1a1a2e;
+  border: 4px solid #000;
+  box-shadow: 
+    8px 8px 0 rgba(0, 0, 0, 0.8),
+    inset 0 0 20px rgba(57, 255, 20, 0.05);
+  z-index: 100;
+  max-height: 240px;
+  overflow: hidden;
+}
+
+.dropdown-options .corner {
+  background: #39ff14;
+}
+
+.options-scroll {
+  max-height: 232px;
+  overflow-y: auto;
+}
+
+.dropdown-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid #2a2a4c;
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+  color: #c0c0c0;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: none;
+}
+
+.dropdown-option:last-child {
+  border-bottom: none;
+}
+
+.dropdown-option:hover:not(.disabled),
+.dropdown-option.highlighted:not(.disabled) {
+  background: #2a2a4c;
+  color: #fff;
+}
+
+.dropdown-option.selected {
+  background: rgba(57, 255, 20, 0.1);
+  color: #39ff14;
+}
+
+.dropdown-option.disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.dropdown-value {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.dropdown-placeholder {
-  color: var(--retro-text-muted, #9d8ec2);
-}
-
-.dropdown-arrow {
-  width: 16px;
-  height: 16px;
-  color: var(--retro-text-muted, #9d8ec2);
-  transition: transform 0.15s ease;
-  flex-shrink: 0;
-}
-
-.pixel-dropdown.open .dropdown-arrow {
-  transform: rotate(180deg);
-}
-
-.dropdown-menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  min-width: 100%;
-  background: var(--retro-bg-panel, #1a1030);
-  border: 2px solid var(--retro-bg-lighter, #2d1f4d);
-  box-shadow: 4px 4px 0 rgba(0,0,0,0.5);
-  z-index: 100;
-  max-height: 240px;
-  overflow-y: auto;
-}
-
-.dropdown-menu.right {
-  left: auto;
-  right: 0;
-}
-
-.dropdown-divider {
-  height: 2px;
-  background: var(--retro-bg-lighter, #2d1f4d);
-  margin: 4px 0;
-}
-
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 10px 14px;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  font-family: 'VT323', monospace;
+.option-icon {
   font-size: 16px;
-  color: var(--retro-text-muted, #9d8ec2);
-  text-align: left;
-  cursor: pointer;
-  transition: all 0.1s;
 }
 
-.dropdown-item:hover:not(:disabled),
-.dropdown-item.highlighted {
-  background: var(--retro-bg-card, #251842);
-  color: var(--retro-text-main, #fff);
+.option-label {
+  flex: 1;
 }
 
-.dropdown-item.selected {
-  color: var(--retro-accent-green, #00ff87);
-}
-
-.dropdown-item.disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.dropdown-icon {
+.option-check {
   width: 16px;
   height: 16px;
-  flex-shrink: 0;
+  color: #39ff14;
 }
 
-.dropdown-icon :deep(svg) { width: 100%; height: 100%; }
-
-.dropdown-label { flex: 1; }
-
-.dropdown-check {
-  width: 16px;
-  height: 16px;
-  color: var(--retro-accent-green, #00ff87);
-  flex-shrink: 0;
+/* Compact variant */
+.pixel-dropdown-wrapper.compact .dropdown-trigger {
+  padding: 8px 12px;
+  font-size: 16px;
 }
 
+.pixel-dropdown-wrapper.compact .dropdown-option {
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+/* Animation */
 .dropdown-enter-active,
 .dropdown-leave-active {
-  transition: all 0.15s ease;
+  transition: all 0.15s steps(4);
 }
 
 .dropdown-enter-from,
 .dropdown-leave-to {
   opacity: 0;
   transform: translateY(-8px);
+}
+
+/* Focus state */
+.pixel-dropdown:focus-visible .dropdown-trigger {
+  outline: 4px solid #39ff14;
+  outline-offset: 2px;
 }
 </style>

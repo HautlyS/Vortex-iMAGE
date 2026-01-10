@@ -1,275 +1,333 @@
 <script setup lang="ts">
-import { ref, computed, useSlots, watch, nextTick, useTemplateRef } from 'vue';
+import { computed } from 'vue';
+
+interface Step {
+  id: string | number;
+  label: string;
+  description?: string;
+  icon?: string;
+}
 
 const props = withDefaults(defineProps<{
-  initialStep?: number;
-  backText?: string;
-  nextText?: string;
-  completeText?: string;
+  steps: Step[];
+  currentStep: number;
+  variant?: 'default' | 'compact' | 'vertical';
 }>(), {
-  initialStep: 1,
-  backText: '< BACK',
-  nextText: 'NEXT >',
-  completeText: 'COMPLETE!'
+  variant: 'default'
 });
 
 const emit = defineEmits<{
-  stepChange: [step: number];
-  complete: [];
+  'step-click': [index: number];
 }>();
 
-const slots = useSlots();
-const currentStep = ref(props.initialStep);
-const isCompleted = ref(false);
-const contentRef = useTemplateRef<HTMLDivElement>('contentRef');
-const contentHeight = ref(0);
-
-const stepsArray = computed(() => slots.default?.() || []);
-const totalSteps = computed(() => stepsArray.value.length);
-const isLastStep = computed(() => currentStep.value === totalSteps.value);
-
-const getStepStatus = (step: number) => {
-  if (isCompleted.value || currentStep.value > step) return 'complete';
-  if (currentStep.value === step) return 'active';
-  return 'inactive';
+const getStepStatus = (index: number) => {
+  if (index < props.currentStep) return 'completed';
+  if (index === props.currentStep) return 'current';
+  return 'upcoming';
 };
 
-const measureHeight = () => {
-  nextTick(() => {
-    if (contentRef.value) {
-      contentHeight.value = contentRef.value.offsetHeight;
-    }
-  });
-};
-
-const goToStep = (step: number) => {
-  if (isCompleted.value) return;
-  if (step >= 1 && step <= totalSteps.value) {
-    currentStep.value = step;
-    emit('stepChange', step);
-    measureHeight();
-  }
-};
-
-const handleBack = () => goToStep(currentStep.value - 1);
-const handleNext = () => {
-  if (isLastStep.value) {
-    isCompleted.value = true;
-    emit('complete');
-  } else {
-    goToStep(currentStep.value + 1);
-  }
-};
-
-watch(currentStep, measureHeight);
+const progress = computed(() => {
+  return (props.currentStep / (props.steps.length - 1)) * 100;
+});
 </script>
 
 <template>
-  <div class="pixel-stepper">
-    <!-- Step indicators -->
-    <div class="pixel-stepper-header">
-      <template v-for="(_, index) in stepsArray" :key="index">
-        <button
-          class="pixel-step-indicator"
-          :class="getStepStatus(index + 1)"
-          @click="goToStep(index + 1)"
-          :disabled="isCompleted"
-        >
-          <span v-if="getStepStatus(index + 1) === 'complete'" class="check">✓</span>
-          <span v-else>{{ index + 1 }}</span>
-        </button>
-        <div 
-          v-if="index < totalSteps - 1" 
-          class="pixel-step-connector"
-          :class="{ filled: currentStep > index + 1 }"
-        >
-          <div class="connector-fill" />
+  <div class="pixel-stepper" :class="[variant]">
+    <!-- Progress track -->
+    <div class="stepper-track">
+      <div class="track-bg"></div>
+      <div class="track-fill" :style="{ width: `${progress}%` }"></div>
+    </div>
+    
+    <!-- Steps -->
+    <div class="stepper-steps">
+      <div 
+        v-for="(step, index) in steps" 
+        :key="step.id"
+        class="stepper-step"
+        :class="getStepStatus(index)"
+        @click="emit('step-click', index)"
+      >
+        <!-- Step indicator -->
+        <div class="step-indicator">
+          <!-- Completed checkmark -->
+          <svg v-if="getStepStatus(index) === 'completed'" class="step-icon" viewBox="0 0 16 16">
+            <rect x="2" y="8" width="4" height="4" fill="currentColor"/>
+            <rect x="6" y="10" width="4" height="4" fill="currentColor"/>
+            <rect x="10" y="4" width="4" height="4" fill="currentColor"/>
+            <rect x="14" y="0" width="2" height="4" fill="currentColor"/>
+          </svg>
+          
+          <!-- Current - pulsing dot -->
+          <div v-else-if="getStepStatus(index) === 'current'" class="step-current">
+            <span class="pulse-ring"></span>
+            <span class="pulse-dot"></span>
+          </div>
+          
+          <!-- Upcoming - number -->
+          <span v-else class="step-number">{{ index + 1 }}</span>
+          
+          <!-- Corner decorations -->
+          <div class="indicator-corner tl"></div>
+          <div class="indicator-corner tr"></div>
+          <div class="indicator-corner bl"></div>
+          <div class="indicator-corner br"></div>
         </div>
-      </template>
-    </div>
-
-    <!-- Content area -->
-    <div 
-      class="pixel-stepper-content"
-      :style="{ height: isCompleted ? '0px' : `${contentHeight}px` }"
-    >
-      <div ref="contentRef" v-if="!isCompleted">
-        <component 
-          v-if="stepsArray[currentStep - 1]" 
-          :is="stepsArray[currentStep - 1]" 
-        />
+        
+        <!-- Step content -->
+        <div class="step-content">
+          <span class="step-label">{{ step.label }}</span>
+          <span v-if="step.description && variant !== 'compact'" class="step-description">
+            {{ step.description }}
+          </span>
+        </div>
       </div>
-    </div>
-
-    <!-- Completed state -->
-    <div v-if="isCompleted" class="pixel-stepper-complete">
-      <div class="complete-icon">★</div>
-      <span>ALL STEPS COMPLETE!</span>
-    </div>
-
-    <!-- Navigation -->
-    <div v-if="!isCompleted" class="pixel-stepper-footer">
-      <button 
-        v-if="currentStep > 1"
-        class="pixel-stepper-btn back"
-        @click="handleBack"
-      >
-        {{ backText }}
-      </button>
-      <div v-else />
-      <button 
-        class="pixel-stepper-btn next"
-        @click="handleNext"
-      >
-        {{ isLastStep ? completeText : nextText }}
-      </button>
     </div>
   </div>
 </template>
 
 <style scoped>
 .pixel-stepper {
-  background: var(--retro-bg-panel, #1a1030);
-  border: 3px solid #000;
-  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.6);
-  padding: 20px;
-}
-
-.pixel-stepper-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  margin-bottom: 24px;
-}
-
-.pixel-step-indicator {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
-  border: 3px solid #000;
-  background: var(--retro-bg-dark, #0f0a1e);
-  color: var(--retro-text-muted, #9d8ec2);
-  cursor: pointer;
-  transition: all 0.1s steps(2);
-  box-shadow: 2px 2px 0 #000;
-}
-
-.pixel-step-indicator:hover:not(:disabled) {
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 #000;
-}
-
-.pixel-step-indicator.active {
-  background: var(--retro-accent-pink, #ff2d95);
-  color: #fff;
-  box-shadow: 2px 2px 0 #000, 0 0 10px var(--retro-accent-pink);
-}
-
-.pixel-step-indicator.complete {
-  background: var(--retro-accent-green, #00ff87);
-  color: #000;
-  box-shadow: 2px 2px 0 #000, 0 0 10px var(--retro-accent-green);
-}
-
-.pixel-step-indicator .check {
-  font-size: 12px;
-}
-
-.pixel-step-connector {
-  width: 40px;
-  height: 4px;
-  background: var(--retro-bg-dark, #0f0a1e);
-  border: 1px solid #000;
   position: relative;
-  overflow: hidden;
+  image-rendering: pixelated;
 }
 
-.connector-fill {
+/* Track */
+.stepper-track {
+  position: absolute;
+  top: 24px;
+  left: 32px;
+  right: 32px;
+  height: 8px;
+  background: #000;
+  border: 2px solid #3a3a5c;
+}
+
+.track-bg {
   position: absolute;
   inset: 0;
-  background: var(--retro-accent-green, #00ff87);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.3s steps(4);
+  background: #1a1a2e;
 }
 
-.pixel-step-connector.filled .connector-fill {
-  transform: scaleX(1);
+.track-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, #39ff14 0%, #8cff7a 100%);
+  box-shadow: 0 0 8px rgba(57, 255, 20, 0.5);
+  transition: width 0.3s steps(8);
 }
 
-.pixel-stepper-content {
-  overflow: hidden;
-  transition: height 0.3s steps(6);
-  margin-bottom: 20px;
+/* Steps container */
+.stepper-steps {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
 }
 
-.pixel-stepper-complete {
+/* Individual step */
+.stepper-step {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  padding: 32px;
-  color: var(--retro-accent-green, #00ff87);
+  cursor: pointer;
+  flex: 1;
+}
+
+/* Step indicator */
+.step-indicator {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1a1a2e;
+  border: 4px solid #000;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
+}
+
+.stepper-step.completed .step-indicator {
+  background: linear-gradient(180deg, #39ff14 0%, #2d8a1a 100%);
+  color: #000;
+}
+
+.stepper-step.current .step-indicator {
+  background: linear-gradient(180deg, #0099db 0%, #006b99 100%);
+  border-color: #0099db;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5), 0 0 16px rgba(0, 153, 219, 0.5);
+}
+
+.stepper-step.upcoming .step-indicator {
+  background: #2a2a4c;
+  color: #808080;
+}
+
+/* Indicator corners */
+.indicator-corner {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #3a3a5c;
+}
+
+.indicator-corner.tl { top: -4px; left: -4px; }
+.indicator-corner.tr { top: -4px; right: -4px; }
+.indicator-corner.bl { bottom: -4px; left: -4px; }
+.indicator-corner.br { bottom: -4px; right: -4px; }
+
+.stepper-step.completed .indicator-corner { background: #39ff14; }
+.stepper-step.current .indicator-corner { background: #0099db; }
+
+/* Step icon */
+.step-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Step number */
+.step-number {
   font-family: 'Press Start 2P', monospace;
   font-size: 12px;
-  text-shadow: 0 0 10px var(--retro-accent-green);
-  animation: complete-pulse 1s steps(4) infinite;
 }
 
-.complete-icon {
-  font-size: 32px;
-  animation: spin 2s steps(8) infinite;
+/* Current step pulse */
+.step-current {
+  position: relative;
+  width: 16px;
+  height: 16px;
 }
 
-@keyframes complete-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+.pulse-ring {
+  position: absolute;
+  inset: -4px;
+  border: 2px solid #fff;
+  animation: pulse-ring 1s steps(4) infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+.pulse-dot {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  animation: pulse-dot 1s steps(2) infinite;
 }
 
-.pixel-stepper-footer {
+@keyframes pulse-ring {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(0.8); }
+}
+
+/* Step content */
+.step-content {
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
 }
 
-.pixel-stepper-btn {
+.step-label {
   font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: #808080;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.stepper-step.completed .step-label,
+.stepper-step.current .step-label {
+  color: #fff;
+}
+
+.step-description {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  color: #4a4a6c;
+  max-width: 120px;
+}
+
+.stepper-step.current .step-description {
+  color: #808080;
+}
+
+/* Compact variant */
+.pixel-stepper.compact .stepper-track {
+  top: 16px;
+  left: 20px;
+  right: 20px;
+  height: 4px;
+}
+
+.pixel-stepper.compact .step-indicator {
+  width: 32px;
+  height: 32px;
+}
+
+.pixel-stepper.compact .step-number {
   font-size: 10px;
-  padding: 12px 20px;
-  border: 2px solid #000;
-  cursor: pointer;
-  transition: all 0.1s steps(2);
 }
 
-.pixel-stepper-btn.back {
-  background: var(--retro-bg-lighter, #2d1f4d);
-  color: var(--retro-text-muted, #9d8ec2);
-  box-shadow: 2px 2px 0 #000;
+.pixel-stepper.compact .step-icon {
+  width: 14px;
+  height: 14px;
 }
 
-.pixel-stepper-btn.back:hover {
-  color: var(--retro-text-main, #fff);
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 #000;
+.pixel-stepper.compact .step-content {
+  display: none;
 }
 
-.pixel-stepper-btn.next {
-  background: linear-gradient(180deg, var(--retro-accent-green, #00ff87), #00cc6a);
-  color: #000;
-  box-shadow: 3px 3px 0 #000;
+/* Vertical variant */
+.pixel-stepper.vertical {
+  display: flex;
+  flex-direction: column;
 }
 
-.pixel-stepper-btn.next:hover {
+.pixel-stepper.vertical .stepper-track {
+  position: absolute;
+  top: 32px;
+  bottom: 32px;
+  left: 24px;
+  right: auto;
+  width: 8px;
+  height: auto;
+}
+
+.pixel-stepper.vertical .track-fill {
+  width: 100%;
+  height: var(--progress);
+}
+
+.pixel-stepper.vertical .stepper-steps {
+  flex-direction: column;
+  gap: 24px;
+}
+
+.pixel-stepper.vertical .stepper-step {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.pixel-stepper.vertical .step-content {
+  align-items: flex-start;
+  text-align: left;
+}
+
+/* Hover states */
+.stepper-step:hover .step-indicator {
   transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0 #000, 0 0 15px var(--retro-accent-green);
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.5);
+}
+
+.stepper-step.current:hover .step-indicator {
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 153, 219, 0.6);
 }
 </style>

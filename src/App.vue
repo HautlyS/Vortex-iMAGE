@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed, onUnmounted } from 'vue'
-import { useGitHubAuth } from './composables/useGitHubAuth'
+import { useGitHubAuth, isWebMode } from './composables/useGitHubAuth'
 import { usePhotoUpload, type Photo, type UploadStatus } from './composables/usePhotoUpload'
 import { useUploadToast } from './composables/useUploadToast'
 import { useAccentColor } from './composables/useAccentColor'
@@ -15,8 +15,7 @@ import { useSmartAlbums } from './composables/useSmartAlbums'
 import { useTimeout } from './composables/useTimeout'
 import { useDockApps, type DockView } from './composables/useDockApps'
 import { useToast } from './composables/useToast'
-import { open } from '@tauri-apps/plugin-dialog'
-import { invoke } from '@tauri-apps/api/core'
+import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts'
 import { 
   UPLOAD, SHORTCUTS, TIMING,
   injectCSSVariables 
@@ -39,13 +38,21 @@ import DataDriverManager from './components/DataDriverManager.vue'
 import BackupSettings from './components/BackupSettings.vue'
 import LocalImageBrowser from './components/LocalImageBrowser.vue'
 import SecuritySettings from './components/SecuritySettings.vue'
+import MediaSettingsPanel from './components/MediaSettingsPanel.vue'
+import UploadSettingsDialog from './components/UploadSettingsDialog.vue'
 import MacOSDock from './components/MacOSDock.vue'
 import ErrorBoundary from './components/ErrorBoundary.vue'
 import AsyncState from './components/AsyncState.vue'
 import ToastContainer from './components/ui/ToastContainer.vue'
+import WebLoginStepper from './components/WebLoginStepper.vue'
+import BrowserFilePicker from './components/BrowserFilePicker.vue'
+import type { ProcessingSettings } from './composables/useMediaSettings'
 
 // Initialize toast system
-const toast = useToast()
+useToast()
+
+// Initialize global keyboard shortcuts system
+useKeyboardShortcuts()
 
 interface Album {
   name: string
@@ -55,7 +62,7 @@ interface Album {
 }
 
 const { token, repo, init, setRepo } = useGitHubAuth()
-const { photos, loadingPhotos, loadPhotos, addToQueue, queue } = usePhotoUpload()
+const { photos, loadingPhotos, loadPhotos, addToQueue, addFilesToQueue, queue } = usePhotoUpload()
 const { addTransfer, updateProgress, setStatus: setTransferStatus } = useUploadToast()
 const { init: initAccent } = useAccentColor()
 const { loadTheme } = useTheme()
@@ -82,6 +89,10 @@ const showDataDrivers = ref(false)
 const showBackupSettings = ref(false)
 const showLocalBrowser = ref(false)
 const showSecuritySettings = ref(false)
+const showMediaSettings = ref(false)
+const mediaSettingsMode = ref<'global' | 'album' | 'item'>('global')
+const mediaSettingsAlbumPath = ref<string | undefined>(undefined)
+const mediaSettingsAlbumName = ref<string | undefined>(undefined)
 const showAlbumPanel = ref(false)
 const searchQuery = ref('')
 const debouncedSearchQuery = ref('')
@@ -109,6 +120,14 @@ const selectedTagId = ref<string | null>(null)
 // Folder upload dialog
 const showFolderDialog = ref(false)
 const pendingFolderPath = ref<string | null>(null)
+
+// Upload settings dialog
+const showUploadSettings = ref(false)
+const pendingUploadFiles = ref<string[]>([])
+
+// Web mode state
+const showWebLoginStepper = ref(false)
+const showBrowserFilePicker = ref(false)
 
 // Context menu
 const contextMenu = ref<{ x: number; y: number; items: ContextMenuItem[] } | null>(null)
@@ -176,14 +195,32 @@ const viewTitle = computed(() => {
 // Load albums from GitHub
 async function loadAlbums() {
   if (!token.value || !repo.value) return
+  
+  // Web mode: albums not supported yet
+  if (isWebMode) {
+    albums.value = []
+    return
+  }
+  
   loadingAlbums.value = true
   try {
+    const { invoke } = await import('@tauri-apps/api/core')
     albums.value = await invoke<Album[]>('list_albums', { token: token.value, repo: repo.value })
   } catch {
     albums.value = []
   } finally {
     loadingAlbums.value = false
   }
+}
+
+// Handle browser file selection (web mode)
+async function handleBrowserFileSelect(files: File[]) {
+  showBrowserFilePicker.value = false
+  
+  if (files.length === 0) return
+  
+  // Use the queue system for web uploads
+  addFilesToQueue(files, selectedAlbumPath.value || undefined)
 }
 
 onMounted(async () => {
@@ -196,13 +233,15 @@ onMounted(async () => {
   await Promise.all([init(), initAccent(), loadTheme(), loadFavorites(), loadTags(), loadPreviewSize(), loadDrivers(), loadBackupConfig()])
   repoInput.value = repo.value
   
-  // Load view mode from storage
-  try {
-    const { load } = await import('@tauri-apps/plugin-store')
-    const store = await load('settings.json')
-    const savedViewMode = await store.get<'grid' | 'list'>('viewMode')
-    if (savedViewMode) viewMode.value = savedViewMode
-  } catch {}
+  // Load view mode from storage (skip in web mode)
+  if (!isWebMode) {
+    try {
+      const { load } = await import('@tauri-apps/plugin-store')
+      const store = await load('settings.json')
+      const savedViewMode = await store.get<'grid' | 'list'>('viewMode')
+      if (savedViewMode) viewMode.value = savedViewMode
+    } catch {}
+  }
 })
 
 watch(repo, (v) => { repoInput.value = v })
@@ -291,21 +330,54 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown))
 
 async function handleUploadClick() {
   uploadError.value = null
+  
+  // Web mode: use browser file picker
+  if (isWebMode) {
+    showBrowserFilePicker.value = true
+    return
+  }
+  
+  // Tauri mode: use native dialog
   try {
+    const { open } = await import('@tauri-apps/plugin-dialog')
     const files = await open({ 
       multiple: true, 
       directory: false, 
       filters: [{ name: 'Images', extensions: [...UPLOAD.supportedFormats] }] 
     })
-    if (files) addToQueue(Array.isArray(files) ? files : [files])
+    if (files) {
+      const fileList = Array.isArray(files) ? files : [files]
+      pendingUploadFiles.value = fileList
+      showUploadSettings.value = true
+    }
   } catch (e) {
     uploadError.value = e instanceof Error ? e.message : 'Erro ao selecionar arquivos'
   }
 }
 
+function handleUploadConfirm(settings: ProcessingSettings, password?: string) {
+  showUploadSettings.value = false
+  addToQueue(pendingUploadFiles.value, selectedAlbumPath.value || undefined, settings, password)
+  pendingUploadFiles.value = []
+}
+
+function handleUploadCancel() {
+  showUploadSettings.value = false
+  pendingUploadFiles.value = []
+}
+
 async function handleFolderClick() {
   uploadError.value = null
+  
+  // Web mode: use browser folder picker
+  if (isWebMode) {
+    showBrowserFilePicker.value = true
+    return
+  }
+  
+  // Tauri mode: use native dialog
   try {
+    const { open } = await import('@tauri-apps/plugin-dialog')
     const folder = await open({ multiple: false, directory: true })
     if (folder && typeof folder === 'string') {
       pendingFolderPath.value = folder
@@ -340,7 +412,15 @@ async function handleFolderUpload(mode: 'album' | 'recursive') {
   showFolderDialog.value = false
   uploadError.value = null
   
+  // Web mode: folder upload not supported
+  if (isWebMode) {
+    uploadError.value = 'Folder upload is only available in the desktop app'
+    pendingFolderPath.value = null
+    return
+  }
+  
   try {
+    const { invoke } = await import('@tauri-apps/api/core')
     if (mode === 'album') {
       const albumName = pendingFolderPath.value.split('/').pop() || 'album'
       await invoke('upload_folder_as_album', { 
@@ -421,6 +501,13 @@ function handleAlbumSelect(albumOrPath: Album | string | null) {
   selectedAlbumPath.value = path
   selectedSmartAlbumId.value = null
   clearSelection()
+}
+
+function handleOpenAlbumSettings(albumPath: string, albumName: string) {
+  mediaSettingsMode.value = 'album'
+  mediaSettingsAlbumPath.value = albumPath
+  mediaSettingsAlbumName.value = albumName
+  showMediaSettings.value = true
 }
 
 function handleSmartAlbumSelect(id: string) {
@@ -584,12 +671,15 @@ async function retryLoadPhotos() {
             <button class="btn-action-icon" @click="handleFolderClick" :disabled="!token || !repo" title="Upload pasta">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
             </button>
-            <button class="btn-action-icon" @click="showLocalBrowser = true" :disabled="!token" title="Importar">
+            <button class="btn-action-icon" @click="isWebMode ? (showBrowserFilePicker = true) : (showLocalBrowser = true)" :disabled="!token" title="Importar">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
             </button>
           </div>
 
           <!-- Settings buttons -->
+          <button class="btn-icon" @click="showMediaSettings = true" title="Compressão e Criptografia">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </button>
           <button class="btn-icon" @click="showDataDrivers = true" title="Fontes de dados">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
           </button>
@@ -628,8 +718,21 @@ async function retryLoadPhotos() {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               </div>
               <h2>CONECTE SUA CONTA</h2>
-              <p>LOGIN TO START GAME</p>
-              <AuthButton class="login-auth-btn" />
+              <p v-if="isWebMode">WEB MODE - TOKEN REQUIRED</p>
+              <p v-else>LOGIN TO START GAME</p>
+              
+              <!-- Web mode: show stepper button -->
+              <button v-if="isWebMode" class="btn-primary web-login-btn" @click="showWebLoginStepper = true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="2" y1="12" x2="22" y2="12"/>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+                Setup Web Access
+              </button>
+              
+              <!-- Tauri mode: show auth button -->
+              <AuthButton v-else class="login-auth-btn" />
             </div>
           </div>
         </template>
@@ -675,6 +778,7 @@ async function retryLoadPhotos() {
               @contextmenu="handlePhotoContextMenu"
               @resize="handlePreviewResize"
               @album-click="handleAlbumSelect"
+              @open-album-settings="handleOpenAlbumSettings"
             />
             <template #empty-action>
               <button class="btn-secondary" @click="handleUploadClick">
@@ -694,6 +798,26 @@ async function retryLoadPhotos() {
     <DataDriverManager v-if="showDataDrivers" @close="showDataDrivers = false" @driver-changed="handleDriverChanged" />
     <BackupSettings v-if="showBackupSettings" @close="showBackupSettings = false" />
     <SecuritySettings v-if="showSecuritySettings" @close="showSecuritySettings = false" />
+    
+    <!-- Web Mode Modals -->
+    <WebLoginStepper 
+      v-if="showWebLoginStepper" 
+      @complete="showWebLoginStepper = false" 
+      @close="showWebLoginStepper = false" 
+    />
+    <BrowserFilePicker 
+      v-if="showBrowserFilePicker" 
+      @select="handleBrowserFileSelect" 
+      @cancel="showBrowserFilePicker = false" 
+    />
+    
+    <MediaSettingsPanel 
+      v-if="showMediaSettings" 
+      :mode="mediaSettingsMode" 
+      :album-path="mediaSettingsAlbumPath"
+      :album-name="mediaSettingsAlbumName"
+      @close="showMediaSettings = false; mediaSettingsMode = 'global'; mediaSettingsAlbumPath = undefined; mediaSettingsAlbumName = undefined" 
+    />
     <LocalImageBrowser v-if="showLocalBrowser" @close="showLocalBrowser = false" @import="handleLocalImport" />
     <SettingsPanel v-if="showSettings" @close="showSettings = false" />
     <FolderCreator 
@@ -706,6 +830,15 @@ async function retryLoadPhotos() {
       :folder-path="pendingFolderPath" 
       @confirm="handleFolderUpload" 
       @cancel="showFolderDialog = false; pendingFolderPath = null" 
+    />
+    
+    <!-- Upload Settings Dialog -->
+    <UploadSettingsDialog
+      v-if="showUploadSettings && pendingUploadFiles.length > 0"
+      :files="pendingUploadFiles"
+      :album-path="selectedAlbumPath || undefined"
+      @confirm="handleUploadConfirm"
+      @cancel="handleUploadCancel"
     />
     
     <!-- Context Menu -->
@@ -777,12 +910,13 @@ async function retryLoadPhotos() {
 .app {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
   background: var(--retro-bg-dark, #0f0a1e);
   color: var(--retro-text-main, #fff);
   position: relative;
   font-family: 'VT323', monospace;
-  padding-bottom: 100px; /* Space for dock */
+  overflow: hidden;
 }
 
 /* === MAIN CONTENT (Full Width) === */
@@ -791,7 +925,10 @@ async function retryLoadPhotos() {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
   background: transparent;
+  overflow: hidden;
+  position: relative;
 }
 
 /* === HEADER === */
@@ -799,12 +936,15 @@ async function retryLoadPhotos() {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 12px 20px;
-  border-bottom: 3px solid #000;
-  background: var(--retro-bg-panel, #1a1030);
-  min-height: 60px;
+  padding: 12px 24px;
+  background: rgba(26, 16, 48, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 64px;
   flex-shrink: 0;
-  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 50;
 }
 
 .header-left {
@@ -817,19 +957,21 @@ async function retryLoadPhotos() {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
-  color: var(--retro-accent-pink, #ff2d95);
-  text-shadow: 2px 2px 0 #000;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.5px;
 }
 
 .logo-icon {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   background: linear-gradient(135deg, #ff3b30, #ff2d95);
-  padding: 4px;
-  border: 2px solid #000;
+  padding: 7px;
+  border-radius: 10px;
   color: #fff;
+  box-shadow: 0 4px 12px rgba(255, 45, 149, 0.4);
 }
 
 .logo-icon svg {
@@ -838,17 +980,21 @@ async function retryLoadPhotos() {
 }
 
 .view-title {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 12px;
-  color: var(--retro-accent-yellow, #ffd000);
-  text-shadow: 2px 2px 0 #000, 0 0 10px rgba(255, 208, 0, 0.5);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
   white-space: nowrap;
 }
 
 .photo-count {
-  font-family: 'VT323', monospace;
-  font-size: 16px;
-  color: var(--retro-text-muted, #9d8ec2);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
 }
 
 /* === SEARCH BAR === */
@@ -858,22 +1004,24 @@ async function retryLoadPhotos() {
   min-width: 200px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: #000;
-  border: 2px solid var(--retro-bg-lighter, #2d1f4d);
-  padding: 6px 12px;
-  transition: border-color 0.2s;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 8px 14px;
+  transition: all 0.2s ease;
 }
 
 .search-bar:focus-within {
-  border-color: var(--retro-accent-pink, #ff2d95);
-  box-shadow: 0 0 10px rgba(255, 45, 149, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 45, 149, 0.5);
+  box-shadow: 0 0 0 3px rgba(255, 45, 149, 0.15);
 }
 
 .search-bar svg {
   width: 18px;
   height: 18px;
-  color: var(--retro-text-muted, #9d8ec2);
+  color: rgba(255, 255, 255, 0.4);
   flex-shrink: 0;
 }
 
@@ -881,14 +1029,14 @@ async function retryLoadPhotos() {
   flex: 1;
   background: transparent;
   border: none;
-  color: var(--retro-accent-green, #00ff87);
-  font-family: 'VT323', monospace;
-  font-size: 18px;
+  color: #fff;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
   padding: 0;
 }
 
 .search-bar input:focus { outline: none; }
-.search-bar input::placeholder { color: var(--retro-text-muted, #9d8ec2); opacity: 0.6; }
+.search-bar input::placeholder { color: rgba(255, 255, 255, 0.4); }
 
 .search-clear {
   width: 20px;
@@ -896,149 +1044,268 @@ async function retryLoadPhotos() {
   padding: 2px;
   background: transparent;
   border: none;
+  border-radius: 4px;
   box-shadow: none;
-  color: var(--retro-text-muted, #9d8ec2);
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.search-clear:hover { color: var(--retro-accent-red, #ff3b30); }
+.search-clear:hover { 
+  color: #ff3b30;
+  background: rgba(255, 59, 48, 0.1);
+}
 
 /* === HEADER ACTIONS === */
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   margin-left: auto;
 }
 
 .header-auth { margin-left: 8px; }
 
+/* View Toggle - Modern Pills */
 .view-toggle {
   display: flex;
-  background: var(--retro-bg-card, #251842);
-  border: 2px solid #000;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
 }
 
 .view-toggle button {
-  width: 36px;
-  height: 36px;
-  padding: 8px;
+  width: 34px;
+  height: 34px;
+  padding: 7px;
   background: transparent;
   border: none;
+  border-radius: 6px;
   box-shadow: none;
-  color: var(--retro-text-muted, #9d8ec2);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.view-toggle button:hover { color: #fff; }
-.view-toggle button.active { background: var(--retro-accent-pink, #ff2d95); color: #fff; }
+.view-toggle button:hover { 
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.view-toggle button.active { 
+  background: rgba(255, 45, 149, 0.2);
+  color: #ff2d95;
+}
+
 .view-toggle button svg { width: 100%; height: 100%; }
 
+/* Action Group - Primary Actions */
 .action-group {
   display: flex;
   gap: 6px;
+  padding-left: 8px;
+  margin-left: 8px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .btn-action {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
-  background: var(--retro-bg-lighter, #2d1f4d);
-  border: 2px solid #000;
-  box-shadow: 2px 2px 0 #000;
-  font-family: 'VT323', monospace;
-  font-size: 16px;
-  color: #fff;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: none;
 }
 
-.btn-action svg { width: 18px; height: 18px; }
-.btn-action.upload { background: linear-gradient(135deg, var(--retro-accent-green, #00ff87), #00cc6a); color: #000; }
-.btn-action.create { background: linear-gradient(135deg, var(--retro-accent-blue, #00d4ff), #00a8cc); color: #000; }
-.btn-action:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-action svg { width: 16px; height: 16px; }
+
+.btn-action:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.btn-action.upload { 
+  background: linear-gradient(135deg, #00ff87, #00cc6a);
+  border-color: transparent;
+  color: #000;
+  font-weight: 600;
+}
+
+.btn-action.upload:hover {
+  box-shadow: 0 4px 16px rgba(0, 255, 135, 0.4);
+}
+
+.btn-action.create { 
+  background: linear-gradient(135deg, #00d4ff, #00a8cc);
+  border-color: transparent;
+  color: #000;
+  font-weight: 600;
+}
+
+.btn-action.create:hover {
+  box-shadow: 0 4px 16px rgba(0, 212, 255, 0.4);
+}
+
+.btn-action:disabled { 
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
 
 .btn-action-icon {
   width: 36px;
   height: 36px;
   padding: 8px;
-  background: var(--retro-bg-lighter, #2d1f4d);
-  border: 2px solid #000;
-  box-shadow: 2px 2px 0 #000;
-  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: none;
 }
 
 .btn-action-icon svg { width: 100%; height: 100%; }
 
-.action-badge {
-  background: var(--retro-accent-red, #ff3b30);
+.btn-action-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
   color: #fff;
-  font-family: 'Press Start 2P', monospace;
-  font-size: 8px;
+  transform: translateY(-1px);
+}
+
+.action-badge {
+  background: #ff3b30;
+  color: #fff;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 600;
   padding: 2px 6px;
+  border-radius: 10px;
   margin-left: 4px;
 }
 
+/* Icon Buttons - Settings Group */
 .btn-icon {
   width: 36px;
   height: 36px;
   padding: 8px;
-  background: var(--retro-bg-lighter, #2d1f4d);
-  border: 2px solid #000;
-  box-shadow: 2px 2px 0 #000;
-  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: none;
+  position: relative;
 }
 
 .btn-icon svg { width: 100%; height: 100%; }
 
-.btn-icon:hover, .btn-action:hover, .btn-action-icon:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 #000;
+.btn-icon:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  transform: translateY(-1px);
 }
 
-.btn-icon:active, .btn-action:active, .btn-action-icon:active {
-  transform: translate(2px, 2px);
-  box-shadow: none;
+.btn-icon:active {
+  transform: translateY(0);
 }
 
 /* === SETTINGS PANEL === */
 .settings-panel {
-  background: var(--retro-bg-card, #251842);
-  border-bottom: 3px solid #000;
-  padding: 16px;
+  background: rgba(37, 24, 66, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 20px 24px;
 }
 
 .setting-item label {
   display: block;
-  font-family: 'Press Start 2P', monospace;
-  font-size: 8px;
-  color: var(--retro-accent-yellow, #ffd000);
-  margin-bottom: 8px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
 }
 
 .repo-input {
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 
 .repo-input input {
   flex: 1;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #fff;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+}
+
+.repo-input input:focus {
+  outline: none;
+  border-color: rgba(255, 45, 149, 0.5);
+  box-shadow: 0 0 0 3px rgba(255, 45, 149, 0.15);
 }
 
 .btn-save {
-  background: var(--retro-accent-green, #00ff87);
+  padding: 10px 18px;
+  background: linear-gradient(135deg, #00ff87, #00cc6a);
+  border: none;
+  border-radius: 8px;
   color: #000;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-save:hover {
+  box-shadow: 0 4px 16px rgba(0, 255, 135, 0.4);
+  transform: translateY(-1px);
 }
 
 .btn-new {
-  width: 40px;
-  padding: 8px;
+  width: 42px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-new:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
 }
 
 /* === CONTENT AREA === */
 .content {
   flex: 1;
   padding: 0;
-  overflow: hidden;
+  padding-bottom: 100px; /* Space for dock */
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  position: relative;
 }
 
 /* === EMPTY STATES === */
@@ -1090,6 +1357,32 @@ async function retryLoadPhotos() {
 
 .login-auth-btn {
   margin-top: 20px;
+}
+
+.web-login-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #00d4ff, #0066ff);
+  border: 3px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.web-login-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #000;
+}
+
+.web-login-btn svg {
+  width: 18px;
+  height: 18px;
 }
 
 .repo-setup {
@@ -1214,13 +1507,14 @@ async function retryLoadPhotos() {
 /* === ALBUM PANEL (Slide-in) === */
 .album-panel {
   position: fixed;
-  top: 60px;
+  top: 64px;
   left: 0;
   bottom: 100px;
-  width: 280px;
-  background: var(--retro-bg-panel, #1a1030);
-  border-right: 3px solid #000;
-  box-shadow: 4px 0 0 rgba(0,0,0,0.3);
+  width: 300px;
+  background: rgba(26, 16, 48, 0.98);
+  backdrop-filter: blur(16px);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 8px 0 32px rgba(0, 0, 0, 0.4);
   z-index: 100;
   display: flex;
   flex-direction: column;
@@ -1231,30 +1525,34 @@ async function retryLoadPhotos() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  background: linear-gradient(135deg, var(--retro-accent-yellow, #ffd000), #ff9500);
-  border-bottom: 3px solid #000;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(255, 208, 0, 0.15), rgba(255, 149, 0, 0.15));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .panel-header h3 {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
-  color: #000;
-  text-shadow: none;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
 }
 
 .panel-close {
-  width: 28px;
-  height: 28px;
-  padding: 4px;
-  background: #000;
-  border: 2px solid #fff;
-  color: #fff;
-  box-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .panel-close:hover {
-  background: var(--retro-accent-red, #ff3b30);
+  background: rgba(255, 59, 48, 0.2);
+  border-color: rgba(255, 59, 48, 0.5);
+  color: #ff3b30;
 }
 
 .panel-close svg {
@@ -1265,7 +1563,7 @@ async function retryLoadPhotos() {
 /* Panel slide transition */
 .slide-panel-enter-active,
 .slide-panel-leave-active {
-  transition: transform 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .slide-panel-enter-from,

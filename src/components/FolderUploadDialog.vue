@@ -5,8 +5,9 @@
  */
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { registerOverlay } from '../composables/useKeyboardShortcuts'
 
 interface FolderScanResult {
   path: string
@@ -24,6 +25,19 @@ const emit = defineEmits<{
   (e: 'confirm', mode: 'album' | 'recursive'): void
   (e: 'cancel'): void
 }>()
+
+// Register ESC key handler
+let unregisterOverlay: (() => void) | null = null;
+
+onMounted(() => {
+  unregisterOverlay = registerOverlay('folder-upload-dialog', () => emit('cancel'));
+});
+
+onUnmounted(() => {
+  if (unregisterOverlay) {
+    unregisterOverlay();
+  }
+});
 
 const loading = ref(true)
 const scanResult = ref<FolderScanResult | null>(null)

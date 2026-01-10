@@ -6,6 +6,7 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
+import { registerOverlay } from '../../composables/useKeyboardShortcuts'
 
 defineProps<{
   title?: string
@@ -17,12 +18,18 @@ const emit = defineEmits<{
   close: []
 }>()
 
-function handleKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') emit('close')
-}
+// Register ESC key handler using the centralized system
+let unregisterOverlay: (() => void) | null = null;
 
-onMounted(() => document.addEventListener('keydown', handleKeydown))
-onUnmounted(() => document.removeEventListener('keydown', handleKeydown))
+onMounted(() => {
+  unregisterOverlay = registerOverlay(`modal-${Date.now()}`, () => emit('close'));
+});
+
+onUnmounted(() => {
+  if (unregisterOverlay) {
+    unregisterOverlay();
+  }
+});
 </script>
 
 <template>

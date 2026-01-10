@@ -5,11 +5,12 @@
  */
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { open } from '@tauri-apps/plugin-dialog'
 import { invoke } from '@tauri-apps/api/core'
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { useDataDriver } from '../composables/useDataDriver'
+import { registerOverlay } from '../composables/useKeyboardShortcuts'
 
 interface LocalImage {
   path: string
@@ -23,6 +24,19 @@ const emit = defineEmits<{
   (e: 'close'): void
   (e: 'import', images: string[], targetDriverId: string): void
 }>()
+
+// Register ESC key handler
+let unregisterOverlay: (() => void) | null = null;
+
+onMounted(() => {
+  unregisterOverlay = registerOverlay('local-image-browser', () => emit('close'));
+});
+
+onUnmounted(() => {
+  if (unregisterOverlay) {
+    unregisterOverlay();
+  }
+});
 
 const { githubDrivers, loadDrivers } = useDataDriver()
 

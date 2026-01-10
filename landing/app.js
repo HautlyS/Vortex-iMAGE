@@ -1,7 +1,5 @@
 /**
- * TypeScript Module - 0 exports
- * Purpose: Type-safe utilities and composable functions
- * Imports: 0 modules
+ * iMAGE Landing Page - Interactive JavaScript
  */
 
 (function() {
@@ -10,6 +8,7 @@
     const $ = s => document.querySelector(s);
     const $$ = s => document.querySelectorAll(s);
 
+    // Cursor glow effect
     const cursorGlow = $('.cursor-glow');
     if (cursorGlow && window.matchMedia('(pointer: fine)').matches) {
         let mouseX = 0, mouseY = 0, glowX = 0, glowY = 0;
@@ -31,6 +30,7 @@
         cursorGlow.style.display = 'none';
     }
 
+    // Mobile nav toggle
     const navToggle = $('.nav-toggle');
     const navMenu = $('.nav-menu');
     navToggle?.addEventListener('click', () => {
@@ -39,6 +39,7 @@
         navToggle.setAttribute('aria-expanded', isOpen);
     });
 
+    // Close nav on link click
     $$('.nav-link').forEach(link => {
         link.addEventListener('click', () => {
             navMenu.classList.remove('active');
@@ -46,6 +47,7 @@
         });
     });
 
+    // Smooth scroll for anchor links
     $$('a[href^="#"]').forEach(a => {
         a.addEventListener('click', e => {
             const target = $(a.getAttribute('href'));
@@ -56,6 +58,7 @@
         });
     });
 
+    // Counter animation
     const counters = $$('.metric-value[data-count]');
     const counterObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
@@ -79,6 +82,7 @@
     }, { threshold: 0.5 });
     counters.forEach(c => counterObserver.observe(c));
 
+    // Fade-in animation for cards
     const fadeObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -96,9 +100,11 @@
         fadeObserver.observe(el);
     });
 
+    // Year in footer
     const yearEl = $('#year');
     if (yearEl) yearEl.textContent = new Date().getFullYear();
 
+    // Platform detection for download buttons
     const detectPlatform = () => {
         const ua = navigator.userAgent.toLowerCase();
         if (ua.includes('win')) return 'windows';
@@ -116,19 +122,17 @@
         }
     }
 
+    // Download button click handlers
     $$('.dl-btn').forEach(btn => {
         btn.addEventListener('click', e => {
             e.preventDefault();
             const p = btn.dataset.platform;
-            const urls = {
-                windows: 'https:
-                macos: 'https:
-                linux: 'https:
-            };
-            if (urls[p]) window.location.href = urls[p];
+            // Redirect to GitHub releases page
+            window.location.href = 'https://github.com/vortex-interface/image/releases/latest';
         });
     });
 
+    // Header hide on scroll
     const header = $('.header');
     let lastScroll = 0;
     window.addEventListener('scroll', () => {
@@ -141,6 +145,7 @@
         lastScroll = scroll;
     }, { passive: true });
 
+    // Console branding
     console.log('%ciMAGE', 'font-size:32px;font-weight:900;background:linear-gradient(135deg,#6366f1,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;');
     console.log('%cNext-Gen Photo Storage', 'color:#71717a;');
 })();

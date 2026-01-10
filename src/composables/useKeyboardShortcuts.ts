@@ -1,73 +1,178 @@
 /**
- * TypeScript Module - 1 exports
- * Purpose: Type-safe utilities and composable functions
- * Imports: 3 modules
+ * Keyboard Shortcuts Composable
+ * Centralized keyboard event handling for the app
+ * Supports ESC to close overlays, and other global shortcuts
  */
+import { ref, onMounted, onUnmounted } from 'vue'
 
-import { ref, onUnmounted } from 'vue'
-import { useSelection } from './useSelection'
-import { useFavorites } from './useFavorites'
-import { SHORTCUTS } from '../config'
-import type { Photo } from './usePhotoUpload'
-import type { ContextMenuItem } from '../components/ContextMenu.vue'
+export interface KeyboardShortcut {
+  key: string
+  ctrl?: boolean
+  shift?: boolean
+  alt?: boolean
+  meta?: boolean
+  action: () => void
+  description?: string
+  preventDefault?: boolean
+}
 
-export function useKeyboardShortcuts(
-  filteredPhotos: { value: Photo[] },
-  photos: { value: Photo[] }
-) {
-  const { clearSelection, selectAll, getSelected, selectedCount } = useSelection()
-  const { toggleFavorite } = useFavorites()
-  const contextMenu = ref<{ x: number; y: number; items: ContextMenuItem[] } | null>(null)
+// Stack of active overlays - last one gets ESC priority
+const overlayStack = ref<string[]>([])
 
-  function handleKeydown(e: KeyboardEvent) {
-    const { selectAll: selectAllKey, favorite: favKey, escape: escKey } = SHORTCUTS
-    
-    if ((e.ctrlKey || e.metaKey) && e.key === selectAllKey.key) {
-      e.preventDefault()
-      selectAll(filteredPhotos.value.map(p => p.sha))
-    }
-    
-    if (e.key === 'Delete' && selectedCount.value > 0) {
-      e.preventDefault()
-      
-    }
-    
-    if (e.key === favKey.key && selectedCount.value > 0) {
-      e.preventDefault()
-      const selectedIds = getSelected()
-      for (const id of selectedIds) {
-        const photo = photos.value.find(p => p.sha === id)
-        if (photo) toggleFavorite({ type: 'photo', id: photo.sha, path: photo.name })
+// Global shortcuts registry
+const globalShortcuts = ref<Map<string, KeyboardShortcut>>(new Map())
+
+/**
+ * Register an overlay to receive ESC key events
+ * Returns a function to unregister
+ */
+export function registerOverlay(id: string, onClose: () => void): () => void {
+  overlayStack.value.push(id)
+  
+  const shortcutId = `overlay-${id}`
+  globalShortcuts.value.set(shortcutId, {
+    key: 'Escape',
+    action: () => {
+      // Only close if this overlay is on top of the stack
+      if (overlayStack.value[overlayStack.value.length - 1] === id) {
+        onClose()
       }
-    }
-    
-    if (e.key === escKey.key) {
-      clearSelection()
-      contextMenu.value = null
-    }
-  }
-
-  let mounted = false
-
-  function mount() {
-    if (!mounted) {
-      document.addEventListener('keydown', handleKeydown)
-      mounted = true
-    }
-  }
-
-  function unmount() {
-    if (mounted) {
-      document.removeEventListener('keydown', handleKeydown)
-      mounted = false
-    }
-  }
-
-  onUnmounted(unmount)
-
-  return {
-    contextMenu,
-    mount,
-    unmount
+    },
+    preventDefault: true
+  })
+  
+  return () => {
+    overlayStack.value = overlayStack.value.filter(o => o !== id)
+    globalShortcuts.value.delete(shortcutId)
   }
 }
+
+/**
+ * Check if click is outside an element (for click-outside-to-close)
+ */
+export function isClickOutside(event: MouseEvent, element: HTMLElement | null): boolean {
+  if (!element) return false
+  return !element.contains(event.target as Node)
+}
+
+/**
+ * Create a click-outside handler
+ */
+export function useClickOutside(
+  elementRef: { value: HTMLElement | null },
+  callback: () => void,
+  options: { enabled?: boolean } = {}
+) {
+  const { enabled = true } = options
+  
+  function handleClick(event: MouseEvent) {
+    if (!enabled) return
+    if (elementRef.value && isClickOutside(event, elementRef.value)) {
+      callback()
+    }
+  }
+  
+  onMounted(() => {
+    // Use setTimeout to avoid immediate trigger on the same click that opened the overlay
+    setTimeout(() => {
+      document.addEventListener('click', handleClick)
+    }, 0)
+  })
+  
+  onUnmounted(() => {
+    document.removeEventListener('click', handleClick)
+  })
+  
+  return { handleClick }
+}
+
+/**
+ * Main keyboard shortcuts composable
+ */
+export function useKeyboardShortcuts() {
+  function handleKeydown(event: KeyboardEvent) {
+    // Check global shortcuts
+    for (const shortcut of globalShortcuts.value.values()) {
+      const keyMatch = event.key === shortcut.key || event.code === shortcut.key
+      const ctrlMatch = !shortcut.ctrl || (event.ctrlKey || event.metaKey)
+      const shiftMatch = !shortcut.shift || event.shiftKey
+      const altMatch = !shortcut.alt || event.altKey
+      
+      if (keyMatch && ctrlMatch && shiftMatch && altMatch) {
+        if (shortcut.preventDefault) {
+          event.preventDefault()
+        }
+        shortcut.action()
+        return
+      }
+    }
+  }
+  
+  function registerShortcut(id: string, shortcut: KeyboardShortcut) {
+    globalShortcuts.value.set(id, shortcut)
+    return () => globalShortcuts.value.delete(id)
+  }
+  
+  function unregisterShortcut(id: string) {
+    globalShortcuts.value.delete(id)
+  }
+  
+  // Setup global listener
+  onMounted(() => {
+    document.addEventListener('keydown', handleKeydown)
+  })
+  
+  onUnmounted(() => {
+    document.removeEventListener('keydown', handleKeydown)
+  })
+  
+  return {
+    registerShortcut,
+    unregisterShortcut,
+    registerOverlay,
+    overlayStack
+  }
+}
+
+/**
+ * Hook for overlay components - handles ESC and click-outside
+ */
+export function useOverlayClose(
+  overlayId: string,
+  onClose: () => void,
+  options: {
+    closeOnEsc?: boolean
+    closeOnClickOutside?: boolean
+  } = {}
+) {
+  const { closeOnEsc = true, closeOnClickOutside = true } = options
+  
+  let unregisterOverlay: (() => void) | null = null
+  
+  onMounted(() => {
+    if (closeOnEsc) {
+      unregisterOverlay = registerOverlay(overlayId, onClose)
+    }
+  })
+  
+  onUnmounted(() => {
+    if (unregisterOverlay) {
+      unregisterOverlay()
+    }
+  })
+  
+  // Handler for overlay background click
+  function handleOverlayClick(event: MouseEvent) {
+    if (!closeOnClickOutside) return
+    // Only close if clicking directly on the overlay background
+    if (event.target === event.currentTarget) {
+      onClose()
+    }
+  }
+  
+  return {
+    handleOverlayClick
+  }
+}
+
+export default useKeyboardShortcuts

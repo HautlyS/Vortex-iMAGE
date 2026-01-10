@@ -16,7 +16,7 @@ use tokio::fs;
 use tokio::time::sleep;
 
 use crate::compress::{compress_file_data, ItemCompressionSettings, Algorithm, CompressedFileData};
-use crate::crypto::{encrypt, decrypt_with_keypair_bytes, PublicBundle, EncryptedFileData, EncryptionSettings, EncryptedPayload, encrypt_with_password};
+use crate::crypto::{encrypt, decrypt_with_keypair_bytes, PublicBundle, EncryptedFileData, EncryptedPayload, encrypt_with_password};
 
 /// Upload processing settings - allows per-item customization
 #[derive(Clone, Debug, Serialize, Deserialize)]

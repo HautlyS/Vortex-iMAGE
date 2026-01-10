@@ -5,14 +5,28 @@
  */
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRepoManager, validateRepoName } from '../composables/useRepoManager'
 import { useGitHubAuth } from '../composables/useGitHubAuth'
+import { registerOverlay } from '../composables/useKeyboardShortcuts'
 
 const emit = defineEmits<{
   (e: 'created', repo: string): void
   (e: 'close'): void
 }>()
+
+// Register ESC key handler
+let unregisterOverlay: (() => void) | null = null;
+
+onMounted(() => {
+  unregisterOverlay = registerOverlay('repo-creator', () => emit('close'));
+});
+
+onUnmounted(() => {
+  if (unregisterOverlay) {
+    unregisterOverlay();
+  }
+});
 
 const { token, setRepo } = useGitHubAuth()
 const { createRepo, creating, error, clearError } = useRepoManager()

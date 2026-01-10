@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 
 export interface ToastProps {
   id: string
@@ -23,20 +23,6 @@ const progress = ref(100)
 const isPaused = ref(false)
 let intervalId: ReturnType<typeof setInterval> | null = null
 
-const iconMap = {
-  success: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>`,
-  error: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>`,
-  warning: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>`,
-  info: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>`
-}
-
-const colorMap = computed(() => ({
-  success: 'var(--retro-accent-green, #00ff87)',
-  error: 'var(--retro-accent-red, #ff4757)',
-  warning: 'var(--retro-accent-yellow, #ffc312)',
-  info: 'var(--retro-accent-blue, #00d4ff)'
-}))
-
 const startTimer = () => {
   if (props.duration <= 0) return
   const step = 100 / (props.duration / 50)
@@ -55,89 +41,194 @@ const resumeTimer = () => { isPaused.value = false }
 
 onMounted(startTimer)
 onUnmounted(() => { if (intervalId) clearInterval(intervalId) })
+
+const colorMap = {
+  success: '#39ff14',
+  error: '#e43b44',
+  warning: '#feae34',
+  info: '#0099db'
+}
+
+const bgColorMap = {
+  success: '#1a3a1a',
+  error: '#3a1a1a',
+  warning: '#3a2a1a',
+  info: '#1a2a3a'
+}
 </script>
 
 <template>
   <div 
-    class="toast"
-    :style="{ '--toast-color': colorMap[type] }"
+    class="pixel-toast"
+    :class="type"
+    :style="{ 
+      '--toast-color': colorMap[type],
+      '--toast-bg': bgColorMap[type]
+    }"
     @mouseenter="pauseTimer"
     @mouseleave="resumeTimer"
     role="alert"
   >
-    <div class="toast-icon" v-html="iconMap[type]" />
+    <!-- Corner decorations -->
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+    
+    <!-- Icon -->
+    <div class="toast-icon">
+      <!-- Success -->
+      <svg v-if="type === 'success'" viewBox="0 0 16 16">
+        <rect x="2" y="8" width="4" height="4" fill="currentColor"/>
+        <rect x="6" y="10" width="4" height="4" fill="currentColor"/>
+        <rect x="10" y="4" width="4" height="4" fill="currentColor"/>
+        <rect x="14" y="0" width="2" height="4" fill="currentColor"/>
+      </svg>
+      
+      <!-- Error -->
+      <svg v-else-if="type === 'error'" viewBox="0 0 16 16">
+        <rect x="2" y="2" width="4" height="4" fill="currentColor"/>
+        <rect x="10" y="2" width="4" height="4" fill="currentColor"/>
+        <rect x="6" y="6" width="4" height="4" fill="currentColor"/>
+        <rect x="2" y="10" width="4" height="4" fill="currentColor"/>
+        <rect x="10" y="10" width="4" height="4" fill="currentColor"/>
+      </svg>
+      
+      <!-- Warning -->
+      <svg v-else-if="type === 'warning'" viewBox="0 0 16 16">
+        <rect x="6" y="0" width="4" height="2" fill="currentColor"/>
+        <rect x="4" y="2" width="8" height="10" fill="currentColor"/>
+        <rect x="2" y="12" width="12" height="4" fill="currentColor"/>
+        <rect x="6" y="4" width="4" height="4" fill="#000"/>
+        <rect x="6" y="10" width="4" height="2" fill="#000"/>
+      </svg>
+      
+      <!-- Info -->
+      <svg v-else viewBox="0 0 16 16">
+        <rect x="4" y="0" width="8" height="2" fill="currentColor"/>
+        <rect x="2" y="2" width="12" height="12" fill="currentColor"/>
+        <rect x="4" y="14" width="8" height="2" fill="currentColor"/>
+        <rect x="6" y="4" width="4" height="2" fill="#000"/>
+        <rect x="6" y="8" width="4" height="4" fill="#000"/>
+      </svg>
+    </div>
+    
+    <!-- Content -->
     <div class="toast-content">
       <div class="toast-title">{{ title }}</div>
       <div v-if="message" class="toast-message">{{ message }}</div>
     </div>
+    
+    <!-- Action button -->
     <button v-if="action" class="toast-action" @click="action.onClick">
       {{ action.label }}
     </button>
+    
+    <!-- Close button -->
     <button class="toast-close" @click="emit('close', id)" aria-label="Fechar">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M18 6L6 18M6 6l12 12"/>
+      <svg viewBox="0 0 16 16">
+        <rect x="2" y="6" width="4" height="4" fill="currentColor"/>
+        <rect x="6" y="2" width="4" height="4" fill="currentColor"/>
+        <rect x="6" y="10" width="4" height="4" fill="currentColor"/>
+        <rect x="10" y="6" width="4" height="4" fill="currentColor"/>
       </svg>
     </button>
-    <div class="toast-progress" :style="{ width: `${progress}%` }" />
+    
+    <!-- Progress bar -->
+    <div class="toast-progress-track">
+      <div class="toast-progress-fill" :style="{ width: `${progress}%` }"></div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.toast {
+.pixel-toast {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 14px 16px;
-  background: var(--retro-bg-panel, #1a1030);
-  border: 2px solid var(--toast-color);
-  border-left-width: 4px;
-  box-shadow: 4px 4px 0 rgba(0,0,0,0.5), 0 0 20px color-mix(in srgb, var(--toast-color) 30%, transparent);
-  position: relative;
-  overflow: hidden;
+  padding: 16px 20px;
+  padding-bottom: 20px;
+  background: var(--toast-bg);
+  border: 4px solid #000;
+  box-shadow: 6px 6px 0 rgba(0,0,0,0.8);
   min-width: 320px;
   max-width: 420px;
+  image-rendering: pixelated;
 }
 
+/* Corner decorations */
+.corner {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--toast-color);
+}
+
+.corner.tl { top: -3px; left: -3px; }
+.corner.tr { top: -3px; right: -3px; }
+.corner.bl { bottom: -3px; left: -3px; }
+.corner.br { bottom: -3px; right: -3px; }
+
+/* Icon */
 .toast-icon {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   color: var(--toast-color);
   flex-shrink: 0;
-  margin-top: 2px;
+  filter: drop-shadow(0 0 4px var(--toast-color));
 }
 
-.toast-icon :deep(svg) { width: 100%; height: 100%; }
+.toast-icon svg {
+  width: 100%;
+  height: 100%;
+}
 
-.toast-content { flex: 1; min-width: 0; }
+/* Content */
+.toast-content {
+  flex: 1;
+  min-width: 0;
+}
 
 .toast-title {
-  font-family: 'VT323', monospace;
-  font-size: 18px;
-  color: var(--retro-text-main, #fff);
-  line-height: 1.2;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: #fff;
+  line-height: 1.4;
+  text-shadow: 1px 1px 0 #000;
 }
 
 .toast-message {
   font-family: 'VT323', monospace;
-  font-size: 14px;
-  color: var(--retro-text-muted, #9d8ec2);
-  margin-top: 4px;
+  font-size: 16px;
+  color: #808080;
+  margin-top: 6px;
 }
 
+/* Action button */
 .toast-action {
   font-family: 'Press Start 2P', monospace;
   font-size: 8px;
-  padding: 6px 10px;
+  padding: 8px 12px;
   background: var(--toast-color);
   color: #000;
   border: 2px solid #000;
   box-shadow: 2px 2px 0 #000;
   white-space: nowrap;
+  text-shadow: none;
 }
 
-.toast-action:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 #000; }
-.toast-action:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 #000; }
+.toast-action:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0 #000;
+}
 
+.toast-action:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+/* Close button */
 .toast-close {
   width: 24px;
   height: 24px;
@@ -145,18 +236,51 @@ onUnmounted(() => { if (intervalId) clearInterval(intervalId) })
   background: transparent;
   border: none;
   box-shadow: none;
-  color: var(--retro-text-muted, #9d8ec2);
+  color: #808080;
   flex-shrink: 0;
 }
 
-.toast-close:hover { color: var(--retro-accent-red, #ff4757); }
+.toast-close:hover {
+  color: #e43b44;
+  transform: none;
+}
 
-.toast-progress {
+.toast-close svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Progress bar */
+.toast-progress-track {
   position: absolute;
   bottom: 0;
   left: 0;
-  height: 3px;
+  right: 0;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.toast-progress-fill {
+  height: 100%;
   background: var(--toast-color);
-  transition: width 0.05s linear;
+  box-shadow: 0 0 8px var(--toast-color);
+  transition: width 0.05s steps(10);
+}
+
+/* Type-specific styles */
+.pixel-toast.success {
+  border-color: #2d8a1a;
+}
+
+.pixel-toast.error {
+  border-color: #a82835;
+}
+
+.pixel-toast.warning {
+  border-color: #c68b28;
+}
+
+.pixel-toast.info {
+  border-color: #006b99;
 }
 </style>

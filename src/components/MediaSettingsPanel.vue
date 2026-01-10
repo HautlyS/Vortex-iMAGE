@@ -2,11 +2,11 @@
 /**
  * Media Settings Panel
  * 
- * Allows users to configure compression and encryption settings
- * per media type (photo, video, document) and per album.
+ * Simple settings for compression and encryption.
+ * Users choose WHAT to protect, not HOW - we use the best technology automatically.
  */
 import { ref, onMounted, computed } from 'vue'
-import { useMediaSettings, type MediaType, type ProcessingSettings, type CompressionAlgorithm } from '../composables/useMediaSettings'
+import { useMediaSettings } from '../composables/useMediaSettings'
 import { useCrypto } from '../composables/useCrypto'
 
 const emit = defineEmits<{
@@ -15,308 +15,152 @@ const emit = defineEmits<{
 
 const {
   globalSettings,
-  albumSettings,
-  initialized,
   initialize,
-  updateMediaTypeSettings,
-  getMediaTypeSettings,
-  resetToDefaults,
-  exportSettings,
-  importSettings,
-  DEFAULT_COMPRESSION,
-  DEFAULT_ENCRYPTION
+  setGlobalSettings,
+  removeFolderSettings,
+  getAllFolderSettings,
+  resetToDefaults
 } = useMediaSettings()
 
-const { publicBundle, isUnlocked } = useCrypto()
+const { isUnlocked, initialize: initCrypto } = useCrypto()
 
-const activeTab = ref<MediaType>('photo')
-const showExportDialog = ref(false)
-const showImportDialog = ref(false)
-const importJson = ref('')
-const importError = ref('')
-
-const compressionAlgorithms: { id: CompressionAlgorithm; name: string; description: string }[] = [
-  { id: 'zstd', name: 'Zstandard', description: 'Best balance of speed and ratio' },
-  { id: 'lz4', name: 'LZ4', description: 'Fastest compression' },
-  { id: 'brotli', name: 'Brotli', description: 'Best ratio for text' },
-  { id: 'gzip', name: 'Gzip', description: 'Universal compatibility' },
-  { id: 'snap', name: 'Snappy', description: 'Fast with good ratio' },
-  { id: 'none', name: 'None', description: 'No compression' }
-]
-
-const mediaTypes: { id: MediaType; name: string; icon: string }[] = [
-  { id: 'photo', name: 'Photos', icon: '📷' },
-  { id: 'video', name: 'Videos', icon: '🎬' },
-  { id: 'document', name: 'Documents', icon: '📄' },
-  { id: 'other', name: 'Other', icon: '📁' }
-]
-
-const currentSettings = computed(() => getMediaTypeSettings(activeTab.value))
+const showResetConfirm = ref(false)
+const folders = computed(() => getAllFolderSettings())
 
 onMounted(async () => {
-  await initialize()
+  await Promise.all([initialize(), initCrypto()])
 })
 
-function updateCompression(key: string, value: unknown) {
-  const current = getMediaTypeSettings(activeTab.value)
-  updateMediaTypeSettings(activeTab.value, {
-    compression: { ...current.compression, [key]: value }
-  })
+function toggleCompress() {
+  setGlobalSettings({ compress: !globalSettings.value.compress })
 }
 
-function updateEncryption(key: string, value: unknown) {
-  const current = getMediaTypeSettings(activeTab.value)
-  updateMediaTypeSettings(activeTab.value, {
-    encryption: { ...current.encryption, [key]: value }
-  })
-}
-
-function handleExport() {
-  const json = exportSettings()
-  const blob = new Blob([json], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `image-settings-${Date.now()}.json`
-  a.click()
-  URL.revokeObjectURL(url)
-  showExportDialog.value = false
-}
-
-function handleImport() {
-  importError.value = ''
-  if (!importJson.value.trim()) {
-    importError.value = 'Please paste settings JSON'
-    return
-  }
-  
-  const success = importSettings(importJson.value)
-  if (success) {
-    showImportDialog.value = false
-    importJson.value = ''
-  } else {
-    importError.value = 'Invalid settings format'
-  }
+function toggleEncrypt() {
+  setGlobalSettings({ encrypt: !globalSettings.value.encrypt })
 }
 
 function handleReset() {
-  if (confirm('Reset all settings to defaults? This cannot be undone.')) {
-    resetToDefaults()
-  }
+  resetToDefaults()
+  showResetConfirm.value = false
 }
 </script>
 
 <template>
-  <div class="media-settings-overlay" @click.self="emit('close')">
-    <div class="media-settings-panel">
+  <div class="settings-overlay" @click.self="emit('close')">
+    <div class="settings-panel">
+      <!-- Header -->
       <div class="panel-header">
-        <h2>⚙️ Media Processing Settings</h2>
+        <h2>⚙️ File Protection</h2>
         <button class="close-btn" @click="emit('close')">×</button>
       </div>
 
-      <div class="panel-tabs">
-        <button
-          v-for="type in mediaTypes"
-          :key="type.id"
-          :class="{ active: activeTab === type.id }"
-          @click="activeTab = type.id"
-        >
-          <span class="tab-icon">{{ type.icon }}</span>
-          <span class="tab-name">{{ type.name }}</span>
-        </button>
-      </div>
-
-      <div class="panel-content" v-if="initialized">
-        <!-- Compression Section -->
+      <div class="panel-content">
+        <!-- Main Settings -->
         <section class="settings-section">
-          <div class="section-header">
-            <h3>📦 Compression</h3>
-            <label class="toggle-switch">
-              <input
-                type="checkbox"
-                :checked="currentSettings.compression.enabled"
-                @change="updateCompression('enabled', ($event.target as HTMLInputElement).checked)"
-              />
-              <span class="toggle-slider"></span>
-            </label>
+          <h3>Default Settings</h3>
+          <p class="section-desc">Applied to all uploads unless overridden per folder.</p>
+
+          <!-- Compress Toggle -->
+          <div class="setting-card" @click="toggleCompress">
+            <div class="setting-icon">📦</div>
+            <div class="setting-info">
+              <strong>Compression</strong>
+              <p>Reduce file size automatically</p>
+              <span class="tech-badge">Zstandard • Auto-skip compressed files</span>
+            </div>
+            <div class="toggle-wrapper">
+              <input type="checkbox" :checked="globalSettings.compress" class="toggle" @click.stop />
+            </div>
           </div>
 
-          <div v-if="currentSettings.compression.enabled" class="section-content">
-            <div class="form-group">
-              <label>Algorithm</label>
-              <select
-                :value="currentSettings.compression.algorithm"
-                @change="updateCompression('algorithm', ($event.target as HTMLSelectElement).value)"
-              >
-                <option v-for="alg in compressionAlgorithms" :key="alg.id" :value="alg.id">
-                  {{ alg.name }} - {{ alg.description }}
-                </option>
-              </select>
+          <!-- Encrypt Toggle -->
+          <div class="setting-card" @click="toggleEncrypt">
+            <div class="setting-icon">🔒</div>
+            <div class="setting-info">
+              <strong>Encryption</strong>
+              <p>Protect files with military-grade security</p>
+              <span v-if="isUnlocked" class="tech-badge success">
+                🛡️ Post-Quantum • ML-KEM-1024 + X25519
+              </span>
+              <span v-else class="tech-badge warning">
+                🔑 Password-based • Argon2id + ChaCha20
+              </span>
             </div>
-
-            <div class="form-group">
-              <label>Level ({{ currentSettings.compression.level }})</label>
-              <input
-                type="range"
-                min="1"
-                max="22"
-                :value="currentSettings.compression.level"
-                @input="updateCompression('level', parseInt(($event.target as HTMLInputElement).value))"
-              />
-              <div class="range-labels">
-                <span>Fast</span>
-                <span>Balanced</span>
-                <span>Best</span>
-              </div>
-            </div>
-
-            <div class="form-group checkbox-group">
-              <label>
-                <input
-                  type="checkbox"
-                  :checked="currentSettings.compression.preferSpeed"
-                  @change="updateCompression('preferSpeed', ($event.target as HTMLInputElement).checked)"
-                />
-                Prefer speed over ratio
-              </label>
-            </div>
-
-            <div class="form-group checkbox-group">
-              <label>
-                <input
-                  type="checkbox"
-                  :checked="currentSettings.compression.skipAlreadyCompressed"
-                  @change="updateCompression('skipAlreadyCompressed', ($event.target as HTMLInputElement).checked)"
-                />
-                Skip already compressed files (JPG, PNG, MP4, etc.)
-              </label>
-            </div>
-
-            <div class="form-group">
-              <label>Minimum size threshold</label>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  min="0"
-                  :value="currentSettings.compression.minSizeThreshold"
-                  @input="updateCompression('minSizeThreshold', parseInt(($event.target as HTMLInputElement).value) || 0)"
-                />
-                <span class="unit">bytes</span>
-              </div>
-              <p class="hint">Files smaller than this won't be compressed</p>
+            <div class="toggle-wrapper">
+              <input type="checkbox" :checked="globalSettings.encrypt" class="toggle" @click.stop />
             </div>
           </div>
         </section>
 
-        <!-- Encryption Section -->
+        <!-- Encryption Status -->
         <section class="settings-section">
-          <div class="section-header">
-            <h3>🔐 Encryption</h3>
-            <label class="toggle-switch">
-              <input
-                type="checkbox"
-                :checked="currentSettings.encryption.enabled"
-                @change="updateEncryption('enabled', ($event.target as HTMLInputElement).checked)"
-              />
-              <span class="toggle-slider"></span>
-            </label>
+          <h3>Security Status</h3>
+          
+          <div v-if="isUnlocked" class="status-card success">
+            <span class="status-icon">✓</span>
+            <div>
+              <strong>Keypair Active</strong>
+              <p>Your files are protected with quantum-resistant encryption. Even future quantum computers won't be able to decrypt them.</p>
+            </div>
           </div>
 
-          <div v-if="currentSettings.encryption.enabled" class="section-content">
-            <div class="encryption-methods">
-              <label class="method-option" :class="{ active: currentSettings.encryption.useKeypair }">
-                <input
-                  type="radio"
-                  name="encryption-method"
-                  :checked="currentSettings.encryption.useKeypair"
-                  @change="() => { updateEncryption('useKeypair', true); updateEncryption('usePassword', false) }"
-                />
-                <div class="method-info">
-                  <span class="method-icon">🛡️</span>
-                  <div>
-                    <strong>Post-Quantum Encryption</strong>
-                    <p>ML-KEM-1024 + X25519 hybrid (recommended)</p>
-                  </div>
-                </div>
-              </label>
-
-              <label class="method-option" :class="{ active: currentSettings.encryption.usePassword }">
-                <input
-                  type="radio"
-                  name="encryption-method"
-                  :checked="currentSettings.encryption.usePassword"
-                  @change="() => { updateEncryption('usePassword', true); updateEncryption('useKeypair', false) }"
-                />
-                <div class="method-info">
-                  <span class="method-icon">🔑</span>
-                  <div>
-                    <strong>Password Encryption</strong>
-                    <p>Argon2id + ChaCha20-Poly1305</p>
-                  </div>
-                </div>
-              </label>
-            </div>
-
-            <div v-if="currentSettings.encryption.useKeypair && !isUnlocked" class="warning-box">
-              ⚠️ Keypair not unlocked. Go to Security Settings to unlock your keypair.
-            </div>
-
-            <div v-if="currentSettings.encryption.useKeypair && isUnlocked" class="success-box">
-              ✅ Keypair ready for encryption
+          <div v-else class="status-card warning">
+            <span class="status-icon">!</span>
+            <div>
+              <strong>No Keypair</strong>
+              <p>Files will be encrypted with a password. For stronger protection, set up a keypair in Security Settings.</p>
             </div>
           </div>
         </section>
 
-        <!-- Album Settings Summary -->
-        <section class="settings-section">
-          <div class="section-header">
-            <h3>📁 Album Overrides</h3>
+        <!-- Folder Overrides -->
+        <section v-if="folders.length > 0" class="settings-section">
+          <h3>Folder Overrides</h3>
+          <p class="section-desc">These folders have custom settings.</p>
+
+          <div v-for="folder in folders" :key="folder.path" class="folder-item">
+            <div class="folder-info">
+              <span class="folder-icon">📁</span>
+              <span class="folder-name">{{ folder.name || folder.path }}</span>
+            </div>
+            <div class="folder-badges">
+              <span v-if="folder.settings.compress" class="mini-badge">📦</span>
+              <span v-if="folder.settings.encrypt" class="mini-badge">🔒</span>
+            </div>
+            <button class="remove-btn" @click="removeFolderSettings(folder.path)">×</button>
           </div>
-          <div class="section-content">
-            <p class="hint">
-              {{ albumSettings.size }} album(s) with custom settings
-            </p>
-            <p class="hint">
-              Configure per-album settings when viewing an album.
-            </p>
+        </section>
+
+        <!-- How It Works -->
+        <section class="settings-section info-section">
+          <h3>💡 How It Works</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <strong>Compression</strong>
+              <p>Uses Zstandard (zstd) - the best balance of speed and size reduction. Already compressed files (JPG, PNG, MP4) are automatically skipped.</p>
+            </div>
+            <div class="info-item">
+              <strong>Encryption</strong>
+              <p>With a keypair: Post-quantum hybrid encryption (ML-KEM-1024 + X25519) - secure against future quantum computers.</p>
+              <p>Without keypair: Password-based encryption (Argon2id + ChaCha20-Poly1305) - strong but requires remembering the password.</p>
+            </div>
           </div>
         </section>
       </div>
 
+      <!-- Footer -->
       <div class="panel-footer">
-        <button class="btn-secondary" @click="showExportDialog = true">
-          📤 Export
-        </button>
-        <button class="btn-secondary" @click="showImportDialog = true">
-          📥 Import
-        </button>
-        <button class="btn-danger" @click="handleReset">
-          🔄 Reset
-        </button>
+        <button class="btn-danger" @click="showResetConfirm = true">Reset to Defaults</button>
       </div>
 
-      <!-- Export Dialog -->
-      <div v-if="showExportDialog" class="dialog-overlay" @click.self="showExportDialog = false">
-        <div class="dialog">
-          <h3>Export Settings</h3>
-          <p>Download your media processing settings as a JSON file.</p>
-          <div class="dialog-actions">
-            <button class="btn-secondary" @click="showExportDialog = false">Cancel</button>
-            <button class="btn-primary" @click="handleExport">Download</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Import Dialog -->
-      <div v-if="showImportDialog" class="dialog-overlay" @click.self="showImportDialog = false">
-        <div class="dialog">
-          <h3>Import Settings</h3>
-          <p>Paste your settings JSON below:</p>
-          <textarea v-model="importJson" placeholder="Paste JSON here..."></textarea>
-          <p v-if="importError" class="error">{{ importError }}</p>
-          <div class="dialog-actions">
-            <button class="btn-secondary" @click="showImportDialog = false">Cancel</button>
-            <button class="btn-primary" @click="handleImport">Import</button>
+      <!-- Reset Confirm -->
+      <div v-if="showResetConfirm" class="confirm-overlay" @click.self="showResetConfirm = false">
+        <div class="confirm-dialog">
+          <h3>Reset Settings?</h3>
+          <p>This will reset all settings to defaults and remove folder overrides.</p>
+          <div class="confirm-actions">
+            <button class="btn-secondary" @click="showResetConfirm = false">Cancel</button>
+            <button class="btn-danger" @click="handleReset">Reset</button>
           </div>
         </div>
       </div>
@@ -325,10 +169,10 @@ function handleReset() {
 </template>
 
 <style scoped>
-.media-settings-overlay {
+.settings-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -337,13 +181,13 @@ function handleReset() {
   padding: 1rem;
 }
 
-.media-settings-panel {
+.settings-panel {
   width: 100%;
-  max-width: 600px;
+  max-width: 520px;
   max-height: 90vh;
   background: var(--bg-secondary, #1a1a2e);
   border: 1px solid var(--border-color, #333);
-  border-radius: 12px;
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -353,13 +197,13 @@ function handleReset() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: 20px 24px;
   border-bottom: 1px solid var(--border-color, #333);
 }
 
 .panel-header h2 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
 }
 
 .close-btn {
@@ -370,288 +214,279 @@ function handleReset() {
   color: var(--text-secondary, #a1a1aa);
   font-size: 1.5rem;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: 8px;
+  transition: all 0.2s;
 }
 
 .close-btn:hover {
   background: rgba(255, 255, 255, 0.1);
-}
-
-.panel-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--border-color, #333);
-  overflow-x: auto;
-}
-
-.panel-tabs button {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 12px 8px;
-  background: transparent;
-  border: none;
-  color: var(--text-secondary, #a1a1aa);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.panel-tabs button:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.panel-tabs button.active {
-  color: var(--accent-color, #00ff88);
-  border-bottom: 2px solid var(--accent-color, #00ff88);
-}
-
-.tab-icon {
-  font-size: 1.2rem;
-}
-
-.tab-name {
-  font-size: 0.75rem;
+  color: #fff;
 }
 
 .panel-content {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 20px 24px;
 }
 
 .settings-section {
+  margin-bottom: 24px;
+}
+
+.settings-section h3 {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  color: var(--text-secondary, #a1a1aa);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.section-desc {
+  margin: 0 0 16px;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #a1a1aa);
+}
+
+.setting-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 18px;
   background: var(--bg-primary, #0f0f1a);
-  border-radius: 8px;
-  margin-bottom: 16px;
-  overflow: hidden;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.section-header h3 {
-  margin: 0;
-  font-size: 0.9rem;
-}
-
-.section-content {
-  padding: 16px;
-}
-
-.form-group {
-  margin-bottom: 16px;
-}
-
-.form-group:last-child {
-  margin-bottom: 0;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 0.85rem;
-  color: var(--text-secondary, #a1a1aa);
-}
-
-.form-group select,
-.form-group input[type="number"] {
-  width: 100%;
-  padding: 10px 12px;
-  background: var(--bg-secondary, #1a1a2e);
-  border: 1px solid var(--border-color, #333);
-  border-radius: 6px;
-  color: inherit;
-  font-size: 0.9rem;
-}
-
-.form-group input[type="range"] {
-  width: 100%;
-  margin: 8px 0;
-}
-
-.range-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.7rem;
-  color: var(--text-secondary, #a1a1aa);
-}
-
-.checkbox-group label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
-
-.checkbox-group input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-}
-
-.input-with-unit {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.input-with-unit input {
-  flex: 1;
-}
-
-.unit {
-  font-size: 0.85rem;
-  color: var(--text-secondary, #a1a1aa);
-}
-
-.hint {
-  margin: 4px 0 0;
-  font-size: 0.75rem;
-  color: var(--text-secondary, #a1a1aa);
-}
-
-.toggle-switch {
-  position: relative;
-  width: 44px;
-  height: 24px;
-  cursor: pointer;
-}
-
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-slider {
-  position: absolute;
-  inset: 0;
-  background: var(--bg-secondary, #1a1a2e);
   border: 1px solid var(--border-color, #333);
   border-radius: 12px;
+  margin-bottom: 12px;
+  cursor: pointer;
   transition: all 0.2s;
 }
 
-.toggle-slider::before {
+.setting-card:hover {
+  border-color: var(--accent-color, #00ff88);
+  background: rgba(0, 255, 136, 0.02);
+}
+
+.setting-icon {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+
+.setting-info {
+  flex: 1;
+}
+
+.setting-info strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 1rem;
+}
+
+.setting-info p {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #a1a1aa);
+}
+
+.tech-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  padding: 4px 8px;
+  background: rgba(100, 100, 100, 0.2);
+  border-radius: 4px;
+  color: var(--text-secondary, #a1a1aa);
+}
+
+.tech-badge.success {
+  background: rgba(0, 255, 136, 0.1);
+  color: var(--accent-color, #00ff88);
+}
+
+.tech-badge.warning {
+  background: rgba(255, 200, 0, 0.1);
+  color: #ffc800;
+}
+
+.toggle-wrapper {
+  flex-shrink: 0;
+  padding-top: 4px;
+}
+
+.toggle {
+  width: 52px;
+  height: 28px;
+  appearance: none;
+  background: var(--bg-secondary, #1a1a2e);
+  border: 2px solid var(--border-color, #444);
+  border-radius: 14px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.toggle::before {
   content: '';
   position: absolute;
-  width: 18px;
-  height: 18px;
-  left: 2px;
+  width: 20px;
+  height: 20px;
   top: 2px;
-  background: var(--text-secondary, #a1a1aa);
+  left: 2px;
+  background: var(--text-secondary, #666);
   border-radius: 50%;
   transition: all 0.2s;
 }
 
-.toggle-switch input:checked + .toggle-slider {
+.toggle:checked {
   background: var(--accent-color, #00ff88);
   border-color: var(--accent-color, #00ff88);
 }
 
-.toggle-switch input:checked + .toggle-slider::before {
-  transform: translateX(20px);
+.toggle:checked::before {
+  transform: translateX(24px);
   background: #fff;
 }
 
-.encryption-methods {
+.status-card {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 10px;
 }
 
-.method-option {
+.status-card.success {
+  background: rgba(0, 255, 136, 0.08);
+  border: 1px solid rgba(0, 255, 136, 0.2);
+}
+
+.status-card.warning {
+  background: rgba(255, 200, 0, 0.08);
+  border: 1px solid rgba(255, 200, 0, 0.2);
+}
+
+.status-icon {
+  width: 28px;
+  height: 28px;
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px;
-  background: var(--bg-secondary, #1a1a2e);
-  border: 1px solid var(--border-color, #333);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: bold;
+  flex-shrink: 0;
 }
 
-.method-option:hover {
-  border-color: var(--accent-color, #00ff88);
+.status-card.success .status-icon {
+  background: var(--accent-color, #00ff88);
+  color: #000;
 }
 
-.method-option.active {
-  border-color: var(--accent-color, #00ff88);
-  background: rgba(0, 255, 136, 0.05);
+.status-card.warning .status-icon {
+  background: #ffc800;
+  color: #000;
 }
 
-.method-option input[type="radio"] {
-  margin-top: 4px;
-}
-
-.method-info {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-}
-
-.method-icon {
-  font-size: 1.5rem;
-}
-
-.method-info strong {
+.status-card strong {
   display: block;
   margin-bottom: 4px;
 }
 
-.method-info p {
+.status-card p {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--text-secondary, #a1a1aa);
+  line-height: 1.5;
 }
 
-.warning-box {
-  padding: 12px;
-  background: rgba(255, 200, 0, 0.1);
-  border: 1px solid rgba(255, 200, 0, 0.3);
-  border-radius: 6px;
-  color: #ffc800;
-  font-size: 0.85rem;
-  margin-top: 12px;
-}
-
-.success-box {
-  padding: 12px;
-  background: rgba(0, 255, 136, 0.1);
-  border: 1px solid rgba(0, 255, 136, 0.3);
-  border-radius: 6px;
-  color: var(--accent-color, #00ff88);
-  font-size: 0.85rem;
-  margin-top: 12px;
-}
-
-.panel-footer {
+.folder-item {
   display: flex;
-  gap: 8px;
-  padding: 16px;
-  border-top: 1px solid var(--border-color, #333);
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-primary, #0f0f1a);
+  border-radius: 8px;
+  margin-bottom: 8px;
 }
 
-.btn-primary,
-.btn-secondary,
-.btn-danger {
-  padding: 10px 16px;
-  border-radius: 6px;
-  font-size: 0.85rem;
+.folder-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.folder-icon {
+  font-size: 1.2rem;
+}
+
+.folder-name {
+  font-size: 0.9rem;
+}
+
+.folder-badges {
+  display: flex;
+  gap: 4px;
+}
+
+.mini-badge {
+  font-size: 0.9rem;
+}
+
+.remove-btn {
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #666);
+  font-size: 1.2rem;
   cursor: pointer;
+  border-radius: 4px;
   transition: all 0.2s;
 }
 
-.btn-primary {
-  background: var(--accent-color, #00ff88);
-  border: none;
-  color: #000;
+.remove-btn:hover {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+}
+
+.info-section {
+  background: var(--bg-primary, #0f0f1a);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.info-section h3 {
+  margin-bottom: 12px;
+}
+
+.info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.info-item strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+}
+
+.info-item p {
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  color: var(--text-secondary, #a1a1aa);
+  line-height: 1.5;
+}
+
+.panel-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color, #333);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-secondary, .btn-danger {
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
 .btn-secondary {
@@ -662,20 +497,15 @@ function handleReset() {
 
 .btn-danger {
   background: transparent;
-  border: 1px solid #ff4444;
-  color: #ff4444;
-  margin-left: auto;
-}
-
-.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 100, 100, 0.5);
+  color: #ff6b6b;
 }
 
 .btn-danger:hover {
-  background: rgba(255, 68, 68, 0.1);
+  background: rgba(255, 100, 100, 0.1);
 }
 
-.dialog-overlay {
+.confirm-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
@@ -685,46 +515,26 @@ function handleReset() {
   z-index: 200;
 }
 
-.dialog {
+.confirm-dialog {
   background: var(--bg-secondary, #1a1a2e);
   border: 1px solid var(--border-color, #333);
   border-radius: 12px;
-  padding: 20px;
-  width: 90%;
-  max-width: 400px;
+  padding: 24px;
+  max-width: 360px;
 }
 
-.dialog h3 {
+.confirm-dialog h3 {
   margin: 0 0 12px;
 }
 
-.dialog p {
-  margin: 0 0 16px;
+.confirm-dialog p {
+  margin: 0 0 20px;
   color: var(--text-secondary, #a1a1aa);
 }
 
-.dialog textarea {
-  width: 100%;
-  height: 150px;
-  padding: 12px;
-  background: var(--bg-primary, #0f0f1a);
-  border: 1px solid var(--border-color, #333);
-  border-radius: 6px;
-  color: inherit;
-  font-family: monospace;
-  font-size: 0.85rem;
-  resize: vertical;
-  margin-bottom: 12px;
-}
-
-.dialog .error {
-  color: #ff4444;
-  font-size: 0.85rem;
-}
-
-.dialog-actions {
+.confirm-actions {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   justify-content: flex-end;
 }
 </style>

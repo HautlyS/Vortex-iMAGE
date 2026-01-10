@@ -1,11 +1,6 @@
-/**
- * Vue Component - 0 components, 0 composables
- * Main functionality: UI component with reactive state management
- * Dependencies: 
- */
-
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
+import { registerOverlay } from '../../composables/useKeyboardShortcuts'
 
 defineProps<{
   title: string
@@ -20,34 +15,66 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-function handleKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') emit('cancel')
-}
+let unregisterOverlay: (() => void) | null = null;
 
-onMounted(() => document.addEventListener('keydown', handleKeydown))
-onUnmounted(() => document.removeEventListener('keydown', handleKeydown))
+onMounted(() => {
+  unregisterOverlay = registerOverlay(`confirm-dialog-${Date.now()}`, () => emit('cancel'));
+});
+
+onUnmounted(() => {
+  if (unregisterOverlay) {
+    unregisterOverlay();
+  }
+});
 </script>
 
 <template>
   <Teleport to="body">
     <Transition name="confirm">
       <div class="confirm-overlay" @click.self="emit('cancel')">
-        <div class="confirm-dialog">
-          <div class="confirm-icon" :class="variant || 'warning'">
-            <svg v-if="variant === 'danger'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>
+        <!-- Scanlines -->
+        <div class="overlay-scanlines"></div>
+        
+        <div class="confirm-dialog" :class="variant || 'warning'">
+          <!-- Corner decorations -->
+          <div class="corner tl"></div>
+          <div class="corner tr"></div>
+          <div class="corner bl"></div>
+          <div class="corner br"></div>
+          
+          <!-- Icon -->
+          <div class="confirm-icon">
+            <!-- Danger X -->
+            <svg v-if="variant === 'danger'" viewBox="0 0 32 32">
+              <rect x="4" y="4" width="8" height="8" fill="currentColor"/>
+              <rect x="20" y="4" width="8" height="8" fill="currentColor"/>
+              <rect x="12" y="12" width="8" height="8" fill="currentColor"/>
+              <rect x="4" y="20" width="8" height="8" fill="currentColor"/>
+              <rect x="20" y="20" width="8" height="8" fill="currentColor"/>
             </svg>
-            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            
+            <!-- Warning Triangle -->
+            <svg v-else viewBox="0 0 32 32">
+              <rect x="14" y="4" width="4" height="4" fill="currentColor"/>
+              <rect x="12" y="8" width="8" height="4" fill="currentColor"/>
+              <rect x="10" y="12" width="12" height="4" fill="currentColor"/>
+              <rect x="8" y="16" width="16" height="4" fill="currentColor"/>
+              <rect x="6" y="20" width="20" height="4" fill="currentColor"/>
+              <rect x="4" y="24" width="24" height="4" fill="currentColor"/>
+              <rect x="14" y="12" width="4" height="6" fill="#000"/>
+              <rect x="14" y="20" width="4" height="4" fill="#000"/>
             </svg>
           </div>
+          
           <h3>{{ title }}</h3>
           <p>{{ message }}</p>
+          
           <div class="confirm-actions">
-            <button class="btn-cancel" @click="emit('cancel')">{{ cancelText || 'Cancelar' }}</button>
-            <button :class="['btn-confirm', variant || 'warning']" @click="emit('confirm')">
-              {{ confirmText || 'Confirmar' }}
+            <button class="btn-cancel" @click="emit('cancel')">
+              {{ cancelText || 'CANCEL' }}
+            </button>
+            <button class="btn-confirm" :class="variant || 'warning'" @click="emit('confirm')">
+              {{ confirmText || 'CONFIRM' }}
             </button>
           </div>
         </div>
@@ -60,82 +87,173 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown))
 .confirm-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.92);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 300;
+  image-rendering: pixelated;
+}
+
+.overlay-scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.15) 2px,
+    rgba(0, 0, 0, 0.15) 4px
+  );
+  pointer-events: none;
 }
 
 .confirm-dialog {
+  position: relative;
   width: 100%;
   max-width: 400px;
-  background: var(--surface-1, #1a1a1c);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1rem;
-  padding: 1.5rem;
+  background: #1a1a2e;
+  border: 4px solid #000;
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.8);
+  padding: 24px;
   text-align: center;
 }
 
+/* Corner decorations */
+.corner {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #feae34;
+}
+
+.corner.tl { top: -4px; left: -4px; }
+.corner.tr { top: -4px; right: -4px; }
+.corner.bl { bottom: -4px; left: -4px; }
+.corner.br { bottom: -4px; right: -4px; }
+
+.confirm-dialog.danger .corner { background: #e43b44; }
+.confirm-dialog.default .corner { background: #0099db; }
+
+/* Icon */
 .confirm-icon {
-  width: 3rem;
-  height: 3rem;
-  margin: 0 auto 1rem;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 20px;
+  color: #feae34;
+  filter: drop-shadow(0 0 8px currentColor);
 }
 
-.confirm-icon.warning { color: #f59e0b; }
-.confirm-icon.danger { color: #ef4444; }
-.confirm-icon.default { color: var(--accent-color, #6366f1); }
+.confirm-dialog.danger .confirm-icon { color: #e43b44; }
+.confirm-dialog.default .confirm-icon { color: #0099db; }
 
-.confirm-icon svg { width: 100%; height: 100%; }
+.confirm-icon svg {
+  width: 100%;
+  height: 100%;
+}
 
+/* Title */
 .confirm-dialog h3 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: var(--text-primary, #fafafa);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  color: #fff;
+  text-shadow: 2px 2px 0 #000;
+  margin-bottom: 12px;
+  letter-spacing: 2px;
 }
 
+/* Message */
 .confirm-dialog p {
-  font-size: 0.875rem;
-  color: var(--text-secondary, #71717a);
-  margin-bottom: 1.5rem;
+  font-family: 'VT323', monospace;
+  font-size: 20px;
+  color: #808080;
+  margin-bottom: 24px;
+  line-height: 1.4;
 }
 
+/* Actions */
 .confirm-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: 12px;
   justify-content: center;
 }
 
 .btn-cancel {
-  padding: 0.625rem 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--text-secondary, #a1a1aa);
-  font-size: 0.875rem;
-  border-radius: 0.5rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  padding: 12px 20px;
+  background: #2a2a4c;
+  border: 4px solid #000;
+  color: #808080;
   cursor: pointer;
+  box-shadow: 4px 4px 0 #000;
 }
 
-.btn-cancel:hover { background: rgba(255, 255, 255, 0.1); }
+.btn-cancel:hover {
+  background: #3a3a5c;
+  color: #fff;
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #000;
+}
+
+.btn-cancel:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
 
 .btn-confirm {
-  padding: 0.625rem 1.25rem;
-  border: none;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border-radius: 0.5rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  padding: 12px 20px;
+  border: 4px solid #000;
   cursor: pointer;
+  box-shadow: 4px 4px 0 #000;
 }
 
-.btn-confirm.warning { background: #f59e0b; color: #000; }
-.btn-confirm.danger { background: #ef4444; color: #fff; }
-.btn-confirm.default { background: var(--accent-color, #6366f1); color: #fff; }
+.btn-confirm.warning {
+  background: linear-gradient(180deg, #feae34 0%, #c68b28 100%);
+  color: #000;
+}
 
-.btn-confirm:hover { filter: brightness(1.1); }
+.btn-confirm.danger {
+  background: linear-gradient(180deg, #e43b44 0%, #a82835 100%);
+  color: #fff;
+}
 
-.confirm-enter-active, .confirm-leave-active { transition: opacity 0.2s; }
-.confirm-enter-from, .confirm-leave-to { opacity: 0; }
+.btn-confirm.default {
+  background: linear-gradient(180deg, #0099db 0%, #006b99 100%);
+  color: #fff;
+}
+
+.btn-confirm:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #000;
+  filter: brightness(1.1);
+}
+
+.btn-confirm:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+/* Animation */
+.confirm-enter-active,
+.confirm-leave-active {
+  transition: opacity 0.2s steps(4);
+}
+
+.confirm-enter-active .confirm-dialog,
+.confirm-leave-active .confirm-dialog {
+  transition: transform 0.2s steps(4);
+}
+
+.confirm-enter-from,
+.confirm-leave-to {
+  opacity: 0;
+}
+
+.confirm-enter-from .confirm-dialog,
+.confirm-leave-to .confirm-dialog {
+  transform: scale(0.9) translateY(-20px);
+}
 </style>

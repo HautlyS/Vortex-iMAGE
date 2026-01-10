@@ -5,10 +5,24 @@
  */
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useTheme, ACCENT_COLORS } from '../composables/useTheme'
+import { registerOverlay } from '../composables/useKeyboardShortcuts'
 
 const emit = defineEmits<{ close: [] }>()
+
+// Register ESC key handler
+let unregisterOverlay: (() => void) | null = null;
+
+onMounted(() => {
+  unregisterOverlay = registerOverlay('theme-settings', () => emit('close'));
+});
+
+onUnmounted(() => {
+  if (unregisterOverlay) {
+    unregisterOverlay();
+  }
+});
 
 const {
   theme,

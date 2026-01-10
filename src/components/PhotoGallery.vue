@@ -5,7 +5,7 @@
  */
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import Masonry from './Masonry.vue'
 import CircularGallery from './CircularGallery.vue'
@@ -13,6 +13,7 @@ import PhotoEditor from './PhotoEditor.vue'
 import type { Photo } from '../types/photo'
 import { useGitHubAuth } from '../composables/useGitHubAuth'
 import { useFavorites } from '../composables/useFavorites'
+import { registerOverlay } from '../composables/useKeyboardShortcuts'
 
 const { token, repo } = useGitHubAuth()
 const { isFavorite, toggleFavorite } = useFavorites()
@@ -32,11 +33,16 @@ const props = defineProps<{
   showAlbums?: boolean
   viewMode?: 'grid' | 'list'
   currentAlbumPath?: string | null
+  previewSize?: number
 }>()
 
 const emit = defineEmits<{
   photoClick: [photo: Photo]
   albumClick: [album: Album]
+  refresh: []
+  contextmenu: [event: MouseEvent]
+  resize: [size: number]
+  openAlbumSettings: [albumPath: string, albumName: string]
 }>()
 
 const mockPhotos: Photo[] = Array.from({ length: 12 }, (_, i) => ({
@@ -172,6 +178,30 @@ const saveSuccess = ref(false);
 const syncSuccess = ref(false);
 const isEditorOpen = ref(false);
 const currentLightboxPhoto = computed(() => displayPhotos.value[currentLightboxIndex.value])
+
+// ESC key handling for lightbox
+let unregisterLightbox: (() => void) | null = null;
+
+function closeLightbox() {
+  isLightboxOpen.value = false;
+}
+
+watch(isLightboxOpen, (isOpen) => {
+  if (isOpen) {
+    unregisterLightbox = registerOverlay('photo-lightbox', closeLightbox);
+  } else {
+    if (unregisterLightbox) {
+      unregisterLightbox();
+      unregisterLightbox = null;
+    }
+  }
+});
+
+onUnmounted(() => {
+  if (unregisterLightbox) {
+    unregisterLightbox();
+  }
+});
 
 function handleLightboxIndexChange(index: number) {
   currentLightboxIndex.value = index
@@ -372,6 +402,18 @@ async function handleEditorSave(blob: Blob) {
                     <span v-if="index < getBreadcrumbs(currentAlbumPath).length - 1" class="breadcrumb-sep">/</span>
                 </template>
             </div>
+            
+            <!-- Album Settings Button -->
+            <button 
+              class="album-settings-btn"
+              @click="emit('openAlbumSettings', currentAlbumPath, getBreadcrumbs(currentAlbumPath).pop()?.name || 'Album')"
+              title="Configurações do álbum"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </button>
          </template>
       </div>
       <Masonry 
@@ -469,12 +511,12 @@ async function handleEditorSave(blob: Blob) {
             <div 
                 v-if="isLightboxOpen" 
                 class="lightbox-overlay"
-                @click.self="isLightboxOpen = false"
+                @click.self="closeLightbox"
             >
                 <!-- Close Button - iOS safe area aware -->
                 <button 
                   class="lightbox-close"
-                  @click="isLightboxOpen = false"
+                  @click="closeLightbox"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -613,6 +655,9 @@ async function handleEditorSave(blob: Blob) {
   background: transparent;
   display: flex;
   flex-direction: column;
+  min-height: 0; /* Important for flex scroll */
+  overflow: hidden;
+  flex: 1;
 }
 
 /* === LOADING & EMPTY STATES === */
@@ -645,10 +690,14 @@ async function handleEditorSave(blob: Blob) {
   flex: 1;
   position: relative;
   background: transparent;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0; /* Important for flex scroll */
+  display: flex;
+  flex-direction: column;
 }
 
-/* === BREADCRUMBS (8-Bit Style) === */
+/* === BREADCRUMBS (Modern Style) === */
 .breadcrumbs-bar {
   position: sticky;
   top: 0;
@@ -656,9 +705,10 @@ async function handleEditorSave(blob: Blob) {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 16px;
-  background: var(--retro-bg-panel, #1a1030);
-  border-bottom: 2px solid #000;
+  padding: 12px 20px;
+  background: rgba(26, 16, 48, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -669,28 +719,30 @@ async function handleEditorSave(blob: Blob) {
 
 .breadcrumb-btn {
   flex-shrink: 0;
-  background: var(--retro-bg-card, #251842);
-  border: 2px solid var(--retro-bg-lighter, #2d1f4d);
-  color: var(--retro-text-muted, #9d8ec2);
-  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 8px 14px;
   display: flex;
   align-items: center;
   gap: 6px;
-  font-family: 'VT323', monospace;
-  font-size: 16px;
-  box-shadow: 2px 2px 0 #000;
-  transition: all 0.1s;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .breadcrumb-btn:hover {
-  border-color: var(--retro-accent-green, #00ff87);
-  color: var(--retro-accent-green, #00ff87);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
 }
 
 .breadcrumb-btn.active {
-  background: var(--retro-accent-pink, #ff2d95);
-  color: #fff;
-  border-color: #000;
+  background: rgba(255, 45, 149, 0.2);
+  border-color: rgba(255, 45, 149, 0.3);
+  color: #ff2d95;
 }
 
 .breadcrumb-btn svg {
@@ -699,9 +751,8 @@ async function handleEditorSave(blob: Blob) {
 }
 
 .breadcrumb-sep {
-  color: var(--retro-accent-yellow, #ffd000);
-  font-family: 'Press Start 2P', monospace;
-  font-size: 8px;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 14px;
 }
 
 .breadcrumb-trail {
@@ -710,37 +761,71 @@ async function handleEditorSave(blob: Blob) {
   gap: 8px;
 }
 
+/* Album Settings Button */
+.album-settings-btn {
+  margin-left: auto;
+  width: 36px;
+  height: 36px;
+  padding: 8px;
+  background: rgba(165, 94, 234, 0.15);
+  border: 1px solid rgba(165, 94, 234, 0.3);
+  border-radius: 8px;
+  color: #a55eea;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.album-settings-btn:hover {
+  background: rgba(165, 94, 234, 0.25);
+  color: #c084fc;
+  transform: translateY(-1px);
+}
+
+.album-settings-btn:active {
+  transform: translateY(0);
+}
+
+.album-settings-btn svg {
+  width: 100%;
+  height: 100%;
+}
+
 /* === LIST VIEW === */
 .list-wrapper {
   width: 100%;
   flex: 1;
-  background: var(--retro-bg-card, #251842);
-  border: 2px solid #000;
+  background: rgba(37, 24, 66, 0.4);
+  border-radius: 12px;
   overflow: hidden;
+  margin: 16px;
+  margin-top: 0;
 }
 
 .list-container {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   height: 100%;
-  gap: 2px;
-  background: #000;
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .list-column {
-  background: var(--retro-bg-panel, #1a1030);
+  background: rgba(26, 16, 48, 0.8);
   display: flex;
   flex-direction: column;
 }
 
 .column-header {
-  padding: 12px 16px;
-  background: var(--retro-bg-lighter, #2d1f4d);
-  font-family: 'Press Start 2P', monospace;
-  font-size: 8px;
-  color: var(--retro-accent-yellow, #ffd000);
-  border-bottom: 2px solid #000;
-  text-shadow: 1px 1px 0 #000;
+  padding: 14px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .column-items {
@@ -752,27 +837,28 @@ async function handleEditorSave(blob: Blob) {
 .list-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
+  gap: 14px;
+  padding: 12px 20px;
   cursor: pointer;
   border-left: 3px solid transparent;
-  transition: all 0.1s;
+  transition: all 0.15s ease;
 }
 
 .list-item:hover {
-  background: var(--retro-bg-card, #251842);
+  background: rgba(255, 255, 255, 0.05);
   border-left-color: var(--retro-accent-green, #00ff87);
 }
 
 .list-item-icon {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: #000;
-  border: 2px solid var(--retro-bg-lighter, #2d1f4d);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .folder-item .list-item-icon {
@@ -796,86 +882,89 @@ async function handleEditorSave(blob: Blob) {
 }
 
 .list-item-name {
-  font-family: 'VT323', monospace;
-  font-size: 18px;
-  color: var(--retro-text-main, #fff);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .list-item-meta {
-  font-size: 14px;
-  color: var(--retro-text-muted, #9d8ec2);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
   margin-top: 2px;
 }
 
-/* === LIGHTBOX (8-Bit Style) === */
+/* === LIGHTBOX (Modern Style) === */
 .lightbox-overlay {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: rgba(0, 0, 0, 0.95);
+  background: rgba(0, 0, 0, 0.97);
   padding-top: env(safe-area-inset-top, 0);
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 .lightbox-close {
   position: absolute;
-  top: calc(16px + env(safe-area-inset-top, 0));
-  right: 16px;
+  top: calc(20px + env(safe-area-inset-top, 0));
+  right: 20px;
   z-index: 50;
   width: 44px;
   height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--retro-bg-panel, #1a1030);
-  border: 2px solid var(--retro-accent-red, #ff3b30);
-  color: var(--retro-accent-red, #ff3b30);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
-  box-shadow: 3px 3px 0 #000;
-  transition: all 0.1s;
+  transition: all 0.15s ease;
 }
 
 .lightbox-close:hover {
-  background: var(--retro-accent-red, #ff3b30);
-  color: #fff;
-}
-
-.lightbox-close:active {
-  transform: translate(2px, 2px);
-  box-shadow: none;
+  background: rgba(255, 59, 48, 0.3);
+  border-color: rgba(255, 59, 48, 0.5);
+  color: #ff3b30;
 }
 
 .lightbox-counter {
   position: absolute;
-  top: calc(20px + env(safe-area-inset-top, 0));
+  top: calc(24px + env(safe-area-inset-top, 0));
   left: 50%;
   transform: translateX(-50%);
   z-index: 50;
-  padding: 8px 16px;
-  background: var(--retro-bg-panel, #1a1030);
-  border: 2px solid var(--retro-accent-yellow, #ffd000);
-  color: var(--retro-accent-yellow, #ffd000);
-  font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
-  box-shadow: 3px 3px 0 #000;
+  padding: 10px 20px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .lightbox-tools {
   position: absolute;
-  bottom: calc(24px + env(safe-area-inset-bottom, 0));
+  bottom: calc(30px + env(safe-area-inset-bottom, 0));
   left: 50%;
   transform: translateX(-50%);
   z-index: 50;
   display: flex;
   gap: 8px;
-  padding: 8px;
-  background: var(--retro-bg-panel, #1a1030);
-  border: 3px solid #000;
-  box-shadow: 4px 4px 0 #000;
-  max-width: calc(100vw - 32px);
+  padding: 10px;
+  background: rgba(26, 16, 48, 0.9);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  max-width: calc(100vw - 40px);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -889,53 +978,51 @@ async function handleEditorSave(blob: Blob) {
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 10px 14px;
-  background: var(--retro-bg-card, #251842);
-  border: 2px solid var(--retro-bg-lighter, #2d1f4d);
-  color: var(--retro-text-muted, #9d8ec2);
-  font-family: 'VT323', monospace;
-  font-size: 14px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
   cursor: pointer;
-  box-shadow: 2px 2px 0 #000;
-  transition: all 0.1s;
-  min-width: 60px;
+  transition: all 0.15s ease;
+  min-width: 64px;
   flex-shrink: 0;
 }
 
 .lightbox-tool svg {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
 }
 
 .lightbox-tool:hover {
-  border-color: var(--retro-accent-green, #00ff87);
-  color: var(--retro-accent-green, #00ff87);
-}
-
-.lightbox-tool:active {
-  transform: translate(2px, 2px);
-  box-shadow: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  transform: translateY(-2px);
 }
 
 .lightbox-tool:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  transform: none;
 }
 
 .lightbox-tool.active {
-  background: var(--retro-accent-pink, #ff2d95);
-  border-color: #000;
-  color: #fff;
+  background: rgba(255, 45, 149, 0.2);
+  border-color: rgba(255, 45, 149, 0.4);
+  color: #ff2d95;
 }
 
 .lightbox-tool.success {
-  background: var(--retro-accent-green, #00ff87);
-  border-color: #000;
-  color: #000;
+  background: rgba(0, 255, 135, 0.2);
+  border-color: rgba(0, 255, 135, 0.4);
+  color: #00ff87;
 }
 
 .lightbox-tool .spin {
-  animation: spin 0.8s steps(8) infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 /* === RESPONSIVE === */

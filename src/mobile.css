@@ -157,6 +157,8 @@
     height: auto !important;
     min-height: calc(100vh - 180px);
     padding: 0 var(--mobile-gap-sm);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 

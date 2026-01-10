@@ -11,8 +11,8 @@
  */
 
 import { ref, computed, onUnmounted } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
-import { load } from '@tauri-apps/plugin-store'
+
+const isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI__
 
 // ============================================================================
 // Types
@@ -154,7 +154,14 @@ export function useCrypto() {
    */
   async function initialize(): Promise<void> {
     if (initialized) return
+    if (!isTauri) {
+      // Web mode: crypto features not available
+      initialized = true
+      return
+    }
     try {
+      const { load } = await import('@tauri-apps/plugin-store')
+      const { invoke } = await import('@tauri-apps/api/core')
       const store = await load('settings.json')
       const storedHandle = await store.get<number>('keypairHandle')
       hasStoredKeypair.value = storedHandle !== null && storedHandle !== undefined
@@ -173,8 +180,10 @@ export function useCrypto() {
    * Generate a new keypair - returns handle and public bundle, NOT bytes
    */
   async function generateKeypair(): Promise<KeypairInfo> {
+    if (!isTauri) throw new Error('Crypto not available in web mode')
     resetActivityTimer()
     
+    const { invoke } = await import('@tauri-apps/api/core')
     const result = await invoke<KeypairInfo>('generate_keypair')
     keypairHandle.value = result.handle
     publicBundle.value = result.public_bundle
@@ -189,8 +198,12 @@ export function useCrypto() {
    * @param _password - Reserved for future password-based encryption
    */
   async function saveKeypair(_password: string): Promise<void> {
+    if (!isTauri) throw new Error('Crypto not available in web mode')
     if (keypairHandle.value === null) throw new Error('No keypair to save')
     resetActivityTimer()
+    
+    const { invoke } = await import('@tauri-apps/api/core')
+    const { load } = await import('@tauri-apps/plugin-store')
     
     // Store the encrypted keypair using secure token storage
     await invoke('secure_store_token', {
@@ -210,10 +223,14 @@ export function useCrypto() {
    * @param _password - Reserved for future password-based decryption
    */
   async function unlockKeypair(_password: string): Promise<boolean> {
+    if (!isTauri) return false
     if (!hasStoredKeypair.value) return false
     resetActivityTimer()
     
     try {
+      const { invoke } = await import('@tauri-apps/api/core')
+      const { load } = await import('@tauri-apps/plugin-store')
+      
       // Retrieve the stored handle
       const storedValue = await invoke<string>('secure_retrieve_token', {
         key: 'keypair_handle'
@@ -254,9 +271,10 @@ export function useCrypto() {
   /**
    * Lock the keypair (clear from memory)
    */
-  function lockKeypair(): void {
+  async function lockKeypair(): Promise<void> {
     // Release the keypair from backend memory
-    if (keypairHandle.value !== null) {
+    if (keypairHandle.value !== null && isTauri) {
+      const { invoke } = await import('@tauri-apps/api/core')
       invoke('release_keypair', { handle: keypairHandle.value }).catch(console.error)
     }
     

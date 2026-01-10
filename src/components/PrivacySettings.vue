@@ -5,13 +5,28 @@
  */
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { load } from '@tauri-apps/plugin-store'
 import { useRepoManager } from '../composables/useRepoManager'
 import { useGitHubAuth } from '../composables/useGitHubAuth'
+import { registerOverlay } from '../composables/useKeyboardShortcuts'
 import ConfirmDialog from './ui/ConfirmDialog.vue'
 
 const emit = defineEmits<{ close: [] }>()
+
+// Register ESC key handler
+let unregisterOverlay: (() => void) | null = null;
+
+onMounted(() => {
+  unregisterOverlay = registerOverlay('privacy-settings', () => emit('close'));
+  loadSettings();
+});
+
+onUnmounted(() => {
+  if (unregisterOverlay) {
+    unregisterOverlay();
+  }
+});
 
 const { token, repo } = useGitHubAuth()
 const { syncPrivacy, updateVisibility, syncing } = useRepoManager()
@@ -83,8 +98,6 @@ async function saveSettings() {
   
   emit('close')
 }
-
-onMounted(loadSettings)
 </script>
 
 <template>

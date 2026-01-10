@@ -1,119 +1,46 @@
 /**
- * Media Settings Composable
+ * Simplified Media Settings Composable
  * 
- * Provides per-album, per-photo, and per-video compression/encryption settings.
- * Users can configure what processing applies to each type of content.
+ * Simple toggles for compression and encryption.
+ * Technology choices are automatic - users just decide WHAT to protect, not HOW.
  */
 
-import { ref, computed, watch } from 'vue'
-import { load } from '@tauri-apps/plugin-store'
+import { ref, watch } from 'vue'
 import type { PublicBundle } from './useCrypto'
 
+const isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI__
+
 // ============================================================================
-// Types
+// Types - Simplified
 // ============================================================================
 
-export type MediaType = 'photo' | 'video' | 'document' | 'other'
-
-export type CompressionAlgorithm = 'zstd' | 'lz4' | 'snap' | 'brotli' | 'gzip' | 'none'
-
-export interface CompressionConfig {
-  enabled: boolean
-  algorithm: CompressionAlgorithm
-  level: number
-  preferSpeed: boolean
-  minSizeThreshold: number
-  skipAlreadyCompressed: boolean
+export interface SimpleSettings {
+  /** Compress files to save space (auto-selects best algorithm) */
+  compress: boolean
+  /** Encrypt files for privacy (uses post-quantum encryption when keypair available) */
+  encrypt: boolean
 }
 
-export interface EncryptionConfig {
-  enabled: boolean
-  usePassword: boolean
-  useKeypair: boolean
-  recipientBundle: PublicBundle | null
-}
-
-export interface ProcessingSettings {
-  compression: CompressionConfig
-  encryption: EncryptionConfig
-}
-
-export interface MediaTypeSettings {
-  photo: ProcessingSettings
-  video: ProcessingSettings
-  document: ProcessingSettings
-  other: ProcessingSettings
-}
-
-export interface AlbumSettings {
-  albumId: string
-  albumPath: string
+export interface FolderSettings {
+  path: string
   name: string
-  useCustomSettings: boolean
-  settings: ProcessingSettings
+  settings: SimpleSettings
   createdAt: number
-  updatedAt: number
-}
-
-export interface ItemOverride {
-  itemId: string
-  itemPath: string
-  useCustomSettings: boolean
-  settings: ProcessingSettings
-  createdAt: number
-}
-
-// ============================================================================
-// Default Settings
-// ============================================================================
-
-const DEFAULT_COMPRESSION: CompressionConfig = {
-  enabled: true,
-  algorithm: 'zstd',
-  level: 3,
-  preferSpeed: false,
-  minSizeThreshold: 1024,
-  skipAlreadyCompressed: true
-}
-
-const DEFAULT_ENCRYPTION: EncryptionConfig = {
-  enabled: true,
-  usePassword: false,
-  useKeypair: true,
-  recipientBundle: null
-}
-
-const DEFAULT_PROCESSING: ProcessingSettings = {
-  compression: { ...DEFAULT_COMPRESSION },
-  encryption: { ...DEFAULT_ENCRYPTION }
-}
-
-const DEFAULT_MEDIA_SETTINGS: MediaTypeSettings = {
-  photo: {
-    compression: { ...DEFAULT_COMPRESSION, skipAlreadyCompressed: true },
-    encryption: { ...DEFAULT_ENCRYPTION }
-  },
-  video: {
-    compression: { ...DEFAULT_COMPRESSION, algorithm: 'lz4', preferSpeed: true, skipAlreadyCompressed: true },
-    encryption: { ...DEFAULT_ENCRYPTION }
-  },
-  document: {
-    compression: { ...DEFAULT_COMPRESSION, level: 6 },
-    encryption: { ...DEFAULT_ENCRYPTION }
-  },
-  other: {
-    compression: { ...DEFAULT_COMPRESSION },
-    encryption: { ...DEFAULT_ENCRYPTION }
-  }
 }
 
 // ============================================================================
 // State
 // ============================================================================
 
-const globalSettings = ref<MediaTypeSettings>({ ...DEFAULT_MEDIA_SETTINGS })
-const albumSettings = ref<Map<string, AlbumSettings>>(new Map())
-const itemOverrides = ref<Map<string, ItemOverride>>(new Map())
+/** Global default settings */
+const globalSettings = ref<SimpleSettings>({
+  compress: true,
+  encrypt: true
+})
+
+/** Per-folder overrides */
+const folderSettings = ref<Map<string, FolderSettings>>(new Map())
+
 const initialized = ref(false)
 
 // ============================================================================
@@ -121,10 +48,7 @@ const initialized = ref(false)
 // ============================================================================
 
 export function useMediaSettings() {
-  // Computed
-  const hasCustomAlbumSettings = computed(() => albumSettings.value.size > 0)
-  const hasItemOverrides = computed(() => itemOverrides.value.size > 0)
-
+  
   /**
    * Initialize settings from storage
    */
@@ -132,21 +56,29 @@ export function useMediaSettings() {
     if (initialized.value) return
 
     try {
-      const store = await load('media-settings.json')
-      
-      const savedGlobal = await store.get<MediaTypeSettings>('globalSettings')
-      if (savedGlobal) {
-        globalSettings.value = mergeSettings(DEFAULT_MEDIA_SETTINGS, savedGlobal)
-      }
+      if (isTauri) {
+        const { load } = await import('@tauri-apps/plugin-store')
+        const store = await load('media-settings.json')
+        
+        const savedGlobal = await store.get<SimpleSettings>('globalSettings')
+        if (savedGlobal) {
+          globalSettings.value = { ...globalSettings.value, ...savedGlobal }
+        }
 
-      const savedAlbums = await store.get<[string, AlbumSettings][]>('albumSettings')
-      if (savedAlbums) {
-        albumSettings.value = new Map(savedAlbums)
-      }
+        const savedFolders = await store.get<[string, FolderSettings][]>('folderSettings')
+        if (savedFolders) {
+          folderSettings.value = new Map(savedFolders)
+        }
+      } else {
+        const savedGlobal = localStorage.getItem('mediaGlobalSettings')
+        if (savedGlobal) {
+          globalSettings.value = { ...globalSettings.value, ...JSON.parse(savedGlobal) }
+        }
 
-      const savedOverrides = await store.get<[string, ItemOverride][]>('itemOverrides')
-      if (savedOverrides) {
-        itemOverrides.value = new Map(savedOverrides)
+        const savedFolders = localStorage.getItem('mediaFolderSettings')
+        if (savedFolders) {
+          folderSettings.value = new Map(JSON.parse(savedFolders))
+        }
       }
 
       initialized.value = true
@@ -161,337 +93,154 @@ export function useMediaSettings() {
    */
   async function saveSettings(): Promise<void> {
     try {
-      const store = await load('media-settings.json')
-      await store.set('globalSettings', globalSettings.value)
-      await store.set('albumSettings', Array.from(albumSettings.value.entries()))
-      await store.set('itemOverrides', Array.from(itemOverrides.value.entries()))
-      await store.save()
+      if (isTauri) {
+        const { load } = await import('@tauri-apps/plugin-store')
+        const store = await load('media-settings.json')
+        await store.set('globalSettings', globalSettings.value)
+        await store.set('folderSettings', Array.from(folderSettings.value.entries()))
+        await store.save()
+      } else {
+        localStorage.setItem('mediaGlobalSettings', JSON.stringify(globalSettings.value))
+        localStorage.setItem('mediaFolderSettings', JSON.stringify(Array.from(folderSettings.value.entries())))
+      }
     } catch (e) {
       console.error('Failed to save media settings:', e)
     }
   }
 
   // Auto-save on changes
-  watch([globalSettings, albumSettings, itemOverrides], saveSettings, { deep: true })
+  watch([globalSettings, folderSettings], saveSettings, { deep: true })
 
   /**
-   * Get settings for a specific media type
+   * Get global settings
    */
-  function getMediaTypeSettings(type: MediaType): ProcessingSettings {
-    return globalSettings.value[type] || DEFAULT_PROCESSING
+  function getGlobalSettings(): SimpleSettings {
+    return { ...globalSettings.value }
   }
 
   /**
-   * Update global settings for a media type
+   * Update global settings
    */
-  function updateMediaTypeSettings(type: MediaType, settings: Partial<ProcessingSettings>): void {
-    globalSettings.value[type] = {
-      ...globalSettings.value[type],
-      ...settings,
-      compression: {
-        ...globalSettings.value[type].compression,
-        ...(settings.compression || {})
-      },
-      encryption: {
-        ...globalSettings.value[type].encryption,
-        ...(settings.encryption || {})
-      }
-    }
+  function setGlobalSettings(settings: Partial<SimpleSettings>): void {
+    globalSettings.value = { ...globalSettings.value, ...settings }
   }
 
   /**
-   * Get or create album settings
+   * Get settings for a folder (returns folder-specific or global)
    */
-  function getAlbumSettings(albumPath: string): AlbumSettings | null {
-    return albumSettings.value.get(albumPath) || null
+  function getFolderSettings(folderPath: string): SimpleSettings {
+    const folder = folderSettings.value.get(folderPath)
+    return folder ? { ...folder.settings } : { ...globalSettings.value }
   }
 
   /**
-   * Set custom settings for an album
+   * Set custom settings for a folder
    */
-  function setAlbumSettings(
-    albumPath: string,
-    name: string,
-    settings: ProcessingSettings,
-    useCustom = true
-  ): AlbumSettings {
-    const now = Date.now()
-    const existing = albumSettings.value.get(albumPath)
-    
-    const albumSetting: AlbumSettings = {
-      albumId: existing?.albumId || `album-${now}-${Math.random().toString(36).slice(2, 8)}`,
-      albumPath,
+  function setFolderSettings(folderPath: string, name: string, settings: SimpleSettings): void {
+    folderSettings.value.set(folderPath, {
+      path: folderPath,
       name,
-      useCustomSettings: useCustom,
       settings,
-      createdAt: existing?.createdAt || now,
-      updatedAt: now
-    }
-
-    albumSettings.value.set(albumPath, albumSetting)
-    return albumSetting
+      createdAt: Date.now()
+    })
   }
 
   /**
-   * Remove custom album settings (revert to global)
+   * Remove folder-specific settings (revert to global)
    */
-  function removeAlbumSettings(albumPath: string): void {
-    albumSettings.value.delete(albumPath)
+  function removeFolderSettings(folderPath: string): void {
+    folderSettings.value.delete(folderPath)
   }
 
   /**
-   * Get item-specific override
+   * Check if folder has custom settings
    */
-  function getItemOverride(itemPath: string): ItemOverride | null {
-    return itemOverrides.value.get(itemPath) || null
+  function hasFolderSettings(folderPath: string): boolean {
+    return folderSettings.value.has(folderPath)
   }
 
   /**
-   * Set item-specific override
+   * Get all folders with custom settings
    */
-  function setItemOverride(
-    itemPath: string,
-    settings: ProcessingSettings,
-    useCustom = true
-  ): ItemOverride {
-    const now = Date.now()
-    const existing = itemOverrides.value.get(itemPath)
-
-    const override: ItemOverride = {
-      itemId: existing?.itemId || `item-${now}-${Math.random().toString(36).slice(2, 8)}`,
-      itemPath,
-      useCustomSettings: useCustom,
-      settings,
-      createdAt: existing?.createdAt || now
-    }
-
-    itemOverrides.value.set(itemPath, override)
-    return override
-  }
-
-  /**
-   * Remove item override
-   */
-  function removeItemOverride(itemPath: string): void {
-    itemOverrides.value.delete(itemPath)
-  }
-
-  /**
-   * Get effective settings for an item (respects hierarchy: item > album > global)
-   */
-  function getEffectiveSettings(
-    itemPath: string,
-    albumPath: string | null,
-    mediaType: MediaType
-  ): ProcessingSettings {
-    // Check item override first
-    const itemOverride = itemOverrides.value.get(itemPath)
-    if (itemOverride?.useCustomSettings) {
-      return itemOverride.settings
-    }
-
-    // Check album settings
-    if (albumPath) {
-      const album = albumSettings.value.get(albumPath)
-      if (album?.useCustomSettings) {
-        return album.settings
-      }
-    }
-
-    // Fall back to global media type settings
-    return globalSettings.value[mediaType] || DEFAULT_PROCESSING
-  }
-
-  /**
-   * Detect media type from filename
-   */
-  function detectMediaType(filename: string): MediaType {
-    const ext = filename.split('.').pop()?.toLowerCase() || ''
-    
-    const photoExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'heic', 'heif', 'bmp', 'tiff', 'tif', 'raw']
-    const videoExts = ['mp4', 'mkv', 'avi', 'mov', 'webm', 'wmv', 'flv', 'm4v', '3gp']
-    const docExts = ['pdf', 'doc', 'docx', 'txt', 'md', 'json', 'xml', 'html', 'css', 'js', 'ts']
-
-    if (photoExts.includes(ext)) return 'photo'
-    if (videoExts.includes(ext)) return 'video'
-    if (docExts.includes(ext)) return 'document'
-    return 'other'
-  }
-
-  /**
-   * Check if file is already compressed format
-   */
-  function isAlreadyCompressed(filename: string): boolean {
-    const ext = filename.split('.').pop()?.toLowerCase() || ''
-    const compressedExts = [
-      'jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'heic', 'heif',
-      'mp4', 'mkv', 'avi', 'mov', 'webm',
-      'mp3', 'aac', 'ogg', 'flac',
-      'zip', 'gz', 'bz2', 'xz', '7z', 'rar', 'zst', 'lz4', 'br'
-    ]
-    return compressedExts.includes(ext)
-  }
-
-  /**
-   * Get compression recommendation for a file
-   */
-  function getCompressionRecommendation(filename: string, fileSize: number): {
-    algorithm: CompressionAlgorithm
-    level: number
-    reason: string
-    shouldCompress: boolean
-  } {
-    const ext = filename.split('.').pop()?.toLowerCase() || ''
-    const mediaType = detectMediaType(filename)
-
-    if (isAlreadyCompressed(filename)) {
-      return {
-        algorithm: 'none',
-        level: 0,
-        reason: 'File is already in a compressed format',
-        shouldCompress: false
-      }
-    }
-
-    if (fileSize < 1024) {
-      return {
-        algorithm: 'none',
-        level: 0,
-        reason: 'File too small to benefit from compression',
-        shouldCompress: false
-      }
-    }
-
-    if (fileSize > 100 * 1024 * 1024) {
-      return {
-        algorithm: 'lz4',
-        level: 1,
-        reason: 'Large file - using fast compression',
-        shouldCompress: true
-      }
-    }
-
-    if (['txt', 'json', 'xml', 'html', 'css', 'js', 'ts', 'md'].includes(ext)) {
-      return {
-        algorithm: 'zstd',
-        level: 6,
-        reason: 'Text file - high compression ratio recommended',
-        shouldCompress: true
-      }
-    }
-
-    if (['bmp', 'tiff', 'tif', 'raw'].includes(ext)) {
-      return {
-        algorithm: 'zstd',
-        level: 3,
-        reason: 'Uncompressed image - good compression potential',
-        shouldCompress: true
-      }
-    }
-
-    return {
-      algorithm: 'zstd',
-      level: 3,
-      reason: 'Default balanced compression',
-      shouldCompress: true
-    }
+  function getAllFolderSettings(): FolderSettings[] {
+    return Array.from(folderSettings.value.values())
   }
 
   /**
    * Reset all settings to defaults
    */
   function resetToDefaults(): void {
-    globalSettings.value = { ...DEFAULT_MEDIA_SETTINGS }
-    albumSettings.value.clear()
-    itemOverrides.value.clear()
-  }
-
-  /**
-   * Export settings for backup
-   */
-  function exportSettings(): string {
-    return JSON.stringify({
-      globalSettings: globalSettings.value,
-      albumSettings: Array.from(albumSettings.value.entries()),
-      itemOverrides: Array.from(itemOverrides.value.entries()),
-      exportedAt: Date.now()
-    }, null, 2)
-  }
-
-  /**
-   * Import settings from backup
-   */
-  function importSettings(json: string): boolean {
-    try {
-      const data = JSON.parse(json)
-      if (data.globalSettings) {
-        globalSettings.value = mergeSettings(DEFAULT_MEDIA_SETTINGS, data.globalSettings)
-      }
-      if (data.albumSettings) {
-        albumSettings.value = new Map(data.albumSettings)
-      }
-      if (data.itemOverrides) {
-        itemOverrides.value = new Map(data.itemOverrides)
-      }
-      return true
-    } catch {
-      return false
-    }
+    globalSettings.value = { compress: true, encrypt: true }
+    folderSettings.value.clear()
   }
 
   return {
     // State
     globalSettings,
-    albumSettings,
-    itemOverrides,
+    folderSettings,
     initialized,
-    hasCustomAlbumSettings,
-    hasItemOverrides,
 
     // Lifecycle
     initialize,
 
     // Global settings
-    getMediaTypeSettings,
-    updateMediaTypeSettings,
+    getGlobalSettings,
+    setGlobalSettings,
 
-    // Album settings
-    getAlbumSettings,
-    setAlbumSettings,
-    removeAlbumSettings,
+    // Folder settings
+    getFolderSettings,
+    setFolderSettings,
+    removeFolderSettings,
+    hasFolderSettings,
+    getAllFolderSettings,
 
-    // Item overrides
-    getItemOverride,
-    setItemOverride,
-    removeItemOverride,
-
-    // Effective settings
-    getEffectiveSettings,
-
-    // Utilities
-    detectMediaType,
-    isAlreadyCompressed,
-    getCompressionRecommendation,
-    resetToDefaults,
-    exportSettings,
-    importSettings,
-
-    // Constants
-    DEFAULT_COMPRESSION,
-    DEFAULT_ENCRYPTION,
-    DEFAULT_PROCESSING
+    // Utils
+    resetToDefaults
   }
 }
 
 // ============================================================================
-// Helpers
+// Backend Settings Converter
 // ============================================================================
 
-function mergeSettings(defaults: MediaTypeSettings, saved: Partial<MediaTypeSettings>): MediaTypeSettings {
+/**
+ * Convert simple user settings to backend processing settings.
+ * Automatically selects the best compression algorithm and encryption method.
+ */
+export function toBackendSettings(
+  settings: SimpleSettings,
+  publicBundle: PublicBundle | null,
+  password?: string
+): {
+  compression: {
+    enabled: boolean
+    algorithm: string
+    level: number
+    prefer_speed: boolean
+    min_size_threshold: number
+    skip_already_compressed: boolean
+  }
+  encryption: {
+    enabled: boolean
+    use_password: boolean
+    use_keypair: boolean
+  }
+} {
   return {
-    photo: { ...defaults.photo, ...saved.photo },
-    video: { ...defaults.video, ...saved.video },
-    document: { ...defaults.document, ...saved.document },
-    other: { ...defaults.other, ...saved.other }
+    compression: {
+      enabled: settings.compress,
+      // Auto-select best algorithm: Zstd for best balance
+      algorithm: 'zstd',
+      level: 3, // Good balance of speed and ratio
+      prefer_speed: false,
+      min_size_threshold: 1024, // Don't compress tiny files
+      skip_already_compressed: true // Skip JPG, PNG, MP4, etc.
+    },
+    encryption: {
+      enabled: settings.encrypt,
+      // Prefer keypair (post-quantum) if available, otherwise password
+      use_keypair: settings.encrypt && publicBundle !== null,
+      use_password: settings.encrypt && publicBundle === null && !!password
+    }
   }
 }

@@ -1,15 +1,20 @@
 <script setup lang="ts">
-import { watch, onMounted, onUnmounted } from 'vue';
+import { watch, onUnmounted } from 'vue';
+import { registerOverlay } from '../../composables/useKeyboardShortcuts';
 
 const props = withDefaults(defineProps<{
   modelValue: boolean;
   title?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   closable?: boolean;
-  variant?: 'default' | 'success' | 'warning' | 'danger';
+  closeOnClickOutside?: boolean;
+  closeOnEsc?: boolean;
+  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info';
 }>(), {
   size: 'md',
   closable: true,
+  closeOnClickOutside: true,
+  closeOnEsc: true,
   variant: 'default'
 });
 
@@ -18,13 +23,15 @@ const emit = defineEmits<{
   close: [];
 }>();
 
+let unregisterOverlay: (() => void) | null = null;
+
 const close = () => {
   emit('update:modelValue', false);
   emit('close');
 };
 
-const handleKeydown = (e: KeyboardEvent) => {
-  if (e.key === 'Escape' && props.closable) {
+const handleOverlayClick = (e: MouseEvent) => {
+  if (props.closable && props.closeOnClickOutside && e.target === e.currentTarget) {
     close();
   }
 };
@@ -32,17 +39,22 @@ const handleKeydown = (e: KeyboardEvent) => {
 watch(() => props.modelValue, (isOpen) => {
   if (isOpen) {
     document.body.style.overflow = 'hidden';
+    if (props.closable && props.closeOnEsc) {
+      unregisterOverlay = registerOverlay(`pixel-modal-${Date.now()}`, close);
+    }
   } else {
     document.body.style.overflow = '';
+    if (unregisterOverlay) {
+      unregisterOverlay();
+      unregisterOverlay = null;
+    }
   }
-});
-
-onMounted(() => {
-  window.addEventListener('keydown', handleKeydown);
-});
+}, { immediate: true });
 
 onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeydown);
+  if (unregisterOverlay) {
+    unregisterOverlay();
+  }
   document.body.style.overflow = '';
 });
 </script>
@@ -50,20 +62,33 @@ onUnmounted(() => {
 <template>
   <Teleport to="body">
     <Transition name="pixel-modal">
-      <div v-if="modelValue" class="pixel-modal-overlay" @click.self="closable && close()">
+      <div v-if="modelValue" class="pixel-modal-overlay" @click="handleOverlayClick">
+        <!-- Scanline effect on modal -->
+        <div class="modal-scanlines"></div>
+        
         <div class="pixel-modal" :class="[size, variant]">
-          <!-- Corner decorations -->
-          <div class="corner tl" />
-          <div class="corner tr" />
-          <div class="corner bl" />
-          <div class="corner br" />
+          <!-- 8-Bit Corner decorations -->
+          <div class="corner tl"><div class="corner-shine"></div></div>
+          <div class="corner tr"><div class="corner-shine"></div></div>
+          <div class="corner bl"><div class="corner-shine"></div></div>
+          <div class="corner br"><div class="corner-shine"></div></div>
 
           <!-- Header -->
           <div v-if="title || closable" class="pixel-modal-header">
-            <div class="header-decoration" />
+            <div class="header-pattern"></div>
+            <div class="header-deco-left">
+              <span class="deco-block"></span>
+              <span class="deco-block"></span>
+              <span class="deco-block"></span>
+            </div>
             <h3 class="pixel-modal-title">{{ title }}</h3>
             <button v-if="closable" class="pixel-modal-close" @click="close">
-              ✕
+              <svg viewBox="0 0 16 16" width="16" height="16">
+                <rect x="2" y="6" width="4" height="4" fill="currentColor"/>
+                <rect x="6" y="2" width="4" height="4" fill="currentColor"/>
+                <rect x="6" y="10" width="4" height="4" fill="currentColor"/>
+                <rect x="10" y="6" width="4" height="4" fill="currentColor"/>
+              </svg>
             </button>
           </div>
 
@@ -86,19 +111,41 @@ onUnmounted(() => {
 .pixel-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.92);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
   padding: 20px;
+  image-rendering: pixelated;
+}
+
+.modal-scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.2) 2px,
+    rgba(0, 0, 0, 0.2) 4px
+  );
+  pointer-events: none;
+  animation: scanline-scroll 0.1s steps(2) infinite;
+}
+
+@keyframes scanline-scroll {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(4px); }
 }
 
 .pixel-modal {
   position: relative;
-  background: var(--retro-bg-panel, #1a1030);
+  background: #1a1a2e;
   border: 4px solid #000;
-  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.8);
+  box-shadow: 
+    8px 8px 0 rgba(0, 0, 0, 0.9),
+    inset 0 0 40px rgba(57, 255, 20, 0.03);
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -108,25 +155,41 @@ onUnmounted(() => {
 .pixel-modal.sm { width: 320px; }
 .pixel-modal.md { width: 480px; }
 .pixel-modal.lg { width: 640px; }
+.pixel-modal.xl { width: 800px; }
 
 /* Corners */
 .corner {
   position: absolute;
-  width: 10px;
-  height: 10px;
-  background: var(--retro-accent-pink, #ff2d95);
+  width: 16px;
+  height: 16px;
+  background: #f15bb5;
   z-index: 1;
 }
 
-.corner.tl { top: -5px; left: -5px; }
-.corner.tr { top: -5px; right: -5px; }
-.corner.bl { bottom: -5px; left: -5px; }
-.corner.br { bottom: -5px; right: -5px; }
+.corner-shine {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: rgba(255,255,255,0.6);
+}
+
+.corner.tl { top: -8px; left: -8px; }
+.corner.tl .corner-shine { top: 2px; left: 2px; }
+
+.corner.tr { top: -8px; right: -8px; }
+.corner.tr .corner-shine { top: 2px; right: 2px; }
+
+.corner.bl { bottom: -8px; left: -8px; }
+.corner.bl .corner-shine { bottom: 2px; left: 2px; }
+
+.corner.br { bottom: -8px; right: -8px; }
+.corner.br .corner-shine { bottom: 2px; right: 2px; }
 
 /* Variants */
-.pixel-modal.success .corner { background: var(--retro-accent-green, #00ff87); }
-.pixel-modal.warning .corner { background: var(--retro-accent-yellow, #ffd000); }
-.pixel-modal.danger .corner { background: var(--retro-accent-red, #ff3b30); }
+.pixel-modal.success .corner { background: #63c74d; }
+.pixel-modal.warning .corner { background: #feae34; }
+.pixel-modal.danger .corner { background: #e43b44; }
+.pixel-modal.info .corner { background: #9b5de5; }
 
 /* Header */
 .pixel-modal-header {
@@ -134,36 +197,55 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  background: linear-gradient(90deg, var(--retro-accent-blue, #00d4ff), var(--retro-accent-purple, #b24dff));
+  padding: 16px 20px;
+  padding-left: 40px;
+  background: linear-gradient(180deg, #0099db 0%, #006b99 100%);
   border-bottom: 4px solid #000;
+  overflow: hidden;
+}
+
+.header-pattern {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0px,
+    transparent 8px,
+    rgba(0,0,0,0.1) 8px,
+    rgba(0,0,0,0.1) 16px
+  );
+}
+
+.header-deco-left {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.deco-block {
+  width: 8px;
+  height: 4px;
+  background: rgba(255,255,255,0.5);
 }
 
 .pixel-modal.success .pixel-modal-header {
-  background: linear-gradient(90deg, var(--retro-accent-green, #00ff87), #00cc6a);
+  background: linear-gradient(180deg, #63c74d 0%, #3e8948 100%);
 }
 
 .pixel-modal.warning .pixel-modal-header {
-  background: linear-gradient(90deg, var(--retro-accent-yellow, #ffd000), #ffaa00);
+  background: linear-gradient(180deg, #feae34 0%, #c68b28 100%);
 }
 
 .pixel-modal.danger .pixel-modal-header {
-  background: linear-gradient(90deg, var(--retro-accent-red, #ff3b30), #cc2020);
+  background: linear-gradient(180deg, #e43b44 0%, #a82835 100%);
 }
 
-.header-decoration {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 8px;
-  background: repeating-linear-gradient(
-    0deg,
-    #000 0px,
-    #000 4px,
-    transparent 4px,
-    transparent 8px
-  );
+.pixel-modal.info .pixel-modal-header {
+  background: linear-gradient(180deg, #9b5de5 0%, #7b3dc5 100%);
 }
 
 .pixel-modal-title {
@@ -172,31 +254,42 @@ onUnmounted(() => {
   color: #fff;
   text-shadow: 2px 2px 0 #000;
   margin: 0;
-  padding-left: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  position: relative;
 }
 
 .pixel-modal-close {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 12px;
-  background: transparent;
-  border: none;
+  position: relative;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.3);
+  border: 2px solid #000;
   color: #fff;
   cursor: pointer;
-  padding: 4px 8px;
-  transition: all 0.1s steps(2);
-  text-shadow: 2px 2px 0 #000;
+  padding: 0;
+  box-shadow: 2px 2px 0 #000;
 }
 
 .pixel-modal-close:hover {
-  color: var(--retro-accent-yellow, #ffd000);
-  transform: scale(1.2);
+  background: #e43b44;
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0 #000;
+}
+
+.pixel-modal-close:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
 }
 
 /* Body */
 .pixel-modal-body {
-  padding: 20px;
+  padding: 24px;
   overflow-y: auto;
-  background: var(--retro-bg-card, #251842);
+  background: linear-gradient(180deg, #16213e 0%, #1a1a2e 100%);
 }
 
 /* Footer */
@@ -204,9 +297,9 @@ onUnmounted(() => {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  padding: 16px 20px;
-  border-top: 3px solid #000;
-  background: var(--retro-bg-panel, #1a1030);
+  padding: 16px 24px;
+  border-top: 4px solid #000;
+  background: #0f0f23;
 }
 
 /* Animation */
@@ -227,6 +320,6 @@ onUnmounted(() => {
 
 .pixel-modal-enter-from .pixel-modal,
 .pixel-modal-leave-to .pixel-modal {
-  transform: scale(0.9) translateY(-20px);
+  transform: scale(0.8) translateY(-40px);
 }
 </style>

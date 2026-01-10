@@ -5,7 +5,9 @@
  */
 
 import { ref, computed, watch } from 'vue'
-import { load } from '@tauri-apps/plugin-store'
+
+// Platform detection
+const isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI__
 
 export interface ThemeConfig {
   
@@ -208,10 +210,19 @@ export function useTheme() {
   async function loadTheme(): Promise<void> {
     if (initialized) return
     try {
-      const store = await load('settings.json')
-      const savedTheme = await store.get<ThemeConfig>('theme')
-      if (savedTheme) {
-        theme.value = { ...DEFAULT_THEME, ...savedTheme }
+      if (isTauri) {
+        const { load } = await import('@tauri-apps/plugin-store')
+        const store = await load('settings.json')
+        const savedTheme = await store.get<ThemeConfig>('theme')
+        if (savedTheme) {
+          theme.value = { ...DEFAULT_THEME, ...savedTheme }
+        }
+      } else {
+        // Web mode: use localStorage
+        const saved = localStorage.getItem('theme')
+        if (saved) {
+          theme.value = { ...DEFAULT_THEME, ...JSON.parse(saved) }
+        }
       }
     } catch {
       
@@ -223,9 +234,14 @@ export function useTheme() {
 
   async function saveTheme(): Promise<void> {
     try {
-      const store = await load('settings.json')
-      await store.set('theme', theme.value)
-      await store.save()
+      if (isTauri) {
+        const { load } = await import('@tauri-apps/plugin-store')
+        const store = await load('settings.json')
+        await store.set('theme', theme.value)
+        await store.save()
+      } else {
+        localStorage.setItem('theme', JSON.stringify(theme.value))
+      }
     } catch {
       
     }

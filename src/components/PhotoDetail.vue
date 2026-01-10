@@ -10,6 +10,7 @@ import SecureImage from './SecureImage.vue'
 import { useImageMetadata, type ImageMetadata } from '../composables/useImageMetadata'
 import { useFavorites } from '../composables/useFavorites'
 import { useColorTags, PREDEFINED_COLORS } from '../composables/useColorTags'
+import { registerOverlay } from '../composables/useKeyboardShortcuts'
 
 interface Photo {
   sha: string
@@ -91,19 +92,28 @@ function onTouchEnd(e: TouchEvent) {
   }
 }
 
+// Handle arrow keys and other shortcuts (ESC is handled by registerOverlay)
 function handleKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') emit('close')
   if (e.key === 'ArrowLeft' && hasPrev.value) emit('navigate', 'prev')
   if (e.key === 'ArrowRight' && hasNext.value) emit('navigate', 'next')
   if (e.key === 'f') handleFavorite()
   if (e.key === 'i') showMetadata.value = !showMetadata.value
 }
 
+let unregisterOverlay: (() => void) | null = null;
+
 onMounted(() => {
+  // Register ESC key handler
+  unregisterOverlay = registerOverlay('photo-detail', () => emit('close'));
+  
+  // Register other keyboard shortcuts
   document.addEventListener('keydown', handleKeydown)
 })
 
 onUnmounted(() => {
+  if (unregisterOverlay) {
+    unregisterOverlay();
+  }
   document.removeEventListener('keydown', handleKeydown)
 })
 </script>

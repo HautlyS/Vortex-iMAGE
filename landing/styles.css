@@ -150,6 +150,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
     color: var(--text);
 }
 .btn-outline:hover { background: var(--bg-card); border-color: var(--text-muted); }
+.btn-outline.btn-github { gap: 0.375rem; }
 .btn-lg { padding: 1rem 2rem; font-size: 1rem; }
 
 .hero {
@@ -525,6 +526,82 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 }
 .download-card h2 { font-size: 2rem; font-weight: 800; margin: 1rem 0 0.5rem; position: relative; }
 .download-card > p { color: var(--text-muted); margin-bottom: 2rem; position: relative; }
+
+/* Web Version Banner */
+.web-version-banner {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(34, 211, 238, 0.1));
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: var(--radius);
+    margin-bottom: 2rem;
+    position: relative;
+    text-align: left;
+}
+
+.web-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gradient);
+    border-radius: 0.75rem;
+    flex-shrink: 0;
+}
+
+.web-icon svg {
+    width: 24px;
+    height: 24px;
+    stroke: white;
+}
+
+.web-info {
+    flex: 1;
+}
+
+.web-info h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    color: var(--text);
+}
+
+.web-info p {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.web-version-banner .btn {
+    flex-shrink: 0;
+}
+
+.download-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.download-divider::before,
+.download-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.download-divider span {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
 .download-grid {
     display: flex;
     justify-content: center;
@@ -588,6 +665,8 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
     .bento-lg, .bento-wide { grid-column: span 1; }
     .footer-content { flex-direction: column; gap: 2rem; text-align: center; }
     .footer-links { flex-wrap: wrap; justify-content: center; }
+    .web-version-banner { flex-direction: column; text-align: center; }
+    .web-info { text-align: center; }
 }
 @media (max-width: 480px) {
     .container { padding: 0 1rem; }

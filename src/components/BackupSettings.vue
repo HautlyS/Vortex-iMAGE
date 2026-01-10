@@ -5,14 +5,28 @@
  */
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { open } from '@tauri-apps/plugin-dialog'
 import { useBackupSettings } from '../composables/useBackupSettings'
 import { useDataDriver } from '../composables/useDataDriver'
+import { registerOverlay } from '../composables/useKeyboardShortcuts'
 
 const emit = defineEmits<{
   (e: 'close'): void
 }>()
+
+// Register ESC key handler
+let unregisterOverlay: (() => void) | null = null;
+
+onMounted(() => {
+  unregisterOverlay = registerOverlay('backup-settings', () => emit('close'));
+});
+
+onUnmounted(() => {
+  if (unregisterOverlay) {
+    unregisterOverlay();
+  }
+});
 
 const {
   config,

@@ -7,6 +7,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { SHORTCUTS } from '../../config'
+import { registerOverlay } from '../../composables/useKeyboardShortcuts'
 import type { Photo } from '../../types/photo'
 
 const props = defineProps<{
@@ -48,13 +49,11 @@ function onImageError() {
   imageLoading.value = false
 }
 
+// Handle arrow keys and favorite shortcut (ESC is handled by registerOverlay)
 function handleKeydown(e: KeyboardEvent) {
   if (!props.photo) return
   
   switch (e.key) {
-    case SHORTCUTS.escape.key:
-      emit('close')
-      break
     case 'ArrowRight':
       if (canGoNext.value) emit('next')
       break
@@ -82,8 +81,13 @@ watch(() => props.photo, (newPhoto) => {
 })
 
 const keydownHandler = ref<((e: KeyboardEvent) => void) | null>(null)
+let unregisterOverlay: (() => void) | null = null;
 
 onMounted(() => {
+  // Register ESC key handler
+  unregisterOverlay = registerOverlay('photo-lightbox-detail', () => emit('close'));
+  
+  // Register arrow key handler
   keydownHandler.value = handleKeydown
   document.addEventListener('keydown', keydownHandler.value)
   if (props.photo) {
@@ -92,6 +96,9 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  if (unregisterOverlay) {
+    unregisterOverlay();
+  }
   if (keydownHandler.value) {
     document.removeEventListener('keydown', keydownHandler.value)
     keydownHandler.value = null

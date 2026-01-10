@@ -5,7 +5,8 @@
  */
 
 import { ref, computed } from 'vue'
-import { load } from '@tauri-apps/plugin-store'
+
+const isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI__
 
 export type DriverType = 'github' | 'local'
 
@@ -51,31 +52,48 @@ export function useDataDriver() {
     if (initialized) return
     loading.value = true
     try {
-      const store = await load('settings.json')
-      const saved = await store.get<DataDriver[]>('dataDrivers')
-      const activeId = await store.get<string>('activeDriverId')
-      
-      if (saved && Array.isArray(saved)) {
-        drivers.value = saved
-      }
-
-      const existingRepo = await store.get<string>('repo')
-      if (existingRepo && !drivers.value.some(d => d.path === existingRepo)) {
-        const githubDriver: DataDriver = {
-          id: `github-${Date.now()}`,
-          type: 'github',
-          name: existingRepo.split('/')[1] || existingRepo,
-          path: existingRepo,
-          isActive: true,
-          createdAt: Date.now()
+      if (isTauri) {
+        const { load } = await import('@tauri-apps/plugin-store')
+        const store = await load('settings.json')
+        const saved = await store.get<DataDriver[]>('dataDrivers')
+        const activeId = await store.get<string>('activeDriverId')
+        
+        if (saved && Array.isArray(saved)) {
+          drivers.value = saved
         }
-        drivers.value.push(githubDriver)
-        activeDriverId.value = githubDriver.id
-        await saveDrivers()
-      } else if (activeId) {
-        activeDriverId.value = activeId
-      } else if (drivers.value.length > 0) {
-        activeDriverId.value = drivers.value[0].id
+
+        const existingRepo = await store.get<string>('repo')
+        if (existingRepo && !drivers.value.some(d => d.path === existingRepo)) {
+          const githubDriver: DataDriver = {
+            id: `github-${Date.now()}`,
+            type: 'github',
+            name: existingRepo.split('/')[1] || existingRepo,
+            path: existingRepo,
+            isActive: true,
+            createdAt: Date.now()
+          }
+          drivers.value.push(githubDriver)
+          activeDriverId.value = githubDriver.id
+          await saveDrivers()
+        } else if (activeId) {
+          activeDriverId.value = activeId
+        } else if (drivers.value.length > 0) {
+          activeDriverId.value = drivers.value[0].id
+        }
+      } else {
+        // Web mode: use localStorage
+        const saved = localStorage.getItem('dataDrivers')
+        const activeId = localStorage.getItem('activeDriverId')
+        
+        if (saved) {
+          drivers.value = JSON.parse(saved)
+        }
+        
+        if (activeId) {
+          activeDriverId.value = activeId
+        } else if (drivers.value.length > 0) {
+          activeDriverId.value = drivers.value[0].id
+        }
       }
       
       initialized = true
@@ -88,10 +106,18 @@ export function useDataDriver() {
 
   async function saveDrivers(): Promise<void> {
     try {
-      const store = await load('settings.json')
-      await store.set('dataDrivers', drivers.value)
-      await store.set('activeDriverId', activeDriverId.value)
-      await store.save()
+      if (isTauri) {
+        const { load } = await import('@tauri-apps/plugin-store')
+        const store = await load('settings.json')
+        await store.set('dataDrivers', drivers.value)
+        await store.set('activeDriverId', activeDriverId.value)
+        await store.save()
+      } else {
+        localStorage.setItem('dataDrivers', JSON.stringify(drivers.value))
+        if (activeDriverId.value) {
+          localStorage.setItem('activeDriverId', activeDriverId.value)
+        }
+      }
     } catch (e) {
       console.error('Failed to save drivers:', e)
     }

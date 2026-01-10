@@ -5,7 +5,8 @@
  */
 
 import { ref } from 'vue'
-import { load } from '@tauri-apps/plugin-store'
+
+const isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI__
 
 const MIN_SIZE = 80
 const MAX_SIZE = 400
@@ -23,10 +24,18 @@ export function usePhotoPreviewSize() {
   async function loadSize(): Promise<void> {
     if (initialized) return
     try {
-      const store = await load('settings.json')
-      const savedSize = await store.get<number>('previewSize')
-      if (savedSize !== null && savedSize !== undefined) {
-        size.value = clampSize(savedSize)
+      if (isTauri) {
+        const { load } = await import('@tauri-apps/plugin-store')
+        const store = await load('settings.json')
+        const savedSize = await store.get<number>('previewSize')
+        if (savedSize !== null && savedSize !== undefined) {
+          size.value = clampSize(savedSize)
+        }
+      } else {
+        const savedSize = localStorage.getItem('previewSize')
+        if (savedSize) {
+          size.value = clampSize(Number(savedSize))
+        }
       }
       initialized = true
     } catch {
@@ -36,9 +45,14 @@ export function usePhotoPreviewSize() {
 
   async function saveSize(): Promise<void> {
     try {
-      const store = await load('settings.json')
-      await store.set('previewSize', size.value)
-      await store.save()
+      if (isTauri) {
+        const { load } = await import('@tauri-apps/plugin-store')
+        const store = await load('settings.json')
+        await store.set('previewSize', size.value)
+        await store.save()
+      } else {
+        localStorage.setItem('previewSize', String(size.value))
+      }
     } catch {
       
     }

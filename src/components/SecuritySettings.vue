@@ -5,16 +5,30 @@
  */
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useCrypto } from '../composables/useCrypto'
 import { useCompression } from '../composables/useCompression'
 import { usePipeline } from '../composables/usePipeline'
+import { registerOverlay } from '../composables/useKeyboardShortcuts'
 import PipelineEditor from './PipelineEditor.vue'
 import ConfirmDialog from './ui/ConfirmDialog.vue'
 
 const emit = defineEmits<{
   (e: 'close'): void
 }>()
+
+// Register ESC key handler
+let unregisterOverlay: (() => void) | null = null;
+
+onMounted(() => {
+  unregisterOverlay = registerOverlay('security-settings', () => emit('close'));
+});
+
+onUnmounted(() => {
+  if (unregisterOverlay) {
+    unregisterOverlay();
+  }
+});
 
 const {
   hasStoredKeypair,

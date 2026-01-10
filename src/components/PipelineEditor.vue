@@ -5,14 +5,28 @@
  */
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { usePipeline, type PipelineConfig, type PipelineLayer, type PipelineOperation } from '../composables/usePipeline'
 import { useCrypto } from '../composables/useCrypto'
+import { registerOverlay } from '../composables/useKeyboardShortcuts'
 
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'select', pipeline: PipelineConfig): void
 }>()
+
+// Register ESC key handler
+let unregisterOverlay: (() => void) | null = null;
+
+onMounted(() => {
+  unregisterOverlay = registerOverlay('pipeline-editor', () => emit('close'));
+});
+
+onUnmounted(() => {
+  if (unregisterOverlay) {
+    unregisterOverlay();
+  }
+});
 
 const {
   pipelines,

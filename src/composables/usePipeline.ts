@@ -1,164 +1,183 @@
-/**
- * TypeScript Module - 1 exports
- * Purpose: Type-safe utilities and composable functions
- * Imports: 2 modules
- */
-
 import { ref, computed } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
-import { load } from '@tauri-apps/plugin-store'
-import type { PublicBundle } from './useCrypto'
 
-export type OperationType = 'compress' | 'encrypt_password' | 'encrypt_hybrid_pq' | 'hash' | 'base64_encode'
-
-export interface CompressOperation {
-  type: 'compress'
-  algorithm: string
-  level: number
+// Types
+export interface PipelineOperation {
+  type: 'compress' | 'encrypt_password' | 'encrypt_hybrid_pq' | 'hash' | 'base64_encode' | 'base64_decode'
+  algorithm?: string
+  level?: number
+  public_bundle?: any
 }
-
-export interface EncryptPasswordOperation {
-  type: 'encrypt_password'
-}
-
-export interface EncryptHybridPQOperation {
-  type: 'encrypt_hybrid_pq'
-  recipient_bundle: PublicBundle | null
-}
-
-export interface HashOperation {
-  type: 'hash'
-}
-
-export interface Base64EncodeOperation {
-  type: 'base64_encode'
-}
-
-export type PipelineOperation = 
-  | CompressOperation 
-  | EncryptPasswordOperation 
-  | EncryptHybridPQOperation 
-  | HashOperation 
-  | Base64EncodeOperation
 
 export interface PipelineLayer {
   id: string
   operation: PipelineOperation
   enabled: boolean
-  order: number
 }
 
 export interface PipelineConfig {
   id: string
   name: string
+  description?: string
+  layers: PipelineLayer[]
+  createdAt: number
+  updatedAt: number
+}
+
+export interface PipelinePreset {
+  id: string
+  name: string
   description: string
   layers: PipelineLayer[]
-  created_at: number
-  updated_at: number
-}
-
-export interface LayerResult {
-  layer_id: string
-  operation_type: string
-  input_size: number
-  output_size: number
-  success: boolean
-  error: string | null
-}
-
-export interface PipelineResult {
-  data: number[]
-  original_size: number
-  final_size: number
-  layers_applied: LayerResult[]
-  checksum: number[]
 }
 
 export interface PipelineEstimate {
-  original_size: number
   estimated_final_size: number
   overall_ratio: number
-  operations: {
+  operations: Array<{
     operation: string
-    ratio: number
     estimated_size_after: number
-  }[]
+  }>
 }
 
+// State
 const pipelines = ref<PipelineConfig[]>([])
 const activePipelineId = ref<string | null>(null)
-const presets = ref<PipelineConfig[]>([])
-const processing = ref(false)
-let initialized = false
+const initialized = ref(false)
+
+// Presets
+const presets = ref<PipelinePreset[]>([
+  {
+    id: 'preset-fast-compress',
+    name: 'Fast Compression',
+    description: 'Quick LZ4 compression for speed',
+    layers: [
+      { id: 'l1', operation: { type: 'compress', algorithm: 'lz4', level: 1 }, enabled: true }
+    ]
+  },
+  {
+    id: 'preset-max-compress',
+    name: 'Maximum Compression',
+    description: 'Zstd level 19 for best ratio',
+    layers: [
+      { id: 'l1', operation: { type: 'compress', algorithm: 'zstd', level: 19 }, enabled: true }
+    ]
+  },
+  {
+    id: 'preset-secure',
+    name: 'Secure Storage',
+    description: 'Compress then encrypt with password',
+    layers: [
+      { id: 'l1', operation: { type: 'compress', algorithm: 'zstd', level: 3 }, enabled: true },
+      { id: 'l2', operation: { type: 'encrypt_password' }, enabled: true }
+    ]
+  },
+  {
+    id: 'preset-pq-secure',
+    name: 'Post-Quantum Secure',
+    description: 'Future-proof hybrid encryption',
+    layers: [
+      { id: 'l1', operation: { type: 'compress', algorithm: 'zstd', level: 3 }, enabled: true },
+      { id: 'l2', operation: { type: 'encrypt_hybrid_pq' }, enabled: true },
+      { id: 'l3', operation: { type: 'hash' }, enabled: true }
+    ]
+  },
+  {
+    id: 'preset-archive',
+    name: 'Archive Ready',
+    description: 'Compress, hash, and base64 encode',
+    layers: [
+      { id: 'l1', operation: { type: 'compress', algorithm: 'brotli', level: 6 }, enabled: true },
+      { id: 'l2', operation: { type: 'hash' }, enabled: true },
+      { id: 'l3', operation: { type: 'base64_encode' }, enabled: true }
+    ]
+  }
+])
+
+// Computed
+const activePipeline = computed(() => {
+  if (!activePipelineId.value) return null
+  return pipelines.value.find(p => p.id === activePipelineId.value) || null
+})
+
+// Helper functions
+function generateId(): string {
+  return `pipeline-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+}
+
+function generateLayerId(): string {
+  return `layer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+}
+
+// Storage
+const STORAGE_KEY = 'image-pipelines'
+const ACTIVE_KEY = 'image-active-pipeline'
+
+function loadFromStorage(): void {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      pipelines.value = JSON.parse(stored)
+    }
+    const activeId = localStorage.getItem(ACTIVE_KEY)
+    if (activeId) {
+      activePipelineId.value = activeId
+    }
+  } catch (e) {
+    console.error('Failed to load pipelines from storage:', e)
+  }
+}
+
+function saveToStorage(): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(pipelines.value))
+    if (activePipelineId.value) {
+      localStorage.setItem(ACTIVE_KEY, activePipelineId.value)
+    }
+  } catch (e) {
+    console.error('Failed to save pipelines to storage:', e)
+  }
+}
 
 export function usePipeline() {
-  const activePipeline = computed(() => 
-    pipelines.value.find(p => p.id === activePipelineId.value) || null
-  )
-
+  // Initialize
   async function initialize(): Promise<void> {
-    if (initialized) return
-    try {
-      
-      presets.value = await invoke<PipelineConfig[]>('pipeline_get_presets')
-
-      const store = await load('settings.json')
-      const saved = await store.get<PipelineConfig[]>('pipelines')
-      if (saved) {
-        pipelines.value = saved
-      }
-      
-      const activeId = await store.get<string>('activePipelineId')
-      if (activeId) {
-        activePipelineId.value = activeId
-      }
-      
-      initialized = true
-    } catch (e) {
-      console.error('Failed to initialize pipeline:', e)
-    }
+    if (initialized.value) return
+    loadFromStorage()
+    initialized.value = true
   }
 
-  async function savePipelines(): Promise<void> {
-    try {
-      const store = await load('settings.json')
-      await store.set('pipelines', pipelines.value)
-      await store.set('activePipelineId', activePipelineId.value)
-      await store.save()
-    } catch (e) {
-      console.error('Failed to save pipelines:', e)
-    }
-  }
-
-  function createPipeline(name: string, description = ''): PipelineConfig {
-    const now = Date.now()
+  // Pipeline CRUD
+  function createPipeline(name: string, description?: string): PipelineConfig {
     const pipeline: PipelineConfig = {
-      id: `pipeline-${now}-${Math.random().toString(36).slice(2, 8)}`,
+      id: generateId(),
       name,
       description,
       layers: [],
-      created_at: Math.floor(now / 1000),
-      updated_at: Math.floor(now / 1000)
+      createdAt: Date.now(),
+      updatedAt: Date.now()
     }
     pipelines.value.push(pipeline)
-    savePipelines()
+    saveToStorage()
     return pipeline
   }
 
-  function clonePreset(presetId: string, newName?: string): PipelineConfig | null {
+  function clonePreset(presetId: string): PipelineConfig | null {
     const preset = presets.value.find(p => p.id === presetId)
     if (!preset) return null
-    
-    const now = Date.now()
+
     const pipeline: PipelineConfig = {
-      ...JSON.parse(JSON.stringify(preset)),
-      id: `pipeline-${now}-${Math.random().toString(36).slice(2, 8)}`,
-      name: newName || `${preset.name} (Copy)`,
-      created_at: Math.floor(now / 1000),
-      updated_at: Math.floor(now / 1000)
+      id: generateId(),
+      name: `${preset.name} (Copy)`,
+      description: preset.description,
+      layers: preset.layers.map(l => ({
+        ...l,
+        id: generateLayerId()
+      })),
+      createdAt: Date.now(),
+      updatedAt: Date.now()
     }
     pipelines.value.push(pipeline)
-    savePipelines()
+    saveToStorage()
     return pipeline
   }
 
@@ -169,170 +188,161 @@ export function usePipeline() {
       if (activePipelineId.value === pipelineId) {
         activePipelineId.value = pipelines.value[0]?.id || null
       }
-      savePipelines()
+      saveToStorage()
     }
   }
 
-  function setActivePipeline(pipelineId: string | null): void {
+  function setActivePipeline(pipelineId: string): void {
     activePipelineId.value = pipelineId
-    savePipelines()
+    saveToStorage()
   }
 
-  function addLayer(
-    pipelineId: string,
-    operation: PipelineOperation
-  ): PipelineLayer | null {
+  // Layer management
+  function addLayer(pipelineId: string, operation: PipelineOperation): PipelineLayer | null {
     const pipeline = pipelines.value.find(p => p.id === pipelineId)
     if (!pipeline) return null
-    
+
     const layer: PipelineLayer = {
-      id: `layer-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      id: generateLayerId(),
       operation,
-      enabled: true,
-      order: pipeline.layers.length
+      enabled: true
     }
-    
     pipeline.layers.push(layer)
-    pipeline.updated_at = Math.floor(Date.now() / 1000)
-    savePipelines()
+    pipeline.updatedAt = Date.now()
+    saveToStorage()
     return layer
   }
 
   function removeLayer(pipelineId: string, layerId: string): void {
     const pipeline = pipelines.value.find(p => p.id === pipelineId)
     if (!pipeline) return
-    
+
     const index = pipeline.layers.findIndex(l => l.id === layerId)
     if (index !== -1) {
       pipeline.layers.splice(index, 1)
-      
-      pipeline.layers.forEach((l, i) => l.order = i)
-      pipeline.updated_at = Math.floor(Date.now() / 1000)
-      savePipelines()
+      pipeline.updatedAt = Date.now()
+      saveToStorage()
     }
   }
 
-  function updateLayer(
-    pipelineId: string,
-    layerId: string,
-    updates: Partial<PipelineLayer>
-  ): void {
+  function updateLayer(pipelineId: string, layerId: string, updates: Partial<PipelineLayer>): void {
     const pipeline = pipelines.value.find(p => p.id === pipelineId)
     if (!pipeline) return
-    
+
     const layer = pipeline.layers.find(l => l.id === layerId)
     if (layer) {
       Object.assign(layer, updates)
-      pipeline.updated_at = Math.floor(Date.now() / 1000)
-      savePipelines()
+      pipeline.updatedAt = Date.now()
+      saveToStorage()
     }
   }
 
   function reorderLayers(pipelineId: string, layerIds: string[]): void {
     const pipeline = pipelines.value.find(p => p.id === pipelineId)
     if (!pipeline) return
-    
-    layerIds.forEach((id, index) => {
+
+    const reordered: PipelineLayer[] = []
+    for (const id of layerIds) {
       const layer = pipeline.layers.find(l => l.id === id)
-      if (layer) layer.order = index
-    })
-    
-    pipeline.layers.sort((a, b) => a.order - b.order)
-    pipeline.updated_at = Math.floor(Date.now() / 1000)
-    savePipelines()
+      if (layer) reordered.push(layer)
+    }
+    pipeline.layers = reordered
+    pipeline.updatedAt = Date.now()
+    saveToStorage()
   }
 
-  async function processPipeline(
-    data: Uint8Array,
-    config: PipelineConfig,
-    passwords: Record<string, string> = {},
-    keypairBytes?: number[]
-  ): Promise<PipelineResult> {
-    processing.value = true
-    try {
-      return await invoke<PipelineResult>('pipeline_process', {
-        data: Array.from(data),
-        config,
-        passwords,
-        keypairBytes: keypairBytes || null
+  // Estimation
+  async function estimatePipeline(inputSize: number, pipeline: PipelineConfig): Promise<PipelineEstimate> {
+    let currentSize = inputSize
+    const operations: PipelineEstimate['operations'] = []
+
+    for (const layer of pipeline.layers) {
+      if (!layer.enabled) continue
+
+      let ratio = 1.0
+      switch (layer.operation.type) {
+        case 'compress':
+          // Estimate compression ratio based on algorithm
+          const alg = layer.operation.algorithm || 'zstd'
+          const level = layer.operation.level || 3
+          if (alg === 'zstd') ratio = 0.3 + (0.4 * (1 - level / 22))
+          else if (alg === 'lz4') ratio = 0.5
+          else if (alg === 'brotli') ratio = 0.25 + (0.35 * (1 - level / 11))
+          else if (alg === 'gzip') ratio = 0.35 + (0.3 * (1 - level / 9))
+          else ratio = 0.5
+          break
+        case 'encrypt_password':
+        case 'encrypt_hybrid_pq':
+          ratio = 1.02 // Small overhead for encryption
+          break
+        case 'hash':
+          ratio = 1.0 // Hash doesn't change size (stored separately)
+          break
+        case 'base64_encode':
+          ratio = 1.37 // Base64 increases size by ~37%
+          break
+        case 'base64_decode':
+          ratio = 0.75
+          break
+      }
+
+      currentSize = Math.round(currentSize * ratio)
+      operations.push({
+        operation: getOperationLabel(layer.operation),
+        estimated_size_after: currentSize
       })
-    } finally {
-      processing.value = false
+    }
+
+    return {
+      estimated_final_size: currentSize,
+      overall_ratio: currentSize / inputSize,
+      operations
     }
   }
 
-  async function reversePipeline(
-    data: Uint8Array,
-    passwords: Record<string, string> = {},
-    keypairBytes?: number[]
-  ): Promise<PipelineResult> {
-    processing.value = true
-    try {
-      return await invoke<PipelineResult>('pipeline_reverse', {
-        data: Array.from(data),
-        passwords,
-        keypairBytes: keypairBytes || null
-      })
-    } finally {
-      processing.value = false
-    }
-  }
-
-  async function validatePipeline(config: PipelineConfig): Promise<boolean> {
-    try {
-      return await invoke<boolean>('pipeline_validate', { config })
-    } catch {
-      return false
-    }
-  }
-
-  async function estimatePipeline(
-    originalSize: number,
-    config: PipelineConfig
-  ): Promise<PipelineEstimate> {
-    return await invoke<PipelineEstimate>('pipeline_estimate', {
-      originalSize,
-      config
-    })
-  }
-
-  function createCompressOperation(algorithm = 'zstd', level = 3): CompressOperation {
+  // Operation factories
+  function createCompressOperation(algorithm: string, level: number): PipelineOperation {
     return { type: 'compress', algorithm, level }
   }
 
-  function createPasswordEncryptOperation(): EncryptPasswordOperation {
+  function createPasswordEncryptOperation(): PipelineOperation {
     return { type: 'encrypt_password' }
   }
 
-  function createHybridPQEncryptOperation(recipientBundle: PublicBundle | null = null): EncryptHybridPQOperation {
-    return { type: 'encrypt_hybrid_pq', recipient_bundle: recipientBundle }
+  function createHybridPQEncryptOperation(publicBundle?: any): PipelineOperation {
+    return { type: 'encrypt_hybrid_pq', public_bundle: publicBundle }
   }
 
-  function createHashOperation(): HashOperation {
+  function createHashOperation(): PipelineOperation {
     return { type: 'hash' }
   }
 
-  function createBase64Operation(): Base64EncodeOperation {
+  function createBase64Operation(): PipelineOperation {
     return { type: 'base64_encode' }
   }
 
-  function getOperationLabel(op: PipelineOperation): string {
-    switch (op.type) {
+  // UI helpers
+  function getOperationLabel(operation: PipelineOperation): string {
+    switch (operation.type) {
       case 'compress':
-        return `Compress (${op.algorithm.toUpperCase()} L${op.level})`
+        return `${(operation.algorithm || 'zstd').toUpperCase()} L${operation.level || 3}`
       case 'encrypt_password':
         return 'Password Encryption'
       case 'encrypt_hybrid_pq':
-        return 'Post-Quantum Encryption'
+        return 'PQ Hybrid Encryption'
       case 'hash':
         return 'BLAKE3 Hash'
       case 'base64_encode':
         return 'Base64 Encode'
+      case 'base64_decode':
+        return 'Base64 Decode'
+      default:
+        return operation.type
     }
   }
 
-  function getOperationIcon(op: PipelineOperation): string {
-    switch (op.type) {
+  function getOperationIcon(operation: PipelineOperation): string {
+    switch (operation.type) {
       case 'compress':
         return '📦'
       case 'encrypt_password':
@@ -342,34 +352,45 @@ export function usePipeline() {
       case 'hash':
         return '#️⃣'
       case 'base64_encode':
+      case 'base64_decode':
         return '📝'
+      default:
+        return '⚙️'
     }
   }
 
   return {
+    // State
     pipelines,
     presets,
-    activePipelineId,
     activePipeline,
-    processing,
+    
+    // Lifecycle
     initialize,
+    
+    // Pipeline CRUD
     createPipeline,
     clonePreset,
     deletePipeline,
     setActivePipeline,
+    
+    // Layer management
     addLayer,
     removeLayer,
     updateLayer,
     reorderLayers,
-    processPipeline,
-    reversePipeline,
-    validatePipeline,
+    
+    // Estimation
     estimatePipeline,
+    
+    // Operation factories
     createCompressOperation,
     createPasswordEncryptOperation,
     createHybridPQEncryptOperation,
     createHashOperation,
     createBase64Operation,
+    
+    // UI helpers
     getOperationLabel,
     getOperationIcon
   }

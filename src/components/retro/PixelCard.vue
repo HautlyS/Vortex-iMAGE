@@ -2,24 +2,40 @@
 defineProps<{
   title?: string
   noPadding?: boolean
-  variant?: 'default' | 'success' | 'warning' | 'danger'
+  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info'
+  glow?: boolean
 }>()
 </script>
 
 <template>
-  <div class="pixel-card" :class="[variant]">
-    <!-- Corner Decorations -->
-    <div class="corner tl"></div>
-    <div class="corner tr"></div>
-    <div class="corner bl"></div>
-    <div class="corner br"></div>
+  <div class="pixel-card" :class="[variant, { glow }]">
+    <!-- 8-Bit Corner Decorations -->
+    <div class="corner tl">
+      <div class="corner-inner"></div>
+    </div>
+    <div class="corner tr">
+      <div class="corner-inner"></div>
+    </div>
+    <div class="corner bl">
+      <div class="corner-inner"></div>
+    </div>
+    <div class="corner br">
+      <div class="corner-inner"></div>
+    </div>
     
     <!-- Header -->
     <div v-if="title" class="pixel-card-header">
-      <div class="header-decoration"></div>
-      <span class="pixel-card-title">{{ title }}</span>
-      <div class="pixel-card-actions">
-        <slot name="actions"></slot>
+      <div class="header-pattern"></div>
+      <div class="header-content">
+        <span class="pixel-card-title">{{ title }}</span>
+        <div class="pixel-card-actions">
+          <slot name="actions"></slot>
+        </div>
+      </div>
+      <div class="header-decoration">
+        <span class="deco-dot"></span>
+        <span class="deco-dot"></span>
+        <span class="deco-dot"></span>
       </div>
     </div>
     
@@ -27,63 +43,104 @@ defineProps<{
     <div class="pixel-card-body" :class="{ 'no-padding': noPadding }">
       <slot></slot>
     </div>
+    
+    <!-- Footer slot -->
+    <div v-if="$slots.footer" class="pixel-card-footer">
+      <slot name="footer"></slot>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .pixel-card {
   position: relative;
-  background: var(--retro-bg-panel, #1a1030);
-  border: 3px solid #000;
-  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.6);
+  background: #1a1a2e;
+  border: 4px solid #000;
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.8);
+  image-rendering: pixelated;
 }
 
-/* Corner Decorations */
+/* 8-Bit Corner Decorations */
 .corner {
   position: absolute;
-  width: 8px;
-  height: 8px;
-  background: var(--retro-accent-pink, #ff2d95);
-  z-index: 1;
+  width: 12px;
+  height: 12px;
+  background: #f15bb5;
+  z-index: 10;
 }
 
-.corner.tl { top: -4px; left: -4px; }
-.corner.tr { top: -4px; right: -4px; }
-.corner.bl { bottom: -4px; left: -4px; }
-.corner.br { bottom: -4px; right: -4px; }
+.corner-inner {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #fff;
+}
+
+.corner.tl { top: -6px; left: -6px; }
+.corner.tl .corner-inner { top: 2px; left: 2px; }
+
+.corner.tr { top: -6px; right: -6px; }
+.corner.tr .corner-inner { top: 2px; right: 2px; }
+
+.corner.bl { bottom: -6px; left: -6px; }
+.corner.bl .corner-inner { bottom: 2px; left: 2px; }
+
+.corner.br { bottom: -6px; right: -6px; }
+.corner.br .corner-inner { bottom: 2px; right: 2px; }
 
 /* Header */
 .pixel-card-header {
   position: relative;
-  background: linear-gradient(90deg, var(--retro-accent-blue, #00d4ff), var(--retro-accent-purple, #b24dff));
+  background: linear-gradient(180deg, #0099db 0%, #006b99 100%);
   color: #fff;
-  padding: 10px 16px;
-  border-bottom: 3px solid #000;
+  padding: 0;
+  border-bottom: 4px solid #000;
+  overflow: hidden;
+}
+
+.header-pattern {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0px,
+    transparent 8px,
+    rgba(0,0,0,0.1) 8px,
+    rgba(0,0,0,0.1) 16px
+  );
+}
+
+.header-content {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 12px 16px;
+  padding-left: 24px;
 }
 
 .header-decoration {
   position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 6px;
-  background: repeating-linear-gradient(
-    0deg,
-    #000 0px,
-    #000 4px,
-    transparent 4px,
-    transparent 8px
-  );
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.deco-dot {
+  width: 4px;
+  height: 4px;
+  background: rgba(255,255,255,0.6);
 }
 
 .pixel-card-title {
   font-family: 'Press Start 2P', monospace;
   font-size: 10px;
   text-shadow: 2px 2px 0 #000;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
 }
 
 .pixel-card-actions {
@@ -94,35 +151,73 @@ defineProps<{
 /* Body */
 .pixel-card-body {
   padding: 20px;
-  background: var(--retro-bg-card, #251842);
+  background: linear-gradient(180deg, #16213e 0%, #1a1a2e 100%);
 }
 
 .pixel-card-body.no-padding {
   padding: 0;
 }
 
+/* Footer */
+.pixel-card-footer {
+  padding: 12px 20px;
+  background: #0f0f23;
+  border-top: 4px solid #000;
+}
+
 /* Variants */
 .pixel-card.success .pixel-card-header {
-  background: linear-gradient(90deg, var(--retro-accent-green, #00ff87), #00cc6a);
+  background: linear-gradient(180deg, #63c74d 0%, #3e8948 100%);
 }
 
 .pixel-card.success .corner {
-  background: var(--retro-accent-green, #00ff87);
+  background: #63c74d;
 }
 
 .pixel-card.warning .pixel-card-header {
-  background: linear-gradient(90deg, var(--retro-accent-yellow, #ffd000), #ffaa00);
+  background: linear-gradient(180deg, #feae34 0%, #c68b28 100%);
 }
 
 .pixel-card.warning .corner {
-  background: var(--retro-accent-yellow, #ffd000);
+  background: #feae34;
 }
 
 .pixel-card.danger .pixel-card-header {
-  background: linear-gradient(90deg, var(--retro-accent-red, #ff3b30), #cc2020);
+  background: linear-gradient(180deg, #e43b44 0%, #a82835 100%);
 }
 
 .pixel-card.danger .corner {
-  background: var(--retro-accent-red, #ff3b30);
+  background: #e43b44;
+}
+
+.pixel-card.info .pixel-card-header {
+  background: linear-gradient(180deg, #9b5de5 0%, #7b3dc5 100%);
+}
+
+.pixel-card.info .corner {
+  background: #9b5de5;
+}
+
+/* Glow Effect */
+.pixel-card.glow {
+  animation: card-glow 2s steps(4) infinite;
+}
+
+@keyframes card-glow {
+  0%, 100% { 
+    box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.8), 0 0 8px rgba(241, 91, 181, 0.2); 
+  }
+  50% { 
+    box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.8), 0 0 24px rgba(241, 91, 181, 0.4); 
+  }
+}
+
+.pixel-card.success.glow {
+  animation: card-glow-green 2s steps(4) infinite;
+}
+
+@keyframes card-glow-green {
+  0%, 100% { box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.8), 0 0 8px rgba(99, 199, 77, 0.2); }
+  50% { box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.8), 0 0 24px rgba(99, 199, 77, 0.4); }
 }
 </style>

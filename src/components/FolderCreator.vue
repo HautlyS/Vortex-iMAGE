@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useFolder, validateFolderName } from '../composables/useFolder'
+import { registerOverlay } from '../composables/useKeyboardShortcuts'
 
 const props = defineProps<{
   parentPath?: string | null
@@ -10,6 +11,19 @@ const emit = defineEmits<{
   (e: 'created', path: string): void
   (e: 'close'): void
 }>()
+
+// Register ESC key handler
+let unregisterOverlay: (() => void) | null = null;
+
+onMounted(() => {
+  unregisterOverlay = registerOverlay('folder-creator', () => emit('close'));
+});
+
+onUnmounted(() => {
+  if (unregisterOverlay) {
+    unregisterOverlay();
+  }
+});
 
 const { createFolder, creating, error, clearError } = useFolder()
 

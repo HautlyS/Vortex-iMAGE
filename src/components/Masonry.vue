@@ -1,13 +1,13 @@
 <template>
   <div 
     ref="containerRef" 
-    class="photo-grid-container"
+    class="masonry-container"
     @mousedown="handleMouseDown"
     @mousemove="handleMouseMove"
     @mouseup="handleMouseUp"
     @mouseleave="handleMouseUp"
   >
-    <!-- Selection Menu (appears when items selected) -->
+    <!-- Selection Menu -->
     <Transition name="slide-up">
       <div v-if="selected.length > 0" class="selection-menu">
         <div class="selection-info">
@@ -15,55 +15,34 @@
           <span class="selection-label">selecionados</span>
         </div>
         <div class="selection-actions">
-          <button class="sel-btn" @click="selectAllVisible" title="Selecionar tudo visível">
+          <button class="sel-btn" @click="selectAllVisible" title="Selecionar tudo">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
               <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
             </svg>
-            <span>Tudo</span>
           </button>
-          <button class="sel-btn" @click="selectAlbum" title="Selecionar álbum">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-            </svg>
-            <span>Álbum</span>
-          </button>
-          <button class="sel-btn danger" @click="clearSelection" title="Limpar seleção">
+          <button class="sel-btn danger" @click="clearSelection" title="Limpar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 6L6 18M6 6l12 12"/>
             </svg>
-            <span>Limpar</span>
           </button>
         </div>
       </div>
     </Transition>
 
-    <!-- Resize Handle (bottom-right corner) -->
-    <div 
-      class="resize-handle"
-      @mousedown.stop="startResize"
-      title="Arrastar para redimensionar"
-    >
-      <svg viewBox="0 0 24 24" fill="currentColor">
-        <path d="M22 22H20V20H22V22ZM22 18H20V16H22V18ZM18 22H16V20H18V22ZM22 14H20V12H22V14ZM18 18H16V16H18V18ZM14 22H12V20H14V22ZM18 14H16V12H18V14ZM14 18H12V16H14V18ZM10 22H8V20H10V22Z"/>
-      </svg>
-      <span class="resize-label">{{ Math.round(gridSize) }}px</span>
-    </div>
-
-    <!-- Photo Grid -->
-    <div 
-      class="photo-grid" 
-      :style="{ '--grid-size': `${gridSize}px` }"
-    >
+    <!-- Masonry Grid -->
+    <div class="masonry-grid" :style="gridStyle">
       <div
         v-for="item in visibleItems"
         :key="item.id"
-        class="photo-grid-item"
+        class="masonry-item"
         :class="{ 
           'selected': isSelected(item.id),
           'is-folder': item.isFolder,
-          'in-drag-select': isInDragSelection(item)
+          'in-drag-select': isInDragSelection(item),
+          'is-resizing': resizingItemId === item.id
         }"
+        :style="getItemStyle(item)"
         :data-id="item.id"
         @click.stop="handleItemClick(item, $event)"
         @dblclick.stop="handleItemDblClick(item)"
@@ -75,7 +54,21 @@
           :alt="item.folderName || 'Photo'"
           loading="lazy"
           draggable="false"
+          @load="(e) => handleImageLoad(item.id, e)"
         />
+        
+        <!-- Resize Handle (per item) -->
+        <div 
+          class="item-resize"
+          @mousedown.stop.prevent="startItemResize($event, item)"
+          @touchstart.stop.prevent="startItemResizeTouch($event, item)"
+        >
+          <svg viewBox="0 0 10 10" fill="currentColor">
+            <circle cx="8" cy="8" r="1.5"/>
+            <circle cx="4" cy="8" r="1.5"/>
+            <circle cx="8" cy="4" r="1.5"/>
+          </svg>
+        </div>
         
         <!-- Selection Checkbox -->
         <button
@@ -95,7 +88,7 @@
             <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
           </svg>
           <span class="folder-name">{{ item.folderName }}</span>
-          <span class="folder-count">{{ item.photoCount }}</span>
+          <span class="folder-count">{{ item.photoCount }} fotos</span>
         </div>
 
         <!-- Tag Indicator -->
@@ -103,31 +96,30 @@
 
         <!-- Hover Info -->
         <div class="item-info">
-          <span class="item-name">{{ item.folderName || (item as any).name || 'Photo' }}</span>
+          <span class="item-name">{{ item.folderName || item.name || 'Photo' }}</span>
         </div>
       </div>
+    </div>
+
+    <!-- Global Resize Control -->
+    <div class="global-resize">
+      <button @click="gridSize = Math.max(120, gridSize - 30)">−</button>
+      <input type="range" v-model.number="gridSize" min="120" max="400" step="10" />
+      <button @click="gridSize = Math.min(400, gridSize + 30)">+</button>
+      <span>{{ gridSize }}px</span>
     </div>
 
     <!-- Drag Selection Box -->
     <div 
       v-if="isDragSelecting"
       class="selection-box"
-      :style="{
-        left: `${selectionBox.x}px`,
-        top: `${selectionBox.y}px`,
-        width: `${selectionBox.w}px`,
-        height: `${selectionBox.h}px`
-      }"
-    >
-      <span class="selection-box-count" v-if="dragSelectCount > 0">
-        {{ dragSelectCount }}
-      </span>
-    </div>
+      :style="selectionBoxStyle"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, reactive } from 'vue';
 
 interface Item {
   id: string;
@@ -138,18 +130,14 @@ interface Item {
   folderName?: string;
   photoCount?: number;
   tagColor?: string;
-  [key: string]: any;
+  name?: string;
 }
 
 const props = withDefaults(defineProps<{
   items: Item[];
-  scaleOnHover?: boolean;
-  animateFrom?: string;
   initialSize?: number;
 }>(), {
-  scaleOnHover: true,
-  animateFrom: 'bottom',
-  initialSize: 180
+  initialSize: 200
 });
 
 const emit = defineEmits<{
@@ -158,255 +146,289 @@ const emit = defineEmits<{
   contextMenu: [item: Item, event: MouseEvent];
   select: [ids: Set<string>];
   resize: [size: number];
-}>()
+}>();
 
-// Grid size state
-const gridSize = ref(props.initialSize)
-const isResizing = ref(false)
-const resizeStart = ref({ x: 0, size: 0 })
+// State
+const gridSize = ref(props.initialSize);
+const selected = ref<string[]>([]);
+const containerRef = ref<HTMLElement | null>(null);
 
-// Selection state
-const selected = ref<string[]>([])
-const containerRef = ref<HTMLElement | null>(null)
+// Image aspect ratios
+const imageRatios = reactive<Record<string, number>>({});
 
-// Drag selection state
-const isDragSelecting = ref(false)
-const dragSelectStart = ref({ x: 0, y: 0 })
-const selectionBox = ref({ x: 0, y: 0, w: 0, h: 0 })
-const dragSelectCount = ref(0)
-const itemsInDragSelection = ref<Set<string>>(new Set())
+// Item custom widths
+const itemWidths = reactive<Record<string, number>>({});
 
-// Load saved grid size
+// Resize state
+const resizingItemId = ref<string | null>(null);
+const resizeStartX = ref(0);
+const resizeStartWidth = ref(0);
+
+// Drag selection
+const isDragSelecting = ref(false);
+const dragStart = ref({ x: 0, y: 0 });
+const dragCurrent = ref({ x: 0, y: 0 });
+const itemsInDragSelection = ref<Set<string>>(new Set());
+
+// Computed
+const visibleItems = computed(() => props.items);
+
+const gridStyle = computed(() => ({
+  '--grid-size': `${gridSize.value}px`
+}));
+
+const selectionBoxStyle = computed(() => {
+  const x = Math.min(dragStart.value.x, dragCurrent.value.x);
+  const y = Math.min(dragStart.value.y, dragCurrent.value.y);
+  const w = Math.abs(dragCurrent.value.x - dragStart.value.x);
+  const h = Math.abs(dragCurrent.value.y - dragStart.value.y);
+  return {
+    left: `${x}px`,
+    top: `${y}px`,
+    width: `${w}px`,
+    height: `${h}px`
+  };
+});
+
+// Load/save grid size
 onMounted(async () => {
   try {
-    const { load } = await import('@tauri-apps/plugin-store')
-    const store = await load('settings.json')
-    const savedSize = await store.get<number>('gridSize')
-    if (savedSize && savedSize >= 100 && savedSize <= 400) {
-      gridSize.value = savedSize
-    }
+    const { load } = await import('@tauri-apps/plugin-store');
+    const store = await load('settings.json');
+    const saved = await store.get<number>('gridSize');
+    if (saved && saved >= 120 && saved <= 400) gridSize.value = saved;
   } catch {}
-})
+});
 
-// Save grid size when changed
 watch(gridSize, async (size) => {
   try {
-    const { load } = await import('@tauri-apps/plugin-store')
-    const store = await load('settings.json')
-    await store.set('gridSize', size)
-    await store.save()
-    emit('resize', size)
+    const { load } = await import('@tauri-apps/plugin-store');
+    const store = await load('settings.json');
+    await store.set('gridSize', size);
+    await store.save();
+    emit('resize', size);
   } catch {}
-})
+});
 
-// Resize handlers
-function startResize(e: MouseEvent) {
-  isResizing.value = true
-  resizeStart.value = { x: e.clientX, size: gridSize.value }
-  document.addEventListener('mousemove', onResize)
-  document.addEventListener('mouseup', stopResize)
-  document.body.style.cursor = 'nwse-resize'
-  document.body.style.userSelect = 'none'
+// Image load handler
+function handleImageLoad(id: string, e: Event) {
+  const img = e.target as HTMLImageElement;
+  if (img.naturalWidth && img.naturalHeight) {
+    imageRatios[id] = img.naturalWidth / img.naturalHeight;
+  }
 }
 
-function onResize(e: MouseEvent) {
-  if (!isResizing.value) return
-  const delta = e.clientX - resizeStart.value.x
-  const newSize = Math.max(100, Math.min(400, resizeStart.value.size + delta * 0.5))
-  gridSize.value = newSize
+// Get item style
+function getItemStyle(item: Item) {
+  const customWidth = itemWidths[item.id];
+  const ratio = imageRatios[item.id] || 1;
+  const width = customWidth || gridSize.value;
+  const height = Math.round(width / ratio);
+  
+  return {
+    width: `${width}px`,
+    height: `${Math.max(80, height)}px`
+  };
 }
 
-function stopResize() {
-  isResizing.value = false
-  document.removeEventListener('mousemove', onResize)
-  document.removeEventListener('mouseup', stopResize)
-  document.body.style.cursor = ''
-  document.body.style.userSelect = ''
+// Item resize
+function startItemResize(e: MouseEvent, item: Item) {
+  e.preventDefault();
+  e.stopPropagation();
+  resizingItemId.value = item.id;
+  resizeStartX.value = e.clientX;
+  resizeStartWidth.value = itemWidths[item.id] || gridSize.value;
+  
+  document.addEventListener('mousemove', onItemResize);
+  document.addEventListener('mouseup', stopItemResize);
+  document.body.classList.add('resizing');
 }
 
-// Simplified items
-const visibleItems = computed(() => props.items)
-
-const isSelected = (id: string) => selected.value.includes(id)
-const isInDragSelection = (item: Item) => itemsInDragSelection.value.has(item.id)
-
-const toggleSelect = (id: string) => {
-  const idx = selected.value.indexOf(id)
-  if (idx >= 0) selected.value.splice(idx, 1)
-  else selected.value.push(id)
-  emit('select', new Set(selected.value))
+function startItemResizeTouch(e: TouchEvent, item: Item) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (e.touches.length !== 1) return;
+  
+  resizingItemId.value = item.id;
+  resizeStartX.value = e.touches[0].clientX;
+  resizeStartWidth.value = itemWidths[item.id] || gridSize.value;
+  
+  document.addEventListener('touchmove', onItemResizeTouch, { passive: false });
+  document.addEventListener('touchend', stopItemResizeTouch);
+  document.body.classList.add('resizing');
 }
 
-// Mouse handlers for drag selection
+function onItemResize(e: MouseEvent) {
+  if (!resizingItemId.value) return;
+  e.preventDefault();
+  const delta = e.clientX - resizeStartX.value;
+  const newWidth = Math.max(100, Math.min(600, resizeStartWidth.value + delta));
+  itemWidths[resizingItemId.value] = newWidth;
+}
+
+function onItemResizeTouch(e: TouchEvent) {
+  if (!resizingItemId.value || e.touches.length !== 1) return;
+  e.preventDefault();
+  const delta = e.touches[0].clientX - resizeStartX.value;
+  const newWidth = Math.max(100, Math.min(600, resizeStartWidth.value + delta));
+  itemWidths[resizingItemId.value] = newWidth;
+}
+
+function stopItemResize() {
+  resizingItemId.value = null;
+  document.removeEventListener('mousemove', onItemResize);
+  document.removeEventListener('mouseup', stopItemResize);
+  document.body.classList.remove('resizing');
+}
+
+function stopItemResizeTouch() {
+  resizingItemId.value = null;
+  document.removeEventListener('touchmove', onItemResizeTouch);
+  document.removeEventListener('touchend', stopItemResizeTouch);
+  document.body.classList.remove('resizing');
+}
+
+// Selection
+const isSelected = (id: string) => selected.value.includes(id);
+const isInDragSelection = (item: Item) => itemsInDragSelection.value.has(item.id);
+
+function toggleSelect(id: string) {
+  const idx = selected.value.indexOf(id);
+  if (idx >= 0) selected.value.splice(idx, 1);
+  else selected.value.push(id);
+  emit('select', new Set(selected.value));
+}
+
+function selectAllVisible() {
+  selected.value = props.items.filter(i => !i.isFolder).map(i => i.id);
+  emit('select', new Set(selected.value));
+}
+
+function clearSelection() {
+  selected.value = [];
+  emit('select', new Set());
+}
+
+// Drag selection
 function handleMouseDown(e: MouseEvent) {
-  // Only start drag select on left click and not on items
-  if (e.button !== 0) return
-  const target = e.target as HTMLElement
-  if (target.closest('.photo-grid-item') || target.closest('.selection-menu') || target.closest('.resize-handle')) return
+  if (e.button !== 0) return;
+  const target = e.target as HTMLElement;
+  if (target.closest('.masonry-item') || target.closest('.selection-menu') || target.closest('.global-resize')) return;
   
-  isDragSelecting.value = true
-  const rect = containerRef.value?.getBoundingClientRect()
-  if (!rect) return
+  isDragSelecting.value = true;
+  const rect = containerRef.value?.getBoundingClientRect();
+  if (!rect) return;
   
-  dragSelectStart.value = { 
-    x: e.clientX - rect.left + (containerRef.value?.scrollLeft || 0),
-    y: e.clientY - rect.top + (containerRef.value?.scrollTop || 0)
-  }
-  selectionBox.value = { 
-    x: dragSelectStart.value.x, 
-    y: dragSelectStart.value.y, 
-    w: 0, 
-    h: 0 
-  }
-  itemsInDragSelection.value.clear()
-  dragSelectCount.value = 0
+  const x = e.clientX - rect.left + (containerRef.value?.scrollLeft || 0);
+  const y = e.clientY - rect.top + (containerRef.value?.scrollTop || 0);
+  dragStart.value = { x, y };
+  dragCurrent.value = { x, y };
+  itemsInDragSelection.value.clear();
 }
 
 function handleMouseMove(e: MouseEvent) {
-  if (!isDragSelecting.value || !containerRef.value) return
+  if (!isDragSelecting.value || !containerRef.value) return;
   
-  const rect = containerRef.value.getBoundingClientRect()
-  const currentX = e.clientX - rect.left + containerRef.value.scrollLeft
-  const currentY = e.clientY - rect.top + containerRef.value.scrollTop
+  const rect = containerRef.value.getBoundingClientRect();
+  dragCurrent.value = {
+    x: e.clientX - rect.left + containerRef.value.scrollLeft,
+    y: e.clientY - rect.top + containerRef.value.scrollTop
+  };
   
-  const x = Math.min(dragSelectStart.value.x, currentX)
-  const y = Math.min(dragSelectStart.value.y, currentY)
-  const w = Math.abs(currentX - dragSelectStart.value.x)
-  const h = Math.abs(currentY - dragSelectStart.value.y)
+  // Find items in selection
+  const x1 = Math.min(dragStart.value.x, dragCurrent.value.x);
+  const y1 = Math.min(dragStart.value.y, dragCurrent.value.y);
+  const x2 = Math.max(dragStart.value.x, dragCurrent.value.x);
+  const y2 = Math.max(dragStart.value.y, dragCurrent.value.y);
   
-  selectionBox.value = { x, y, w, h }
-  
-  // Find items in selection box
-  const newSelection = new Set<string>()
-  const items = containerRef.value.querySelectorAll('.photo-grid-item')
-  
-  items.forEach((el) => {
-    const itemRect = el.getBoundingClientRect()
-    const itemX = itemRect.left - rect.left + containerRef.value!.scrollLeft
-    const itemY = itemRect.top - rect.top + containerRef.value!.scrollTop
+  const newSelection = new Set<string>();
+  containerRef.value.querySelectorAll('.masonry-item').forEach(el => {
+    const itemRect = el.getBoundingClientRect();
+    const itemX = itemRect.left - rect.left + containerRef.value!.scrollLeft;
+    const itemY = itemRect.top - rect.top + containerRef.value!.scrollTop;
     
-    // Check intersection
-    const intersects = (
-      itemX < x + w &&
-      itemX + itemRect.width > x &&
-      itemY < y + h &&
-      itemY + itemRect.height > y
-    )
-    
-    if (intersects) {
-      const id = el.getAttribute('data-id')
-      if (id) newSelection.add(id)
+    if (itemX < x2 && itemX + itemRect.width > x1 && itemY < y2 && itemY + itemRect.height > y1) {
+      const id = el.getAttribute('data-id');
+      if (id) newSelection.add(id);
     }
-  })
-  
-  itemsInDragSelection.value = newSelection
-  dragSelectCount.value = newSelection.size
+  });
+  itemsInDragSelection.value = newSelection;
 }
 
 function handleMouseUp() {
   if (isDragSelecting.value && itemsInDragSelection.value.size > 0) {
-    // Add drag-selected items to selection
     itemsInDragSelection.value.forEach(id => {
-      if (!selected.value.includes(id)) {
-        selected.value.push(id)
-      }
-    })
-    emit('select', new Set(selected.value))
+      if (!selected.value.includes(id)) selected.value.push(id);
+    });
+    emit('select', new Set(selected.value));
   }
-  
-  isDragSelecting.value = false
-  itemsInDragSelection.value.clear()
-  dragSelectCount.value = 0
+  isDragSelecting.value = false;
+  itemsInDragSelection.value.clear();
 }
 
-// Selection menu actions
-function selectAllVisible() {
-  const allIds = props.items.filter(i => !i.isFolder).map(i => i.id)
-  selected.value = [...allIds]
-  emit('select', new Set(selected.value))
-}
-
-function selectAlbum() {
-  // Select all items (simulating album selection)
-  const allIds = props.items.filter(i => !i.isFolder).map(i => i.id)
-  selected.value = [...allIds]
-  emit('select', new Set(selected.value))
-}
-
-function clearSelection() {
-  selected.value = []
-  emit('select', new Set())
-}
-
-// Item click with shift/ctrl support
+// Item click
 function handleItemClick(item: Item, e: MouseEvent) {
+  if (e.ctrlKey || e.metaKey) {
+    toggleSelect(item.id);
+    return;
+  }
   if (e.shiftKey && selected.value.length > 0) {
-    // Range select
-    const lastSelected = selected.value[selected.value.length - 1]
-    const lastIndex = props.items.findIndex(i => i.id === lastSelected)
-    const currentIndex = props.items.findIndex(i => i.id === item.id)
-    
-    if (lastIndex !== -1 && currentIndex !== -1) {
-      const start = Math.min(lastIndex, currentIndex)
-      const end = Math.max(lastIndex, currentIndex)
-      
+    const lastIdx = props.items.findIndex(i => i.id === selected.value[selected.value.length - 1]);
+    const currIdx = props.items.findIndex(i => i.id === item.id);
+    if (lastIdx !== -1 && currIdx !== -1) {
+      const [start, end] = [Math.min(lastIdx, currIdx), Math.max(lastIdx, currIdx)];
       for (let i = start; i <= end; i++) {
-        const id = props.items[i].id
-        if (!selected.value.includes(id)) {
-          selected.value.push(id)
+        if (!selected.value.includes(props.items[i].id)) {
+          selected.value.push(props.items[i].id);
         }
       }
-      emit('select', new Set(selected.value))
-      return
+      emit('select', new Set(selected.value));
+      return;
     }
   }
-  
-  if (e.ctrlKey || e.metaKey) {
-    // Toggle select
-    toggleSelect(item.id)
-    return
-  }
-  
-  // Normal click
-  emit('itemClick', item)
+  emit('itemClick', item);
 }
 
-const handleItemDblClick = (item: Item) => emit('itemDblClick', item)
-const handleContextMenu = (item: Item, event: MouseEvent) => emit('contextMenu', item, event)
+function handleItemDblClick(item: Item) {
+  emit('itemDblClick', item);
+}
+
+function handleContextMenu(item: Item, e: MouseEvent) {
+  emit('contextMenu', item, e);
+}
 
 onUnmounted(() => {
-  document.removeEventListener('mousemove', onResize)
-  document.removeEventListener('mouseup', stopResize)
-})
+  document.removeEventListener('mousemove', onItemResize);
+  document.removeEventListener('mouseup', stopItemResize);
+  document.removeEventListener('touchmove', onItemResizeTouch);
+  document.removeEventListener('touchend', stopItemResizeTouch);
+});
 </script>
 
 <style scoped>
-.photo-grid-container {
+.masonry-container {
   width: 100%;
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 8px;
+  padding: 16px;
   position: relative;
-  user-select: none;
-  -webkit-user-select: none;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* === SELECTION MENU === */
+/* Selection Menu */
 .selection-menu {
   position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
   z-index: 20;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 16px;
-  margin: -8px -8px 8px -8px;
-  background: var(--retro-bg-panel, #1a1030);
-  border-bottom: 3px solid #000;
-  box-shadow: 0 4px 0 rgba(0,0,0,0.3);
+  padding: 12px 20px;
+  margin: -16px -16px 16px -16px;
+  background: rgba(26, 16, 48, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
 .selection-info {
@@ -416,16 +438,14 @@ onUnmounted(() => {
 }
 
 .selection-count {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 14px;
-  color: var(--retro-accent-green, #00ff87);
-  text-shadow: 0 0 10px var(--retro-accent-green, #00ff87);
+  font-size: 20px;
+  font-weight: 700;
+  color: #00ff87;
 }
 
 .selection-label {
-  font-family: 'VT323', monospace;
-  font-size: 18px;
-  color: var(--retro-text-muted, #9d8ec2);
+  font-size: 14px;
+  color: rgba(255,255,255,0.6);
 }
 
 .selection-actions {
@@ -434,196 +454,145 @@ onUnmounted(() => {
 }
 
 .sel-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  background: var(--retro-bg-card, #251842);
-  border: 2px solid var(--retro-bg-lighter, #2d1f4d);
-  color: var(--retro-text-main, #fff);
-  font-family: 'VT323', monospace;
-  font-size: 16px;
-  box-shadow: 2px 2px 0 #000;
+  width: 36px;
+  height: 36px;
+  padding: 8px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.7);
   cursor: pointer;
-  transition: all 0.1s;
-}
-
-.sel-btn svg {
-  width: 16px;
-  height: 16px;
 }
 
 .sel-btn:hover {
-  border-color: var(--retro-accent-green, #00ff87);
-  color: var(--retro-accent-green, #00ff87);
-}
-
-.sel-btn:active {
-  transform: translate(2px, 2px);
-  box-shadow: none;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
 }
 
 .sel-btn.danger:hover {
-  border-color: var(--retro-accent-red, #ff3b30);
-  color: var(--retro-accent-red, #ff3b30);
+  background: rgba(255,59,48,0.2);
+  color: #ff3b30;
 }
 
-/* === RESIZE HANDLE === */
-.resize-handle {
-  position: fixed;
-  bottom: 80px;
-  right: 20px;
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 10px;
-  background: var(--retro-bg-panel, #1a1030);
-  border: 2px solid var(--retro-accent-yellow, #ffd000);
-  box-shadow: 3px 3px 0 #000;
-  cursor: nwse-resize;
-  transition: all 0.1s;
-  user-select: none;
-}
-
-.resize-handle:hover {
-  background: var(--retro-bg-card, #251842);
-  box-shadow: 0 0 15px var(--retro-accent-yellow, #ffd000), 3px 3px 0 #000;
-}
-
-.resize-handle svg {
-  width: 20px;
-  height: 20px;
-  color: var(--retro-accent-yellow, #ffd000);
-}
-
-.resize-label {
-  font-family: 'VT323', monospace;
-  font-size: 14px;
-  color: var(--retro-accent-yellow, #ffd000);
-}
-
-/* === PHOTO GRID === */
-.photo-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--grid-size, 180px), 1fr));
-  gap: 4px;
-  padding: 4px;
-}
-
-/* === GRID ITEM === */
-.photo-grid-item {
-  aspect-ratio: 1;
-  position: relative;
-  overflow: hidden;
-  background: var(--retro-bg-card, #251842);
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: all 0.1s;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.photo-grid-item * {
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.photo-grid-item img {
+.sel-btn svg {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  transition: transform 0.15s;
-  pointer-events: none;
 }
 
-.photo-grid-item:hover {
-  border-color: var(--retro-accent-yellow, #ffd000);
-  box-shadow: 
-    0 0 0 1px var(--retro-accent-yellow, #ffd000),
-    0 0 15px rgba(255, 208, 0, 0.4),
-    4px 4px 0 #000;
+/* Masonry Grid */
+.masonry-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+  align-content: flex-start;
+}
+
+/* Masonry Item */
+.masonry-item {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(37,24,66,0.6);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  flex-shrink: 0;
+}
+
+.masonry-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1);
   z-index: 5;
 }
 
-.photo-grid-item:hover img {
-  transform: scale(1.05);
+.masonry-item.selected {
+  box-shadow: 0 0 0 3px #00ff87, 0 8px 24px rgba(0,255,135,0.3);
 }
 
-.photo-grid-item.selected {
-  border-color: var(--retro-accent-green, #00ff87);
-  box-shadow: 
-    0 0 0 2px var(--retro-accent-green, #00ff87),
-    0 0 20px rgba(0, 255, 135, 0.5),
-    inset 0 0 40px rgba(0, 255, 135, 0.15);
+.masonry-item.in-drag-select {
+  box-shadow: 0 0 0 2px #00d4ff, 0 4px 16px rgba(0,212,255,0.3);
 }
 
-.photo-grid-item.in-drag-select {
-  border-color: var(--retro-accent-blue, #00d4ff);
-  box-shadow: 
-    0 0 0 2px var(--retro-accent-blue, #00d4ff),
-    0 0 15px rgba(0, 212, 255, 0.4);
+.masonry-item.is-resizing {
+  z-index: 100;
+  box-shadow: 0 0 0 2px #ffd000, 0 8px 32px rgba(255,208,0,0.4);
 }
 
-/* === FOLDER STYLE === */
-.photo-grid-item.is-folder {
-  background: linear-gradient(135deg, var(--retro-bg-lighter, #2d1f4d), var(--retro-bg-card, #251842));
+.masonry-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
-.folder-badge {
+/* Item Resize Handle */
+.item-resize {
   position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 50%, transparent 100%);
-  padding: 12px;
-  gap: 4px;
-}
-
-.folder-badge svg {
-  width: 32px;
-  height: 32px;
-  color: var(--retro-accent-yellow, #ffd000);
-  filter: drop-shadow(2px 2px 0 #000);
-}
-
-.folder-name {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 8px;
-  color: #fff;
-  text-shadow: 1px 1px 0 #000;
-  text-align: center;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.folder-count {
-  font-family: 'VT323', monospace;
-  font-size: 14px;
-  color: var(--retro-text-muted, #9d8ec2);
-}
-
-/* === SELECTION CHECKBOX === */
-.select-btn {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  width: 24px;
-  height: 24px;
-  border: 2px solid rgba(255,255,255,0.6);
-  background: rgba(0,0,0,0.5);
+  bottom: 0;
+  right: 0;
+  width: 28px;
+  height: 28px;
+  background: rgba(0,0,0,0.7);
+  border-top-left-radius: 8px;
+  color: rgba(255,255,255,0.6);
+  cursor: nwse-resize;
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: all 0.1s;
+  transition: opacity 0.15s, background 0.15s;
+  z-index: 10;
+  touch-action: none;
+}
+
+.masonry-item:hover .item-resize {
+  opacity: 1;
+}
+
+.item-resize:hover {
+  background: rgba(255,208,0,0.4);
+  color: #ffd000;
+}
+
+.item-resize:active {
+  background: rgba(255,208,0,0.6);
+}
+
+.item-resize svg {
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+
+/* Selection Checkbox */
+.select-btn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.5);
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s;
   padding: 0;
-  box-shadow: none;
+  cursor: pointer;
+}
+
+.masonry-item:hover .select-btn,
+.select-btn.active {
+  opacity: 1;
+}
+
+.select-btn.active {
+  background: #00ff87;
+  border-color: #00ff87;
 }
 
 .select-btn svg {
@@ -632,83 +601,144 @@ onUnmounted(() => {
   color: #fff;
 }
 
-.photo-grid-item:hover .select-btn,
-.select-btn.active {
-  opacity: 1;
+/* Folder Badge */
+.folder-badge {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.2));
+  gap: 8px;
 }
 
-.select-btn.active {
-  background: var(--retro-accent-green, #00ff87);
-  border-color: var(--retro-accent-green, #00ff87);
+.folder-badge svg {
+  width: 40px;
+  height: 40px;
+  color: #ffd000;
 }
 
-.select-btn:hover {
-  transform: none;
-  box-shadow: none;
-  border-color: var(--retro-accent-green, #00ff87);
+.folder-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  text-align: center;
 }
 
-/* === TAG INDICATOR === */
+.folder-count {
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+}
+
+/* Tag Indicator */
 .tag-indicator {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 12px;
-  height: 12px;
-  border: 2px solid #000;
-  box-shadow: 2px 2px 0 #000;
+  top: 10px;
+  right: 10px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.3);
 }
 
-/* === HOVER INFO === */
+/* Hover Info */
 .item-info {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 8px;
-  background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+  padding: 12px;
+  background: linear-gradient(to top, rgba(0,0,0,0.85), transparent);
   opacity: 0;
-  transition: opacity 0.1s;
+  transition: opacity 0.2s;
 }
 
-.photo-grid-item:hover .item-info {
+.masonry-item:hover .item-info {
   opacity: 1;
 }
 
 .item-name {
-  font-family: 'VT323', monospace;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 500;
   color: #fff;
-  text-shadow: 1px 1px 0 #000;
-  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* === SELECTION BOX === */
-.selection-box {
-  position: absolute;
-  border: 2px solid var(--retro-accent-blue, #00d4ff);
-  background: rgba(0, 212, 255, 0.15);
-  pointer-events: none;
-  z-index: 100;
+/* Global Resize Control */
+.global-resize {
+  position: fixed;
+  bottom: 100px;
+  right: 20px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(26,16,48,0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+.global-resize button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.7);
+  font-size: 18px;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.selection-box-count {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 12px;
-  color: var(--retro-accent-blue, #00d4ff);
-  text-shadow: 0 0 10px var(--retro-accent-blue, #00d4ff);
-  background: rgba(0, 0, 0, 0.8);
-  padding: 4px 8px;
-  border: 2px solid var(--retro-accent-blue, #00d4ff);
+.global-resize button:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
 }
 
-/* === TRANSITIONS === */
+.global-resize input[type="range"] {
+  width: 100px;
+  height: 4px;
+  -webkit-appearance: none;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+}
+
+.global-resize input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #00ff87;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.global-resize span {
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+  min-width: 45px;
+  text-align: right;
+}
+
+/* Selection Box */
+.selection-box {
+  position: absolute;
+  border: 2px solid #00d4ff;
+  background: rgba(0,212,255,0.1);
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* Transitions */
 .slide-up-enter-active,
 .slide-up-leave-active {
   transition: all 0.2s;
@@ -720,52 +750,41 @@ onUnmounted(() => {
   opacity: 0;
 }
 
-/* === MOBILE === */
+/* Mobile */
 @media (max-width: 768px) {
-  .resize-handle {
-    bottom: 100px;
-    right: 12px;
-    padding: 8px;
-  }
-  
-  .resize-handle svg {
-    width: 16px;
-    height: 16px;
-  }
-  
-  .resize-label {
-    font-size: 12px;
-  }
-  
-  .selection-menu {
-    flex-direction: column;
-    gap: 10px;
+  .masonry-container {
     padding: 12px;
   }
   
-  .selection-actions {
-    width: 100%;
-    justify-content: space-between;
+  .global-resize {
+    bottom: 110px;
+    right: 12px;
+    padding: 8px 10px;
   }
   
-  .sel-btn span {
+  .global-resize input[type="range"] {
+    width: 60px;
+  }
+  
+  .global-resize span {
     display: none;
-  }
-  
-  .sel-btn {
-    padding: 10px;
   }
 }
 
-/* === TOUCH DEVICES === */
+/* Touch devices */
 @media (hover: none) {
   .select-btn {
     opacity: 1;
   }
   
+  .item-resize {
+    opacity: 0.8;
+    width: 32px;
+    height: 32px;
+  }
+  
   .item-info {
     opacity: 1;
-    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
   }
 }
 </style>

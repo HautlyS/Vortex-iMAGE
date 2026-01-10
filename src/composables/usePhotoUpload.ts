@@ -1,12 +1,13 @@
 /**
- * TypeScript Module - 1 exports
- * Purpose: Type-safe utilities and composable functions
- * Imports: 1 modules
+ * Photo Upload Composable
+ * 
+ * Handles file uploads with automatic compression and encryption.
+ * Uses the best available technology automatically.
  */
 
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useGitHubAuth, isDevMode } from './useGitHubAuth'
-import { useMediaSettings, type ProcessingSettings } from './useMediaSettings'
+import { useGitHubAuth, isDevMode, isWebMode } from './useGitHubAuth'
+import { useMediaSettings, toBackendSettings, type SimpleSettings } from './useMediaSettings'
 
 interface UploadResult {
   url: string
@@ -30,9 +31,12 @@ export interface UploadItem {
   progress: number
   error?: string
   url?: string
-  albumPath?: string
-  settings?: ProcessingSettings
+  folderPath?: string
+  settings: SimpleSettings
   password?: string
+  // Web mode: store File object for browser uploads
+  file?: File
+  base64?: string
 }
 
 export interface Photo {
@@ -43,35 +47,13 @@ export interface Photo {
   size?: number
 }
 
-/** Upload processing settings for backend */
-interface UploadProcessingSettings {
-  compression: {
-    enabled: boolean
-    algorithm: string
-    level: number
-    prefer_speed: boolean
-    min_size_threshold: number
-    skip_already_compressed: boolean
-  }
-  encryption: {
-    enabled: boolean
-    use_password: boolean
-    use_keypair: boolean
-  }
-}
-
-const MOCK_PHOTOS: Photo[] = Array.from({ length: 50 }, (_, i) => {
-  const heights = [400, 500, 600, 700, 800]
-  const h = heights[i % heights.length]
-  const names = ['sunset', 'mountain', 'city', 'forest', 'ocean', 'desert', 'autumn', 'snow', 'beach', 'night', 'waterfall', 'flower', 'lake', 'canyon', 'aurora', 'wildlife', 'architecture', 'portrait', 'street', 'abstract']
-  return {
-    name: `${names[i % names.length]}-${i + 1}.jpg`,
-    url: `https://picsum.photos/seed/${i}/${h}/${h}`,
-    sha: `mock-sha-${i + 1}`,
-    size: 150000 + Math.floor(Math.random() * 200000),
-    path: i < 10 ? 'viagens' : i < 20 ? 'viagens/2024' : i < 30 ? 'familia' : undefined
-  }
-})
+// Mock data for dev mode
+const MOCK_PHOTOS: Photo[] = Array.from({ length: 30 }, (_, i) => ({
+  name: `photo-${i + 1}.jpg`,
+  url: `https://picsum.photos/seed/${i}/600/600`,
+  sha: `mock-sha-${i + 1}`,
+  size: 150000 + Math.floor(Math.random() * 200000)
+}))
 
 const queue = ref<UploadItem[]>([])
 const photos = ref<Photo[]>(isDevMode ? [...MOCK_PHOTOS] : [])
@@ -81,11 +63,7 @@ let initialized = false
 
 export function usePhotoUpload() {
   const { token, repo, publicBundle } = useGitHubAuth()
-  const { 
-    getEffectiveSettings, 
-    detectMediaType, 
-    initialize: initMediaSettings 
-  } = useMediaSettings()
+  const { getFolderSettings, initialize: initMediaSettings } = useMediaSettings()
 
   let unlisten: (() => void) | null = null
   let isProcessing = false
@@ -100,10 +78,9 @@ export function usePhotoUpload() {
   }, { immediate: true })
 
   onMounted(async () => {
-    if (isDevMode) {
-      
-      return
-    }
+    if (isDevMode) return
+
+    await initMediaSettings()
 
     try {
       const { listen } = await import('@tauri-apps/api/event')
@@ -126,43 +103,66 @@ export function usePhotoUpload() {
     }
   })
 
-  async function selectFiles() {
-    if (isDevMode) {
-      
-      const mockFiles = [
-        `photo-${Date.now()}-1.jpg`,
-        `photo-${Date.now()}-2.jpg`,
-      ]
-      addToQueue(mockFiles)
-      return
-    }
+  /**
+   * Add files to upload queue (Tauri mode - file paths)
+   */
+  function addToQueue(
+    paths: string[], 
+    folderPath?: string, 
+    customSettings?: SimpleSettings,
+    password?: string
+  ) {
+    // Get settings (custom or folder-based or global)
+    const settings = customSettings || getFolderSettings(folderPath || '')
 
-    try {
-      const { open } = await import('@tauri-apps/plugin-dialog')
-      const files = await open({
-        multiple: true,
-        filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }]
-      })
-      if (files) addToQueue(files as string[])
-    } catch (e) {
-      console.error('Failed to open file dialog:', e)
-    }
-  }
-
-  function addToQueue(paths: string[]) {
     for (const path of paths) {
-      const name = path.split('/').pop() || 'photo'
+      const name = path.split('/').pop() || 'file'
       queue.value.push({
         id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         path,
         name,
         status: 'pending',
-        progress: 0
+        progress: 0,
+        folderPath,
+        settings,
+        password
       })
     }
+    
     if (!isUploading.value && !isProcessing) processQueue()
   }
 
+  /**
+   * Add File objects to upload queue (Web mode - browser File API)
+   */
+  function addFilesToQueue(
+    files: File[],
+    folderPath?: string,
+    customSettings?: SimpleSettings,
+    password?: string
+  ) {
+    const settings = customSettings || getFolderSettings(folderPath || '')
+
+    for (const file of files) {
+      queue.value.push({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        path: file.name, // Use name as path for web mode
+        name: file.name,
+        status: 'pending',
+        progress: 0,
+        folderPath,
+        settings,
+        password,
+        file // Store File object for web upload
+      })
+    }
+    
+    if (!isUploading.value && !isProcessing) processQueue()
+  }
+
+  /**
+   * Process upload queue
+   */
   async function processQueue() {
     if (!token.value || !repo.value || isProcessing) return
 
@@ -177,30 +177,102 @@ export function usePhotoUpload() {
         next.status = 'uploading'
         next.progress = 0
 
+        // Dev mode simulation
         if (isDevMode) {
-          
           for (let p = 0; p <= 100; p += 20) {
             next.progress = p
-            await new Promise(r => setTimeout(r, 200))
+            await new Promise(r => setTimeout(r, 150))
           }
           next.status = 'success'
           next.progress = 100
-
-          const seed = Math.floor(Math.random() * 1000)
           photos.value.unshift({
             name: next.name,
-            url: `https://picsum.photos/seed/${seed}/600/600`,
-            sha: `mock-sha-${seed}`,
+            url: `https://picsum.photos/seed/${Date.now()}/600/600`,
+            sha: `mock-sha-${Date.now()}`,
             size: Math.floor(Math.random() * 200000) + 150000
           })
           continue
         }
 
+        // Web mode: upload via GitHub API
+        if (isWebMode) {
+          try {
+            const filename = `${Date.now()}-${next.name}`
+            let base64Content: string
+
+            // Get base64 content from File object
+            if (next.file) {
+              base64Content = await fileToBase64(next.file)
+            } else {
+              throw new Error('No file data available for web upload')
+            }
+
+            next.progress = 30
+
+            // Upload to GitHub
+            const response = await fetch(
+              `https://api.github.com/repos/${repo.value}/contents/photos/${filename}`,
+              {
+                method: 'PUT',
+                headers: {
+                  'Authorization': `Bearer ${token.value}`,
+                  'Content-Type': 'application/json',
+                  'User-Agent': 'vortex-image'
+                },
+                body: JSON.stringify({
+                  message: `Upload ${filename}`,
+                  content: base64Content
+                })
+              }
+            )
+
+            next.progress = 80
+
+            if (!response.ok) {
+              const error = await response.json()
+              throw new Error(error.message || 'Upload failed')
+            }
+
+            const result = await response.json()
+            next.status = 'success'
+            next.progress = 100
+            next.url = result.content?.html_url
+
+            photos.value.unshift({
+              name: filename,
+              url: result.content?.download_url || `https://raw.githubusercontent.com/${repo.value}/main/photos/${filename}`,
+              sha: result.content?.sha || filename,
+              path: `photos/${filename}`
+            })
+          } catch (e) {
+            next.status = 'failed'
+            next.progress = 0
+            next.error = String(e).replace('Error: ', '')
+          }
+          continue
+        }
+
+        // Tauri mode: use invoke
         try {
           const { invoke } = await import('@tauri-apps/api/core')
           const filename = `${Date.now()}-${next.name}`
 
-          if (!publicBundle.value) throw new Error("Encryption keys not available")
+          // Convert simple settings to backend format
+          const backendSettings = toBackendSettings(
+            next.settings,
+            publicBundle.value,
+            next.password
+          )
+
+          // Validate encryption requirements
+          if (backendSettings.encryption.enabled) {
+            if (backendSettings.encryption.use_keypair && !publicBundle.value) {
+              throw new Error("Keypair not available. Unlock your keypair in Security Settings.")
+            }
+            if (backendSettings.encryption.use_password && !next.password) {
+              throw new Error("Password required for encryption")
+            }
+          }
 
           const result = await invoke<UploadResult>('upload_photo', {
             path: next.path,
@@ -208,7 +280,9 @@ export function usePhotoUpload() {
             token: token.value,
             filename,
             uploadId: next.id,
-            publicBundle: publicBundle.value
+            publicBundle: backendSettings.encryption.use_keypair ? publicBundle.value : null,
+            password: backendSettings.encryption.use_password ? next.password : null,
+            settings: backendSettings
           })
 
           next.status = 'success'
@@ -224,7 +298,7 @@ export function usePhotoUpload() {
         } catch (e) {
           next.status = 'failed'
           next.progress = 0
-          next.error = String(e)
+          next.error = String(e).replace('Error: ', '')
         }
       }
     } finally {
@@ -233,6 +307,23 @@ export function usePhotoUpload() {
     }
 
     if (!isDevMode) await loadPhotos()
+  }
+
+  /**
+   * Convert File to base64 string (without data URL prefix)
+   */
+  function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const result = reader.result as string
+        // Remove data URL prefix (e.g., "data:image/png;base64,")
+        const base64 = result.split(',')[1]
+        resolve(base64)
+      }
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
   }
 
   function retryFailed() {
@@ -265,7 +356,6 @@ export function usePhotoUpload() {
 
   async function loadPhotos(folder?: string) {
     if (isDevMode) {
-      
       loadingPhotos.value = true
       await new Promise(r => setTimeout(r, 300))
       loadingPhotos.value = false
@@ -276,6 +366,39 @@ export function usePhotoUpload() {
 
     loadingPhotos.value = true
     try {
+      // Web mode: use GitHub API directly
+      if (isWebMode) {
+        const path = folder ? `photos/${folder}` : 'photos'
+        const response = await fetch(
+          `https://api.github.com/repos/${repo.value}/contents/${path}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token.value}`,
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          }
+        )
+        
+        if (response.ok) {
+          const contents = await response.json()
+          const imageFiles = Array.isArray(contents) 
+            ? contents.filter((f: any) => f.type === 'file' && /\.(jpg|jpeg|png|gif|webp)$/i.test(f.name))
+            : []
+          
+          photos.value = imageFiles.map((f: any) => ({
+            name: f.name,
+            url: f.download_url,
+            sha: f.sha,
+            path: f.path,
+            size: f.size
+          }))
+        } else {
+          photos.value = []
+        }
+        return
+      }
+
+      // Tauri mode: use invoke
       const { invoke } = await import('@tauri-apps/api/core')
       const photoUrls = await invoke<string[]>('list_photos', {
         repo: repo.value,
@@ -308,8 +431,8 @@ export function usePhotoUpload() {
     failedCount,
     successCount,
     currentUpload,
-    selectFiles,
     addToQueue,
+    addFilesToQueue,
     retryFailed,
     removeFromQueue,
     clearCompleted,

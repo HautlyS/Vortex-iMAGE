@@ -5,7 +5,8 @@
  */
 
 import { ref, computed } from 'vue'
-import { load } from '@tauri-apps/plugin-store'
+
+const isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI__
 
 export type AccentColor = 'pink' | 'cyan' | 'purple' | 'green' | 'orange' | 'yellow'
 
@@ -28,11 +29,20 @@ export function useAccentColor() {
 
   async function init() {
     try {
-      const store = await load('settings.json')
-      const saved = await store.get<AccentColor>('accent')
-      if (saved && colors[saved]) {
-        accent.value = saved
-        document.documentElement.style.setProperty('--accent', colors[saved])
+      if (isTauri) {
+        const { load } = await import('@tauri-apps/plugin-store')
+        const store = await load('settings.json')
+        const saved = await store.get<AccentColor>('accent')
+        if (saved && colors[saved]) {
+          accent.value = saved
+          document.documentElement.style.setProperty('--accent', colors[saved])
+        }
+      } else {
+        const saved = localStorage.getItem('accent') as AccentColor | null
+        if (saved && colors[saved]) {
+          accent.value = saved
+          document.documentElement.style.setProperty('--accent', colors[saved])
+        }
       }
     } catch {
       
@@ -43,9 +53,14 @@ export function useAccentColor() {
     accent.value = color
     document.documentElement.style.setProperty('--accent', colors[color])
     try {
-      const store = await load('settings.json')
-      await store.set('accent', color)
-      await store.save()
+      if (isTauri) {
+        const { load } = await import('@tauri-apps/plugin-store')
+        const store = await load('settings.json')
+        await store.set('accent', color)
+        await store.save()
+      } else {
+        localStorage.setItem('accent', color)
+      }
     } catch {
       
     }

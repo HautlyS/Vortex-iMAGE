@@ -8,11 +8,10 @@ import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
 import { resolve } from "path";
-import { copyFileSync, mkdirSync } from "fs";
 
 const host = process.env.TAURI_DEV_HOST;
-const isGitHubPages = process.env.GITHUB_PAGES === 'true';
 const isLandingDev = process.env.LANDING_DEV === 'true';
+const isWebMode = process.env.VITE_WEB_MODE === 'true';
 
 const isTauri = !!(
   process.env.TAURI_ENV_PLATFORM ||
@@ -25,32 +24,27 @@ const isMobile = process.env.TAURI_ENV_PLATFORM === 'android' ||
                  process.env.TAURI_ENV_PLATFORM === 'ios';
 
 export default defineConfig(async () => ({
-  base: '/',
+  // Use relative base for GitHub Pages subdirectory deployment
+  base: isWebMode ? './' : '/',
   plugins: [
     vue(),
     tailwindcss(),
-    isGitHubPages && {
-      name: 'landing-page',
-      closeBundle() {
-        mkdirSync('dist', { recursive: true });
-        copyFileSync('landing/index.html', 'dist/index.html');
-      }
-    }
   ].filter(Boolean),
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src')
     }
   },
-  build: isGitHubPages ? {
-    rollupOptions: { input: resolve(__dirname, 'landing/index.html') },
-    outDir: 'dist',
-    emptyOutDir: true
-  } : {
-    
+  define: {
+    // Expose web mode flag to the app
+    '__WEB_MODE__': JSON.stringify(isWebMode),
+  },
+  build: {
     target: isMobile ? 'es2020' : 'esnext',
     minify: 'esbuild',
-    cssMinify: true
+    cssMinify: true,
+    outDir: 'dist',
+    emptyOutDir: true
   },
   root: isLandingDev ? 'landing' : undefined,
   clearScreen: false,

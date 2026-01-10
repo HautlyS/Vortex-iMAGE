@@ -5,16 +5,30 @@
  */
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { open } from '@tauri-apps/plugin-dialog'
 import { useDataDriver, type DataDriver } from '../composables/useDataDriver'
 import { useGitHubAuth } from '../composables/useGitHubAuth'
+import { registerOverlay } from '../composables/useKeyboardShortcuts'
 import ConfirmDialog from './ui/ConfirmDialog.vue'
 
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'driver-changed', driver: DataDriver): void
 }>()
+
+// Register ESC key handler
+let unregisterOverlay: (() => void) | null = null;
+
+onMounted(() => {
+  unregisterOverlay = registerOverlay('data-driver-manager', () => emit('close'));
+});
+
+onUnmounted(() => {
+  if (unregisterOverlay) {
+    unregisterOverlay();
+  }
+});
 
 const {
   drivers,
